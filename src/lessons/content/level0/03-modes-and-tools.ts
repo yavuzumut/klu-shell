@@ -11,7 +11,7 @@ Termi, öğrenmeyi kolaylaştırmak için farklı çalışma alanları ve yardı
 - **📖 Dersler:** Adım adım görevlerle ilerlediğin rehberli mod.
 - **💻 Serbest Mod (Sandbox):** Görev sınırlaması olmadan terminali özgürce kullanabileceğin mod.
 - **📑 Hile Kağıdı (Cheat Sheet):** Desteklenen 14 komutun kısa Türkçe açıklamaları ve örnekleri. Bir komuta tıkladığında doğrudan Serbest Mod terminaline yazılır.
-- **🚀 Meraklısına:** Gerçek Linux'ta kullanılan güçlü harici araçlar (\`yt-dlp\`, \`fastfetch\`, \`tldr\`) hakkında tanıtım kartları ve kopyalanabilir kodlar.
+- **🚀 Meraklısına:** \`yt-dlp\` gibi gerçek Linux araçları hakkında tanıtım kartları ve kopyalanabilir komutlar.
 
 ### Yardımcı Paneller ve Ayarlar
 - **🗂️ Dosya Ağacı:** Sanal dosya sistemini canlı görselleştirir. Bir klasöre tıklarsan \`cd <yol>\`, bir dosyaya tıklarsan \`cat <yol>\` komutu terminale yazılır.

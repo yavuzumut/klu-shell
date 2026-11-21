@@ -20,7 +20,7 @@ komut [seçenekler/bayraklar] [argümanlar/hedefler]
 ### 2. Olmazsa Olmaz Kısayollar
 - **Tab Tuşu:** Terminalin en büyük gücüdür. Bir komutun veya dosya adının ilk harflerini yazıp **Tab**'a bastığında otomatik tamamlanır.
 - **Yukarı / Aşağı Ok Tuşları (↑ / ↓):** Daha önce çalıştırdığın komutları tekrar yazmadan geri çağırır.
-- **Ctrl+C:** Satırı çalıştırmadan iptal eder ve temiz bir komut satırı açar.
+- **Ctrl+C:** Yazdığın satırı çalıştırmadan iptal eder ve temiz bir komut satırı açar; gerçek Linux'ta ise takılan veya çalışan bir programı durdurmak için de kullanılır.
 - **Ctrl+L:** Ekranı temizler (\`clear\` komutu ile aynıdır).
 
 ### 3. Komutlardan Yardım Alma
