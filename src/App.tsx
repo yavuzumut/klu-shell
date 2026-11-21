@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Header } from './components/Header';
+import { Header, type AppMode } from './components/Header';
 import { LessonDrawer } from './components/LessonDrawer';
 import { LessonPanel } from './components/LessonPanel';
+import { FileTree } from './components/FileTree';
 import { createRegistry } from './core/commands';
+import { createDefaultFS } from './core/fs/defaultTree';
 import { Shell } from './core/shell/Shell';
 import type { CommandRecord } from './core/shell/types';
 import { ALL_LESSONS, findLesson, LEVELS } from './lessons/content';
@@ -21,25 +23,75 @@ const ansi = {
 };
 const plain = (md: string) => md.replace(/`([^`]+)`/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1');
 
-type MobileTab = 'lesson' | 'terminal';
+type MobileTab = 'lesson' | 'terminal' | 'tree';
 
 export default function App() {
   const { progress, actions } = useProgress(FIRST_LESSON_ID);
   const found = findLesson(progress.currentLessonId) ?? findLesson(FIRST_LESSON_ID)!;
   const { level, lesson, index: lessonIndex } = found;
 
-  const [shell] = useState(() => {
+  const [mode, setMode] = useState<AppMode>('lessons');
+  const [showFileTree, setShowFileTree] = useState(false);
+
+  // Shell for Lessons
+  const [lessonShell] = useState(() => {
     const fs = createLessonFS(lesson);
     return new Shell({ fs, registry: createRegistry(), cwd: lessonStartCwd(lesson, fs), history: progress.history });
   });
+
+  // Dedicated Shell for Sandbox (Serbest Mod)
+  const [sandboxShell] = useState(() => {
+    const fs = createDefaultFS();
+    return new Shell({ fs, registry: createRegistry(), cwd: fs.home });
+  });
+
+  const activeShell = mode === 'lessons' ? lessonShell : sandboxShell;
+
+  const [currentCwd, setCurrentCwd] = useState(activeShell.cwd);
   const termRef = useRef<TerminalHandle>(null);
   const recordsRef = useRef<CommandRecord[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('lesson');
 
+  // Sync cwd state on execute
+  useEffect(() => {
+    setCurrentCwd(activeShell.cwd);
+  }, [activeShell, activeShell.cwd]);
+
+  // Default showFileTree: in sandbox mode defaults to true on desktop
+  const handleModeChange = useCallback(
+    (newMode: AppMode) => {
+      setMode(newMode);
+      if (newMode === 'sandbox') {
+        setShowFileTree(true);
+        setMobileTab('terminal');
+        const banner =
+          ansi.cyan('── Termi Serbest Mod (Sandbox) ──') +
+          '\n' +
+          ansi.dim('İstediğin komutları dene. Yan panelde dosya ağacını canlı izleyebilirsin.') +
+          '\n';
+        requestAnimationFrame(() => {
+          termRef.current?.resetScreen(banner);
+        });
+      } else {
+        setShowFileTree(false);
+        setMobileTab('lesson');
+        const banner =
+          ansi.cyan(`── Ders ${lessonIndex + 1}: ${lesson.title} ──`) +
+          '\n' +
+          ansi.dim("Komutları yazıp Enter'a bas. Yardım için: help") +
+          '\n';
+        requestAnimationFrame(() => {
+          termRef.current?.resetScreen(banner);
+        });
+      }
+    },
+    [lesson.title, lessonIndex],
+  );
+
   // Latest values for the (stable) terminal callback.
-  const latest = useRef({ lesson, progress });
-  latest.current = { lesson, progress };
+  const latest = useRef({ lesson, progress, mode });
+  latest.current = { lesson, progress, mode };
 
   const lessonPos = ALL_LESSONS.findIndex((l) => l.id === lesson.id);
   const prevLesson = ALL_LESSONS[lessonPos - 1];
@@ -58,7 +110,8 @@ export default function App() {
   const startLessonSession = useCallback(
     (message?: string) => {
       const fs = createLessonFS(lesson);
-      shell.reset(fs, lessonStartCwd(lesson, fs));
+      lessonShell.reset(fs, lessonStartCwd(lesson, fs));
+      setCurrentCwd(lessonShell.cwd);
       recordsRef.current = [];
       const banner =
         ansi.cyan(`── Ders ${lessonIndex + 1}: ${lesson.title} ──`) +
@@ -67,25 +120,46 @@ export default function App() {
         '\n';
       termRef.current?.resetScreen(banner);
     },
-    [lesson, lessonIndex, shell],
+    [lesson, lessonIndex, lessonShell],
   );
 
-  // New lesson → fresh file system.
+  // Reset sandbox FS
+  const resetSandboxFS = useCallback(() => {
+    const fs = createDefaultFS();
+    sandboxShell.reset(fs, fs.home);
+    setCurrentCwd(sandboxShell.cwd);
+    const banner =
+      ansi.cyan('── Termi Serbest Mod ──') +
+      '\n' +
+      ansi.dim('Sanal dosya sistemi sıfırlandı.') +
+      '\n';
+    termRef.current?.resetScreen(banner);
+  }, [sandboxShell]);
+
+  // New lesson → fresh file system (if in lesson mode).
   useEffect(() => {
-    startLessonSession();
+    if (mode === 'lessons') {
+      startLessonSession();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lesson.id]);
 
   const onExecuted = useCallback(
     (record: CommandRecord): string | void => {
-      const { lesson: cur, progress: p } = latest.current;
-      recordsRef.current.push(record);
-      actions.setHistory(shell.history);
+      const { lesson: cur, progress: p, mode: curMode } = latest.current;
+      actions.setHistory(activeShell.history);
+      setCurrentCwd(activeShell.cwd);
 
+      // Only evaluate tasks in lessons mode
+      if (curMode !== 'lessons') {
+        return undefined;
+      }
+
+      recordsRef.current.push(record);
       const completed = p.completed[cur.id] ?? [];
       const result = evaluateCommand(cur, completed, {
-        fs: shell.fs,
-        cwd: shell.cwd,
+        fs: activeShell.fs,
+        cwd: activeShell.cwd,
         last: record,
         records: recordsRef.current,
       });
@@ -93,9 +167,8 @@ export default function App() {
       if (result.completedTaskId) {
         const taskId = result.completedTaskId;
         actions.completeTask(cur.id, taskId);
-        // Update the ref right away so a fast next command sees it.
         latest.current = {
-          lesson: cur,
+          ...latest.current,
           progress: { ...p, completed: { ...p.completed, [cur.id]: [...completed, taskId] } },
         };
         const task = cur.tasks.find((t) => t.id === taskId)!;
@@ -110,7 +183,7 @@ export default function App() {
         const attempts = (p.attempts[taskKey(cur.id, task.id)] ?? 0) + 1;
         actions.addAttempt(cur.id, task.id);
         latest.current = {
-          lesson: cur,
+          ...latest.current,
           progress: { ...p, attempts: { ...p.attempts, [taskKey(cur.id, task.id)]: attempts } },
         };
         const hint = task.hints[Math.min(attempts, task.hints.length) - 1];
@@ -119,12 +192,13 @@ export default function App() {
         return msg || undefined;
       }
     },
-    [actions, shell],
+    [actions, activeShell],
   );
 
   const goToLesson = useCallback(
     (id: string) => {
       actions.setCurrentLesson(id);
+      setMode('lessons');
       setMobileTab('lesson');
     },
     [actions],
@@ -132,9 +206,19 @@ export default function App() {
 
   const insertCommand = useCallback((cmd: string) => {
     setMobileTab('terminal');
-    // Wait for the terminal tab to become visible on mobile before focusing.
     requestAnimationFrame(() => termRef.current?.insert(cmd));
   }, []);
+
+  const handleTreeSelectPath = useCallback((path: string) => {
+    // If user clicks a path in the tree, insert "cd <path>" into terminal without pressing Enter
+    const pretty = activeShell.fs.prettyPath(path);
+    const cmd = `cd ${pretty}`;
+    setMobileTab('terminal');
+    requestAnimationFrame(() => {
+      termRef.current?.insert(cmd);
+      termRef.current?.focus();
+    });
+  }, [activeShell]);
 
   const completedTaskIds = progress.completed[lesson.id] ?? [];
   const mobileKeys = useMemo(
@@ -153,7 +237,7 @@ export default function App() {
   );
 
   return (
-    <div className="app">
+    <div className={`app app-mode-${mode} ${showFileTree ? 'with-tree' : ''}`}>
       <Header
         levels={LEVELS}
         currentLevel={level}
@@ -161,54 +245,99 @@ export default function App() {
         isLessonDone={isLessonDone}
         onSelectLesson={goToLesson}
         onOpenMenu={() => setDrawerOpen(true)}
+        mode={mode}
+        onModeChange={handleModeChange}
+        showFileTree={showFileTree}
+        onToggleFileTree={() => setShowFileTree((prev) => !prev)}
       />
 
       <div className="mobile-tabs" role="tablist">
-        <button className={mobileTab === 'lesson' ? 'active' : ''} onClick={() => setMobileTab('lesson')}>
-          📖 Ders
-        </button>
-        <button
-          className={mobileTab === 'terminal' ? 'active' : ''}
-          onClick={() => {
-            setMobileTab('terminal');
-            requestAnimationFrame(() => termRef.current?.focus());
-          }}
-        >
-          ⌨️ Terminal
-        </button>
+        {mode === 'lessons' ? (
+          <>
+            <button className={mobileTab === 'lesson' ? 'active' : ''} onClick={() => setMobileTab('lesson')}>
+              📖 Ders
+            </button>
+            <button
+              className={mobileTab === 'terminal' ? 'active' : ''}
+              onClick={() => {
+                setMobileTab('terminal');
+                requestAnimationFrame(() => termRef.current?.focus());
+              }}
+            >
+              ⌨️ Terminal
+            </button>
+            {showFileTree && (
+              <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
+                🗂️ Ağaç
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <button
+              className={mobileTab === 'terminal' ? 'active' : ''}
+              onClick={() => {
+                setMobileTab('terminal');
+                requestAnimationFrame(() => termRef.current?.focus());
+              }}
+            >
+              ⌨️ Terminal
+            </button>
+            {showFileTree && (
+              <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
+                🗂️ Dosya Ağacı
+              </button>
+            )}
+          </>
+        )}
       </div>
 
-      <main className={`panels show-${mobileTab}`}>
-        <section className="panel panel-lesson">
-          <LessonPanel
-            level={level}
-            lesson={lesson}
-            lessonIndex={lessonIndex}
-            completedTaskIds={completedTaskIds}
-            attemptsFor={(taskId) => progress.attempts[taskKey(lesson.id, taskId)] ?? 0}
-            isRevealed={(taskId) => !!progress.revealed[taskKey(lesson.id, taskId)]}
-            hasPrev={!!prevLesson}
-            hasNext={!!nextLesson}
-            onPrev={() => prevLesson && goToLesson(prevLesson.id)}
-            onNext={() => nextLesson && goToLesson(nextLesson.id)}
-            onRevealSolution={(taskId) => actions.revealSolution(lesson.id, taskId)}
-            onInsertCommand={insertCommand}
-            onRestartLesson={() => {
-              actions.restartLesson(lesson.id);
-              startLessonSession('Ders baştan başladı.');
-            }}
-            onResetTerminal={() => startLessonSession('Dosya sistemi dersin başlangıç haline döndürüldü.')}
-          />
-        </section>
+      <main className={`panels show-${mobileTab} layout-${mode} ${showFileTree ? 'has-tree' : 'no-tree'}`}>
+        {mode === 'lessons' && (
+          <section className="panel panel-lesson">
+            <LessonPanel
+              level={level}
+              lesson={lesson}
+              lessonIndex={lessonIndex}
+              completedTaskIds={completedTaskIds}
+              attemptsFor={(taskId) => progress.attempts[taskKey(lesson.id, taskId)] ?? 0}
+              isRevealed={(taskId) => !!progress.revealed[taskKey(lesson.id, taskId)]}
+              hasPrev={!!prevLesson}
+              hasNext={!!nextLesson}
+              onPrev={() => prevLesson && goToLesson(prevLesson.id)}
+              onNext={() => nextLesson && goToLesson(nextLesson.id)}
+              onRevealSolution={(taskId) => actions.revealSolution(lesson.id, taskId)}
+              onInsertCommand={insertCommand}
+              onRestartLesson={() => {
+                actions.restartLesson(lesson.id);
+                startLessonSession('Ders baştan başladı.');
+              }}
+              onResetTerminal={() => startLessonSession('Dosya sistemi dersin başlangıç haline döndürüldü.')}
+            />
+          </section>
+        )}
 
         <section className="panel panel-terminal">
           <div className="terminal-chrome">
             <span className="dots" aria-hidden>
               <i /> <i /> <i />
             </span>
-            <span className="terminal-title">kullanici@termi: bash</span>
+            <span className="terminal-title">
+              {mode === 'sandbox' ? 'kullanici@termi: bash (serbest mod)' : 'kullanici@termi: bash'}
+            </span>
+            {mode === 'sandbox' && (
+              <div className="sandbox-chrome-actions">
+                <button
+                  className="btn btn-small btn-ghost"
+                  onClick={resetSandboxFS}
+                  title="Sanal dosya sistemini sıfırla"
+                >
+                  ↺ Sıfırla
+                </button>
+              </div>
+            )}
           </div>
-          <TerminalView ref={termRef} shell={shell} onExecuted={onExecuted} />
+          <TerminalView ref={termRef} shell={activeShell} onExecuted={onExecuted} />
           <div className="key-bar" aria-label="Terminal tuşları">
             {mobileKeys.map((k) => (
               <button
@@ -221,6 +350,17 @@ export default function App() {
             ))}
           </div>
         </section>
+
+        {showFileTree && (
+          <aside className="panel panel-tree">
+            <FileTree
+              fs={activeShell.fs}
+              cwd={currentCwd}
+              onSelectPath={handleTreeSelectPath}
+              onResetFs={mode === 'sandbox' ? resetSandboxFS : () => startLessonSession('Dosya sistemi sıfırlandı.')}
+            />
+          </aside>
+        )}
       </main>
 
       <LessonDrawer
@@ -232,7 +372,7 @@ export default function App() {
         onClose={() => setDrawerOpen(false)}
         onResetAll={() => {
           actions.resetAll();
-          shell.history.length = 0;
+          activeShell.history.length = 0;
           startLessonSession('İlerleme sıfırlandı.');
         }}
       />

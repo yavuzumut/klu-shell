@@ -90,17 +90,37 @@ export function joinPath(...parts: string[]): string {
   return parts.join('/').replace(/\/+/g, '/');
 }
 
+export type FsChangeAction = 'create' | 'modify' | 'delete' | 'move';
+
+export interface FsChangeEvent {
+  action: FsChangeAction;
+  path: string;
+  targetPath?: string;
+}
+
+export type FsChangeListener = (event: FsChangeEvent) => void;
+
 export class VirtualFS {
   root: DirNode;
   readonly user: string;
   readonly home: string;
   private readonly now: () => number;
+  private changeListeners = new Set<FsChangeListener>();
 
   constructor(options: VirtualFSOptions = {}) {
     this.user = options.user ?? 'kullanici';
     this.home = options.home ?? `/home/${this.user}`;
     this.now = options.now ?? (() => Date.now());
     this.root = this.makeDir('', 'root');
+  }
+
+  subscribe(listener: FsChangeListener): () => void {
+    this.changeListeners.add(listener);
+    return () => this.changeListeners.delete(listener);
+  }
+
+  private notify(event: FsChangeEvent): void {
+    this.changeListeners.forEach((l) => l(event));
   }
 
   // ---------------------------------------------------------------- paths
@@ -195,11 +215,13 @@ export class VirtualFS {
       if (existing.type === 'dir') throw new FsError('EISDIR', abs);
       existing.content = options.append ? existing.content + content : content;
       existing.mtime = this.now();
+      this.notify({ action: 'modify', path: abs });
       return;
     }
     const { parent, name } = this.parentOf(abs);
     parent.children[name] = this.makeFile(name, content);
     parent.mtime = this.now();
+    this.notify({ action: 'create', path: abs });
   }
 
   /** Create an empty file or update the modification time of an existing node. */
@@ -207,6 +229,7 @@ export class VirtualFS {
     const existing = this.tryLookup(abs);
     if (existing) {
       existing.mtime = this.now();
+      this.notify({ action: 'modify', path: abs });
       return;
     }
     this.writeFile(abs, '');
@@ -217,6 +240,7 @@ export class VirtualFS {
       let current = this.root;
       let path = '';
       const parts = splitPath(abs);
+      const createdPaths: string[] = [];
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         path += '/' + part;
@@ -226,11 +250,15 @@ export class VirtualFS {
           current.children[part] = dir;
           current.mtime = this.now();
           current = dir;
+          createdPaths.push(path);
         } else if (child.type === 'dir') {
           current = child;
         } else {
           throw new FsError(i === parts.length - 1 ? 'EEXIST' : 'ENOTDIR', path);
         }
+      }
+      for (const p of createdPaths) {
+        this.notify({ action: 'create', path: p });
       }
       return;
     }
@@ -238,6 +266,7 @@ export class VirtualFS {
     const { parent, name } = this.parentOf(abs);
     parent.children[name] = this.makeDir(name);
     parent.mtime = this.now();
+    this.notify({ action: 'create', path: abs });
   }
 
   remove(abs: string, options: { recursive?: boolean } = {}): void {
@@ -246,6 +275,7 @@ export class VirtualFS {
     const { parent, name } = this.parentOf(abs);
     delete parent.children[name];
     parent.mtime = this.now();
+    this.notify({ action: 'delete', path: abs });
   }
 
   /** Remove an empty directory. */
@@ -278,6 +308,7 @@ export class VirtualFS {
       parent.children[name] = clone;
     }
     parent.mtime = this.now();
+    this.notify({ action: 'create', path: dest });
   }
 
   /** Move/rename `src` to exactly `dest`. */
@@ -299,6 +330,7 @@ export class VirtualFS {
     node.name = name;
     destParent.children[name] = node;
     srcParent.mtime = destParent.mtime = this.now();
+    this.notify({ action: 'move', path: src, targetPath: dest });
   }
 
   // -------------------------------------------------------- serialization
