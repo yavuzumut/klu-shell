@@ -8,6 +8,8 @@ import { LineEditor } from './LineEditor';
 export interface TerminalHandle {
   /** Type text into the input line (does not execute). */
   insert(text: string): void;
+  /** Replace the whole input line with new text. */
+  setLine(text: string): void;
   /** Send raw key data, e.g. '\t' or '\x1b[A' (mobile key bar). */
   sendKey(data: string): void;
   focus(): void;
@@ -108,6 +110,10 @@ export const TerminalView = forwardRef<TerminalHandle, Props>(function TerminalV
   useImperativeHandle(ref, () => ({
     insert: (text) => {
       editorRef.current?.insert(text);
+      termRef.current?.focus();
+    },
+    setLine: (text) => {
+      editorRef.current?.setValue(text);
       termRef.current?.focus();
     },
     sendKey: (data) => {

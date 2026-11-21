@@ -206,16 +206,19 @@ export default function App() {
 
   const insertCommand = useCallback((cmd: string) => {
     setMobileTab('terminal');
-    requestAnimationFrame(() => termRef.current?.insert(cmd));
+    requestAnimationFrame(() => {
+      termRef.current?.setLine(cmd);
+      termRef.current?.focus();
+    });
   }, []);
 
-  const handleTreeSelectPath = useCallback((path: string) => {
-    // If user clicks a path in the tree, insert "cd <path>" into terminal without pressing Enter
+  const handleTreeSelectPath = useCallback((path: string, node: { type: 'file' | 'dir' }) => {
     const pretty = activeShell.fs.prettyPath(path);
-    const cmd = `cd ${pretty}`;
+    const target = pretty.includes(' ') ? `"${pretty}"` : pretty;
+    const cmd = node.type === 'dir' ? `cd ${target}` : `cat ${target}`;
     setMobileTab('terminal');
     requestAnimationFrame(() => {
-      termRef.current?.insert(cmd);
+      termRef.current?.setLine(cmd);
       termRef.current?.focus();
     });
   }, [activeShell]);

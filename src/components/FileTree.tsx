@@ -4,7 +4,7 @@ import type { VirtualFS, FsNode } from '../core/fs/VirtualFS';
 interface FileTreeProps {
   fs: VirtualFS;
   cwd: string;
-  onSelectPath?: (path: string) => void;
+  onSelectPath?: (path: string, node: FsNode) => void;
   onResetFs?: () => void;
   highlightedPath?: string | null;
 }
@@ -18,7 +18,7 @@ interface TreeNodeProps {
   level: number;
   openDirs: Set<string>;
   toggleDir: (path: string) => void;
-  onSelectPath?: (path: string) => void;
+  onSelectPath?: (path: string, node: FsNode) => void;
   highlightedPath?: string | null;
 }
 
@@ -45,7 +45,7 @@ function TreeNode({
       toggleDir(absPath);
     }
     if (onSelectPath) {
-      onSelectPath(absPath);
+      onSelectPath(absPath, node);
     }
   };
 
