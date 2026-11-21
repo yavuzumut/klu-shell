@@ -1,5 +1,5 @@
 import { FitAddon } from '@xterm/addon-fit';
-import { Terminal } from '@xterm/xterm';
+import { Terminal, type ITheme } from '@xterm/xterm';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import type { Shell } from '../core/shell/Shell';
 import type { CommandRecord } from '../core/shell/types';
@@ -20,6 +20,7 @@ export interface TerminalHandle {
 interface Props {
   shell: Shell;
   onExecuted?: (record: CommandRecord) => string | void;
+  terminalTheme?: ITheme;
 }
 
 const THEME = {
@@ -46,7 +47,10 @@ const THEME = {
   brightWhite: '#ffffff',
 };
 
-export const TerminalView = forwardRef<TerminalHandle, Props>(function TerminalView({ shell, onExecuted }, ref) {
+export const TerminalView = forwardRef<TerminalHandle, Props>(function TerminalView(
+  { shell, onExecuted, terminalTheme },
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const editorRef = useRef<LineEditor | null>(null);
@@ -67,7 +71,7 @@ export const TerminalView = forwardRef<TerminalHandle, Props>(function TerminalV
       fontSize: small ? 13 : 14,
       lineHeight: 1.25,
       scrollback: 2000,
-      theme: THEME,
+      theme: terminalTheme ?? THEME,
       allowProposedApi: false,
     });
     const fit = new FitAddon();
@@ -106,6 +110,13 @@ export const TerminalView = forwardRef<TerminalHandle, Props>(function TerminalV
       setTimeout(() => term.dispose(), 0);
     };
   }, [shell]);
+
+  // Dynamically update terminal theme on change without resetting or clearing text
+  useEffect(() => {
+    if (termRef.current && terminalTheme) {
+      termRef.current.options.theme = terminalTheme;
+    }
+  }, [terminalTheme]);
 
   useImperativeHandle(ref, () => ({
     insert: (text) => {

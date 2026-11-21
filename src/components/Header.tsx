@@ -1,4 +1,6 @@
 import type { Level } from '../lessons/types';
+import type { UseThemeReturn } from '../themes/useTheme';
+import { ThemeSelector } from './ThemeSelector';
 
 export type AppMode = 'lessons' | 'sandbox' | 'cheatsheet' | 'explore';
 
@@ -13,6 +15,7 @@ interface Props {
   onModeChange(mode: AppMode): void;
   showFileTree: boolean;
   onToggleFileTree(): void;
+  themeControls: UseThemeReturn;
 }
 
 export function Header({
@@ -26,6 +29,7 @@ export function Header({
   onModeChange,
   showFileTree,
   onToggleFileTree,
+  themeControls,
 }: Props) {
   const lessons = currentLevel.lessons;
   const doneCount = lessons.filter((l) => isLessonDone(l.id)).length;
@@ -105,19 +109,12 @@ export function Header({
             <span className="progress-text">
               {doneCount}/{lessons.length} ders · %{percent}
             </span>
-            <button
-              className={`btn btn-small ${showFileTree ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={onToggleFileTree}
-              title="Dosya Ağacını Göster/Gizle"
-            >
-              🗂️ Dosya Ağacı
-            </button>
           </div>
         </>
       )}
 
-      {mode === 'sandbox' && (
-        <div className="header-sandbox-actions">
+      <div className="header-right-actions">
+        {(mode === 'lessons' || mode === 'sandbox') && (
           <button
             className={`btn btn-small ${showFileTree ? 'btn-primary' : 'btn-ghost'}`}
             onClick={onToggleFileTree}
@@ -125,8 +122,9 @@ export function Header({
           >
             🗂️ Dosya Ağacı
           </button>
-        </div>
-      )}
+        )}
+        <ThemeSelector {...themeControls} />
+      </div>
     </header>
   );
 }

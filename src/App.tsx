@@ -14,6 +14,7 @@ import { createLessonFS, lessonStartCwd } from './lessons/session';
 import { evaluateCommand } from './lessons/validator';
 import { taskKey, useProgress } from './state/useProgress';
 import { TerminalView, type TerminalHandle } from './terminal/TerminalView';
+import { useTheme } from './themes/useTheme';
 
 const FIRST_LESSON_ID = ALL_LESSONS[0].id;
 
@@ -251,6 +252,8 @@ export default function App() {
     [],
   );
 
+  const themeControls = useTheme();
+
   return (
     <div className={`app app-mode-${mode} ${showFileTree ? 'with-tree' : ''}`}>
       <Header
@@ -264,6 +267,7 @@ export default function App() {
         onModeChange={handleModeChange}
         showFileTree={showFileTree}
         onToggleFileTree={() => setShowFileTree((prev) => !prev)}
+        themeControls={themeControls}
       />
 
       {mode === 'cheatsheet' ? (
@@ -362,7 +366,12 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <TerminalView ref={termRef} shell={activeShell} onExecuted={onExecuted} />
+              <TerminalView
+                ref={termRef}
+                shell={activeShell}
+                onExecuted={onExecuted}
+                terminalTheme={themeControls.terminalTheme}
+              />
               <div className="key-bar" aria-label="Terminal tuşları">
                 {mobileKeys.map((k) => (
                   <button
