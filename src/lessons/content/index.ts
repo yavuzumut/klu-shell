@@ -1,4 +1,5 @@
 import type { Level } from '../types';
+import { level0 } from './level0';
 import { level1 } from './level1';
 
 export const level2: Level = {
@@ -19,7 +20,7 @@ export const level3: Level = {
   comingSoon: true,
 };
 
-export const LEVELS: Level[] = [level1, level2, level3];
+export const LEVELS: Level[] = [level0, level1, level2, level3];
 
 export function findLesson(lessonId: string) {
   for (const level of LEVELS) {

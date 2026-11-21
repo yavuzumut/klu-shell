@@ -31,9 +31,14 @@ export function Header({
   onToggleFileTree,
   themeControls,
 }: Props) {
+  const isLevel0 = currentLevel.id === 'level-0';
   const lessons = currentLevel.lessons;
   const doneCount = lessons.filter((l) => isLessonDone(l.id)).length;
-  const percent = lessons.length ? Math.round((doneCount / lessons.length) * 100) : 0;
+
+  // Main curriculum (Level 1-3) progress calculation
+  const mainLessons = levels.filter((lv) => lv.id !== 'level-0').flatMap((lv) => lv.lessons);
+  const mainDoneCount = mainLessons.filter((l) => isLessonDone(l.id)).length;
+  const mainPercent = mainLessons.length ? Math.round((mainDoneCount / mainLessons.length) * 100) : 0;
 
   return (
     <header className="header">
@@ -95,7 +100,14 @@ export function Header({
             ))}
           </div>
 
-          <div className="progress" aria-label={`İlerleme: ${doneCount}/${lessons.length} ders`}>
+          <div
+            className="progress"
+            aria-label={
+              isLevel0
+                ? `Hazırlık ilerlemesi: ${doneCount}/${lessons.length} ders`
+                : `İlerleme: ${doneCount}/${lessons.length} ders · %${mainPercent}`
+            }
+          >
             <div className="progress-segments">
               {lessons.map((l, i) => (
                 <button
@@ -107,7 +119,9 @@ export function Header({
               ))}
             </div>
             <span className="progress-text">
-              {doneCount}/{lessons.length} ders · %{percent}
+              {isLevel0
+                ? `Hazırlık: ${doneCount}/${lessons.length} ders`
+                : `${doneCount}/${lessons.length} ders · %${mainPercent}`}
             </span>
           </div>
         </>
