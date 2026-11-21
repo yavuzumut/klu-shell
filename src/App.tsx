@@ -3,6 +3,8 @@ import { Header, type AppMode } from './components/Header';
 import { LessonDrawer } from './components/LessonDrawer';
 import { LessonPanel } from './components/LessonPanel';
 import { FileTree } from './components/FileTree';
+import { CheatSheetView } from './cheatsheet/CheatSheetView';
+import { ExploreView } from './explore/ExploreView';
 import { createRegistry } from './core/commands';
 import { createDefaultFS } from './core/fs/defaultTree';
 import { Shell } from './core/shell/Shell';
@@ -73,7 +75,7 @@ export default function App() {
         requestAnimationFrame(() => {
           termRef.current?.resetScreen(banner);
         });
-      } else {
+      } else if (newMode === 'lessons') {
         setShowFileTree(false);
         setMobileTab('lesson');
         const banner =
@@ -223,6 +225,16 @@ export default function App() {
     });
   }, [activeShell]);
 
+  const handleCheatSheetRun = useCallback((command: string) => {
+    setMode('sandbox');
+    setShowFileTree(true);
+    setMobileTab('terminal');
+    requestAnimationFrame(() => {
+      termRef.current?.setLine(command);
+      termRef.current?.focus();
+    });
+  }, []);
+
   const completedTaskIds = progress.completed[lesson.id] ?? [];
   const mobileKeys = useMemo(
     () => [
@@ -254,117 +266,129 @@ export default function App() {
         onToggleFileTree={() => setShowFileTree((prev) => !prev)}
       />
 
-      <div className="mobile-tabs" role="tablist">
-        {mode === 'lessons' ? (
-          <>
-            <button className={mobileTab === 'lesson' ? 'active' : ''} onClick={() => setMobileTab('lesson')}>
-              📖 Ders
-            </button>
-            <button
-              className={mobileTab === 'terminal' ? 'active' : ''}
-              onClick={() => {
-                setMobileTab('terminal');
-                requestAnimationFrame(() => termRef.current?.focus());
-              }}
-            >
-              ⌨️ Terminal
-            </button>
-            {showFileTree && (
-              <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
-                🗂️ Ağaç
-              </button>
-            )}
-          </>
-        ) : (
-          <>
-            <button
-              className={mobileTab === 'terminal' ? 'active' : ''}
-              onClick={() => {
-                setMobileTab('terminal');
-                requestAnimationFrame(() => termRef.current?.focus());
-              }}
-            >
-              ⌨️ Terminal
-            </button>
-            {showFileTree && (
-              <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
-                🗂️ Dosya Ağacı
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
-      <main className={`panels show-${mobileTab} layout-${mode} ${showFileTree ? 'has-tree' : 'no-tree'}`}>
-        {mode === 'lessons' && (
-          <section className="panel panel-lesson">
-            <LessonPanel
-              level={level}
-              lesson={lesson}
-              lessonIndex={lessonIndex}
-              completedTaskIds={completedTaskIds}
-              attemptsFor={(taskId) => progress.attempts[taskKey(lesson.id, taskId)] ?? 0}
-              isRevealed={(taskId) => !!progress.revealed[taskKey(lesson.id, taskId)]}
-              hasPrev={!!prevLesson}
-              hasNext={!!nextLesson}
-              onPrev={() => prevLesson && goToLesson(prevLesson.id)}
-              onNext={() => nextLesson && goToLesson(nextLesson.id)}
-              onRevealSolution={(taskId) => actions.revealSolution(lesson.id, taskId)}
-              onInsertCommand={insertCommand}
-              onRestartLesson={() => {
-                actions.restartLesson(lesson.id);
-                startLessonSession('Ders baştan başladı.');
-              }}
-              onResetTerminal={() => startLessonSession('Dosya sistemi dersin başlangıç haline döndürüldü.')}
-            />
-          </section>
-        )}
-
-        <section className="panel panel-terminal">
-          <div className="terminal-chrome">
-            <span className="dots" aria-hidden>
-              <i /> <i /> <i />
-            </span>
-            <span className="terminal-title">
-              {mode === 'sandbox' ? 'kullanici@termi: bash (serbest mod)' : 'kullanici@termi: bash'}
-            </span>
-            {mode === 'sandbox' && (
-              <div className="sandbox-chrome-actions">
-                <button
-                  className="btn btn-small btn-ghost"
-                  onClick={resetSandboxFS}
-                  title="Sanal dosya sistemini sıfırla"
-                >
-                  ↺ Sıfırla
+      {mode === 'cheatsheet' ? (
+        <main className="page-container">
+          <CheatSheetView onRunInSandbox={handleCheatSheetRun} />
+        </main>
+      ) : mode === 'explore' ? (
+        <main className="page-container">
+          <ExploreView />
+        </main>
+      ) : (
+        <>
+          <div className="mobile-tabs" role="tablist">
+            {mode === 'lessons' ? (
+              <>
+                <button className={mobileTab === 'lesson' ? 'active' : ''} onClick={() => setMobileTab('lesson')}>
+                  📖 Ders
                 </button>
-              </div>
+                <button
+                  className={mobileTab === 'terminal' ? 'active' : ''}
+                  onClick={() => {
+                    setMobileTab('terminal');
+                    requestAnimationFrame(() => termRef.current?.focus());
+                  }}
+                >
+                  ⌨️ Terminal
+                </button>
+                {showFileTree && (
+                  <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
+                    🗂️ Ağaç
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <button
+                  className={mobileTab === 'terminal' ? 'active' : ''}
+                  onClick={() => {
+                    setMobileTab('terminal');
+                    requestAnimationFrame(() => termRef.current?.focus());
+                  }}
+                >
+                  ⌨️ Terminal
+                </button>
+                {showFileTree && (
+                  <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
+                    🗂️ Dosya Ağacı
+                  </button>
+                )}
+              </>
             )}
           </div>
-          <TerminalView ref={termRef} shell={activeShell} onExecuted={onExecuted} />
-          <div className="key-bar" aria-label="Terminal tuşları">
-            {mobileKeys.map((k) => (
-              <button
-                key={k.label}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => termRef.current?.sendKey(k.data)}
-              >
-                {k.label}
-              </button>
-            ))}
-          </div>
-        </section>
 
-        {showFileTree && (
-          <aside className="panel panel-tree">
-            <FileTree
-              fs={activeShell.fs}
-              cwd={currentCwd}
-              onSelectPath={handleTreeSelectPath}
-              onResetFs={mode === 'sandbox' ? resetSandboxFS : () => startLessonSession('Dosya sistemi sıfırlandı.')}
-            />
-          </aside>
-        )}
-      </main>
+          <main className={`panels show-${mobileTab} layout-${mode} ${showFileTree ? 'has-tree' : 'no-tree'}`}>
+            {mode === 'lessons' && (
+              <section className="panel panel-lesson">
+                <LessonPanel
+                  level={level}
+                  lesson={lesson}
+                  lessonIndex={lessonIndex}
+                  completedTaskIds={completedTaskIds}
+                  attemptsFor={(taskId) => progress.attempts[taskKey(lesson.id, taskId)] ?? 0}
+                  isRevealed={(taskId) => !!progress.revealed[taskKey(lesson.id, taskId)]}
+                  hasPrev={!!prevLesson}
+                  hasNext={!!nextLesson}
+                  onPrev={() => prevLesson && goToLesson(prevLesson.id)}
+                  onNext={() => nextLesson && goToLesson(nextLesson.id)}
+                  onRevealSolution={(taskId) => actions.revealSolution(lesson.id, taskId)}
+                  onInsertCommand={insertCommand}
+                  onRestartLesson={() => {
+                    actions.restartLesson(lesson.id);
+                    startLessonSession('Ders baştan başladı.');
+                  }}
+                  onResetTerminal={() => startLessonSession('Dosya sistemi dersin başlangıç haline döndürüldü.')}
+                />
+              </section>
+            )}
+
+            <section className="panel panel-terminal">
+              <div className="terminal-chrome">
+                <span className="dots" aria-hidden>
+                  <i /> <i /> <i />
+                </span>
+                <span className="terminal-title">
+                  {mode === 'sandbox' ? 'kullanici@termi: bash (serbest mod)' : 'kullanici@termi: bash'}
+                </span>
+                {mode === 'sandbox' && (
+                  <div className="sandbox-chrome-actions">
+                    <button
+                      className="btn btn-small btn-ghost"
+                      onClick={resetSandboxFS}
+                      title="Sanal dosya sistemini sıfırla"
+                    >
+                      ↺ Sıfırla
+                    </button>
+                  </div>
+                )}
+              </div>
+              <TerminalView ref={termRef} shell={activeShell} onExecuted={onExecuted} />
+              <div className="key-bar" aria-label="Terminal tuşları">
+                {mobileKeys.map((k) => (
+                  <button
+                    key={k.label}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => termRef.current?.sendKey(k.data)}
+                  >
+                    {k.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {showFileTree && (
+              <aside className="panel panel-tree">
+                <FileTree
+                  fs={activeShell.fs}
+                  cwd={currentCwd}
+                  onSelectPath={handleTreeSelectPath}
+                  onResetFs={mode === 'sandbox' ? resetSandboxFS : () => startLessonSession('Dosya sistemi sıfırlandı.')}
+                />
+              </aside>
+            )}
+          </main>
+        </>
+      )}
 
       <LessonDrawer
         open={drawerOpen}

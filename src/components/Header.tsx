@@ -1,6 +1,6 @@
 import type { Level } from '../lessons/types';
 
-export type AppMode = 'lessons' | 'sandbox';
+export type AppMode = 'lessons' | 'sandbox' | 'cheatsheet' | 'explore';
 
 interface Props {
   levels: Level[];
@@ -57,9 +57,21 @@ export function Header({
         >
           💻 Serbest Mod
         </button>
+        <button
+          className={`mode-tab ${mode === 'cheatsheet' ? 'active' : ''}`}
+          onClick={() => onModeChange('cheatsheet')}
+        >
+          📑 Hile Kağıdı
+        </button>
+        <button
+          className={`mode-tab ${mode === 'explore' ? 'active' : ''}`}
+          onClick={() => onModeChange('explore')}
+        >
+          🚀 Meraklısına
+        </button>
       </nav>
 
-      {mode === 'lessons' ? (
+      {mode === 'lessons' && (
         <>
           <div className="levels" role="tablist" aria-label="Seviyeler">
             {levels.map((lv) => (
@@ -102,7 +114,9 @@ export function Header({
             </button>
           </div>
         </>
-      ) : (
+      )}
+
+      {mode === 'sandbox' && (
         <div className="header-sandbox-actions">
           <button
             className={`btn btn-small ${showFileTree ? 'btn-primary' : 'btn-ghost'}`}
