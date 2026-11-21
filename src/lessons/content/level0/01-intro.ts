@@ -6,7 +6,7 @@ export const introLesson: Lesson = {
   summary: 'Komut satırı dünyasına giriş: Terminal, kabuk (shell) ve Linux kavramları.',
   content: `
 ### Linux Nedir?
-**Linux**, sunuculardan süper bilgisayarlara, akıllı telefonlardan (Android) bulut sistemlerine kadar dünyadaki altyapının büyük kısmını çalıştıran, açık kaynaklı ve güvenilir bir işletim sistemi ailesidir.
+Linux aslında tek başına tam bir işletim sistemi değil, bir **çekirdektir (kernel)**; yani bilgisayarın donanımı ile çalışan programlar arasında köprü kuran temel motordur. **Ubuntu, Fedora ve Arch** gibi bildiğimiz sistemler ise bu Linux çekirdeğinin üzerine paket yöneticisi ve kullanıcı araçları eklenerek oluşturulan tam işletim sistemleridir (dağıtımlar). Termi'de öğrendiğin komutlar tüm bu Linux dağıtımlarında ortak olarak çalışır.
 
 ### Terminal ve Kabuk (Shell) Nedir?
 - **Terminal:** Bilgisayarla fare ile tıklamak yerine metin yazarak iletişim kurmanı sağlayan penceredir.

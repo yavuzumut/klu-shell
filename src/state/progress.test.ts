@@ -51,4 +51,23 @@ describe('progress persistence and initial lesson', () => {
     const progress = loadProgress(firstLessonId, storage);
     expect(progress.currentLessonId).toBe('l0-intro');
   });
+
+  describe('Level 0 callout banner visibility', () => {
+    const isBannerVisible = (hasCompletedAnyLevel0: boolean, isDismissed: boolean) => {
+      return !hasCompletedAnyLevel0 && !isDismissed;
+    };
+
+    it('shows banner when user has not completed any Level 0 lesson and not dismissed', () => {
+      expect(isBannerVisible(false, false)).toBe(true);
+    });
+
+    it('hides banner once dismissed', () => {
+      expect(isBannerVisible(false, true)).toBe(false);
+    });
+
+    it('hides banner once user completes at least one Level 0 lesson', () => {
+      expect(isBannerVisible(true, false)).toBe(false);
+      expect(isBannerVisible(true, true)).toBe(false);
+    });
+  });
 });

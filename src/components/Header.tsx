@@ -83,20 +83,25 @@ export function Header({
       {mode === 'lessons' && (
         <>
           <div className="levels" role="tablist" aria-label="Seviyeler">
-            {levels.map((lv) => (
-              <button
-                key={lv.id}
-                role="tab"
-                aria-selected={lv.id === currentLevel.id}
-                className={`level-pill ${lv.id === currentLevel.id ? 'active' : ''}`}
-                disabled={lv.comingSoon}
-                title={lv.comingSoon ? `${lv.title} — yakında` : lv.description}
-                onClick={() => lv.lessons[0] && onSelectLesson(lv.lessons[0].id)}
-              >
-                <span className="level-num">{lv.number}</span>
-                <span className="level-name">{lv.title}</span>
-                {lv.comingSoon && <span className="lock">🔒</span>}
-              </button>
+            {levels.map((lv, idx) => (
+              <span key={lv.id} className="level-pill-wrapper">
+                <button
+                  role="tab"
+                  aria-selected={lv.id === currentLevel.id}
+                  className={`level-pill ${lv.id === 'level-0' ? 'level-pill-intro' : ''} ${lv.id === currentLevel.id ? 'active' : ''}`}
+                  disabled={lv.comingSoon}
+                  title={lv.comingSoon ? `${lv.title} — yakında` : lv.description}
+                  onClick={() => lv.lessons[0] && onSelectLesson(lv.lessons[0].id)}
+                >
+                  <span className="level-num">{lv.number}</span>
+                  <span className="level-name">{lv.title}</span>
+                  {lv.id === 'level-0' && <span className="level-badge-intro">Yeni başlayanlar</span>}
+                  {lv.comingSoon && <span className="lock">🔒</span>}
+                </button>
+                {lv.id === 'level-0' && idx < levels.length - 1 && (
+                  <span className="levels-divider" aria-hidden="true" />
+                )}
+              </span>
             ))}
           </div>
 

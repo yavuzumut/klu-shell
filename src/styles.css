@@ -426,7 +426,20 @@ pre {
 
 .levels {
   display: flex;
+  align-items: center;
   gap: 6px;
+}
+
+.level-pill-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.levels-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-strong);
+  margin: 0 4px 0 8px;
 }
 
 .level-pill {
@@ -439,6 +452,73 @@ pre {
   border: 1px solid var(--border);
   font-size: 0.85rem;
   white-space: nowrap;
+}
+
+.level-pill-intro {
+  border-color: var(--border-strong);
+}
+
+.level-badge-intro {
+  font-size: 0.68rem;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--blue-dim);
+  color: var(--blue);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+/* Level 0 Top Callout Banner */
+.level0-callout-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--blue-dim);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 16px;
+  font-size: 0.84rem;
+  position: relative;
+  z-index: 5;
+}
+
+.level0-callout-btn {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 0.84rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+}
+
+.level0-callout-btn:hover {
+  color: var(--blue);
+}
+
+.level0-callout-btn strong {
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.level0-callout-close {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.level0-callout-close:hover {
+  color: var(--text);
+  background: var(--bg-elev-2);
 }
 
 .level-pill.active {

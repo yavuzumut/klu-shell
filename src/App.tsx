@@ -254,6 +254,29 @@ export default function App() {
 
   const themeControls = useTheme();
 
+  const level0 = LEVELS.find((l) => l.id === 'level-0');
+  const level0FirstLessonId = level0?.lessons[0]?.id ?? FIRST_LESSON_ID;
+  const hasCompletedAnyLevel0 = level0?.lessons.some((l) => isLessonDone(l.id)) ?? false;
+
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('termi_dismiss_level0_banner') === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismissBanner = useCallback(() => {
+    setBannerDismissed(true);
+    try {
+      localStorage.setItem('termi_dismiss_level0_banner', '1');
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const showLevel0Banner = mode === 'lessons' && !hasCompletedAnyLevel0 && !bannerDismissed;
+
   return (
     <div className={`app app-mode-${mode} ${showFileTree ? 'with-tree' : ''}`}>
       <Header
@@ -269,6 +292,25 @@ export default function App() {
         onToggleFileTree={() => setShowFileTree((prev) => !prev)}
         themeControls={themeControls}
       />
+
+      {showLevel0Banner && (
+        <div className="level0-callout-bar" role="region" aria-label="Yeni başlayanlar için rehber">
+          <button
+            className="level0-callout-btn"
+            onClick={() => goToLesson(level0FirstLessonId)}
+          >
+            🌱 Yeni misin? <strong>'Başlamadan Önce'</strong> ile başla →
+          </button>
+          <button
+            className="level0-callout-close"
+            onClick={handleDismissBanner}
+            aria-label="Kapat"
+            title="Kapat"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {mode === 'cheatsheet' ? (
         <main className="page-container">
