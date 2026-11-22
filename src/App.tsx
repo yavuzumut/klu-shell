@@ -5,6 +5,7 @@ import { LessonPanel } from './components/LessonPanel';
 import { FileTree } from './components/FileTree';
 import { CheatSheetView } from './cheatsheet/CheatSheetView';
 import { ExploreView } from './explore/ExploreView';
+import { GitIntroView } from './git/GitIntroView';
 import { createRegistry } from './core/commands';
 import { createDefaultFS } from './core/fs/defaultTree';
 import { Shell } from './core/shell/Shell';
@@ -312,7 +313,11 @@ export default function App() {
         </div>
       )}
 
-      {mode === 'cheatsheet' ? (
+      {mode === 'git' ? (
+        <main className="page-container">
+          <GitIntroView />
+        </main>
+      ) : mode === 'cheatsheet' ? (
         <main className="page-container">
           <CheatSheetView onRunInSandbox={handleCheatSheetRun} />
         </main>

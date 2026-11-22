@@ -3,13 +3,14 @@ import type { Lesson } from '../../types';
 export const modesAndToolsLesson: Lesson = {
   id: 'l0-modes-tools',
   title: 'Modlar ve Araçlar',
-  summary: 'Dersler, Serbest Mod, Dosya Ağacı, Hile Kağıdı, Meraklısına ve tema ayarları.',
+  summary: 'Dersler, Serbest Mod, Git, Dosya Ağacı, Hile Kağıdı, Meraklısına ve tema ayarları.',
   content: `
 KLU, öğrenmeyi kolaylaştırmak için farklı çalışma alanları ve yardımcı araçlar sunar:
 
 ### Üst Gezinme Sekmeleri
 - **📖 Dersler:** Adım adım görevlerle ilerlediğin rehberli mod.
 - **💻 Serbest Mod (Sandbox):** Görev sınırlaması olmadan terminali özgürce kullanabileceğin mod.
+- **🌿 Git:** Sürüm kontrol sistemini tanıtan bölüm (uygulamalı dersler yakında).
 - **📑 Hile Kağıdı (Cheat Sheet):** Desteklenen 14 komutun kısa Türkçe açıklamaları ve örnekleri. Bir komuta tıkladığında doğrudan Serbest Mod terminaline yazılır.
 - **🚀 Meraklısına:** \`yt-dlp\` gibi gerçek Linux araçları hakkında tanıtım kartları ve kopyalanabilir komutlar.
 

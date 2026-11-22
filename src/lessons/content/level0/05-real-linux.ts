@@ -25,6 +25,9 @@ Artık terminalin temellerini ve KLU'nun nasıl çalıştığını biliyorsun. *
 - Dosya okuma (\`cat\`), kopyalama (\`cp\`), taşıma (\`mv\`) ve silme (\`rm\`)
 
 Hazırsan ekranı temizleyip bir sonraki seviyeye geçebilirsin!
+
+### Git
+Git, dosyalarındaki değişiklikleri kaydeden ve istediğin ana dönmeni sağlayan bir sürüm kontrol sistemidir. Yazılımcıların ve açık kaynak dünyasının günlük en temel çalışma aracıdır. Ayrıntıları üstteki Git sekmesinde bulabilirsin, uygulamalı dersler yakında eklenecek.
 `,
   examples: ['clear', 'help'],
   tasks: [

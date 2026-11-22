@@ -2,7 +2,7 @@ import type { Level } from '../lessons/types';
 import type { UseThemeReturn } from '../themes/useTheme';
 import { ThemeSelector } from './ThemeSelector';
 
-export type AppMode = 'lessons' | 'sandbox' | 'cheatsheet' | 'explore';
+export type AppMode = 'lessons' | 'sandbox' | 'git' | 'cheatsheet' | 'explore';
 
 interface Props {
   levels: Level[];
@@ -78,6 +78,12 @@ export function Header({
           onClick={() => onModeChange('sandbox')}
         >
           💻 Serbest Mod
+        </button>
+        <button
+          className={`mode-tab ${mode === 'git' ? 'active' : ''}`}
+          onClick={() => onModeChange('git')}
+        >
+          🌿 Git
         </button>
         <button
           className={`mode-tab ${mode === 'cheatsheet' ? 'active' : ''}`}
