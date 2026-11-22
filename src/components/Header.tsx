@@ -49,7 +49,18 @@ export function Header({
           </button>
         )}
         <span className="logo">
-          <span className="logo-prompt">&gt;_</span> termi
+          <span className="logo-mascot-frame">
+            <img
+              src="/klu-mascot-64.png"
+              alt="KLU Maskotu"
+              className="logo-mascot"
+              width={32}
+              height={32}
+            />
+          </span>
+          <span className="logo-text">
+            <span className="logo-prompt">&gt;_</span> klu
+          </span>
         </span>
       </div>
 

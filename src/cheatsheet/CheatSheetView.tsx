@@ -10,7 +10,7 @@ export function CheatSheetView({ onRunInSandbox }: Props) {
       <div className="cheatsheet-header">
         <h1>📑 Linux Komut Hile Kağıdı</h1>
         <p className="muted">
-          Termi'de desteklenen tüm temel komutların derlenmiş listesi. Bir komutun veya örneğin üzerine tıklayarak
+          KLU'da desteklenen tüm temel komutların derlenmiş listesi. Bir komutun veya örneğin üzerine tıklayarak
           doğrudan <strong>Serbest Mod</strong> terminaline aktarabilirsin.
         </p>
       </div>

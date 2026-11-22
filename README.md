@@ -1,8 +1,8 @@
-# Termi 🚀
+# KLU 🚀
 
 > **Tarayıcıda çalışan, sıfırdan ileri seviyeye Linux terminali öğreten interaktif web uygulaması.**
 
-Termi; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafında (tarayıcıda) çalışan sanal bir Linux dosya sistemi ve komut kabuğu (shell) simülatörüdür. Kullanıcılar xterm.js tabanlı gerçekçi bir terminal üzerinde temel Linux komutlarını interaktif görevlerle öğrenebilir, Serbest Mod'da diledikleri gibi pratik yapabilir ve canlı dosya ağacını izleyebilirler.
+KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafında (tarayıcıda) çalışan sanal bir Linux dosya sistemi ve komut kabuğu (shell) simülatörüdür. Kullanıcılar xterm.js tabanlı gerçekçi bir terminal üzerinde temel Linux komutlarını interaktif görevlerle öğrenebilir, Serbest Mod'da diledikleri gibi pratik yapabilir ve canlı dosya ağacını izleyebilirler.
 
 ---
 

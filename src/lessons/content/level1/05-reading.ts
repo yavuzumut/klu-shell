@@ -11,7 +11,7 @@ export const reading: Lesson = {
 
 \`\`\`
 $ cat merhaba.txt
-Merhaba! Termi'ye hoş geldin.
+Merhaba! KLU'ya hoş geldin.
 \`\`\`
 
 - \`cat -n dosya\` satır numaralarıyla gösterir.
@@ -32,7 +32,7 @@ $ man ls
 
 Kısa bir özet için \`KOMUT --help\` da kullanabilirsin.
 
-> 💡 Gerçek Linux'ta \`man\` sayfasından **q** tuşuyla çıkılır. Termi'de sayfa doğrudan ekrana yazılır.
+> 💡 Gerçek Linux'ta \`man\` sayfasından **q** tuşuyla çıkılır. KLU'da sayfa doğrudan ekrana yazılır.
 `,
   examples: ['cat merhaba.txt', 'cat -n Belgeler/alisveris.txt', 'man cat', 'ls --help'],
   tasks: [
@@ -45,7 +45,7 @@ Kısa bir özet için \`KOMUT --help\` da kullanabilirsin.
         type: 'all',
         checks: [
           { type: 'commandUsed', command: 'cat' },
-          { type: 'outputContains', text: "Termi'ye hoş geldin" },
+          { type: 'outputContains', text: "KLU'ya hoş geldin" },
         ],
       },
     },

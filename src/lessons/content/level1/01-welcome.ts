@@ -10,7 +10,7 @@ export const welcome: Lesson = {
 Sağdaki ekranda şöyle bir satır görüyorsun:
 
 \`\`\`
-kullanici@termi:~$
+kullanici@klu:~$
 \`\`\`
 
 Buna **istem** (prompt) denir:
@@ -18,7 +18,7 @@ Buna **istem** (prompt) denir:
 | Parça | Anlamı |
 |---|---|
 | \`kullanici\` | oturum açmış kullanıcı |
-| \`termi\` | bilgisayarın adı |
+| \`klu\` | bilgisayarın adı |
 | \`~\` | bulunduğun dizin (\`~\` = ev dizinin) |
 | \`$\` | normal kullanıcı (\`#\` olsaydı yönetici/root) |
 

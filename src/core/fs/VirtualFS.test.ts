@@ -30,7 +30,7 @@ describe('VirtualFS operations', () => {
   it('has the default layout', () => {
     const fs = make();
     for (const p of ['/etc', '/var/log', '/tmp', '/home/kullanici/Belgeler']) expect(fs.isDir(p)).toBe(true);
-    expect(fs.readFile('/etc/hostname')).toBe('termi\n');
+    expect(fs.readFile('/etc/hostname')).toBe('klu\n');
     expect(fs.lookup('/etc').owner).toBe('root');
     expect(fs.lookup('/home/kullanici').owner).toBe('kullanici');
   });
@@ -93,7 +93,7 @@ describe('VirtualFS operations', () => {
   it('serializes and clones', () => {
     const fs = make();
     const copy = VirtualFS.fromJSON(JSON.parse(JSON.stringify(fs.toJSON())));
-    expect(copy.readFile('/etc/hostname')).toBe('termi\n');
+    expect(copy.readFile('/etc/hostname')).toBe('klu\n');
     const c2 = fs.clone();
     c2.writeFile('/tmp/z', '1');
     expect(fs.exists('/tmp/z')).toBe(false);

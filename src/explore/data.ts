@@ -39,7 +39,7 @@ Deleting original file Videom [kendi_videonuz].f137.mp4 (pass -k to keep)`,
       'Neofetch gibi sistem donanımı, dağıtımı, çekirdek sürümü ve bellek kullanımını şık bir ASCII logosuyla birlikte terminalde gösteren ultra hızlı bir araçtır.',
     installCommand: 'sudo apt install fastfetch',
     exampleCommand: 'fastfetch',
-    exampleOutput: `       _,met$$$$$gg.          kullanici@termi
+    exampleOutput: `       _,met$$$$$gg.          kullanici@klu
     ,g$$$$$$$$$$$$$$$P.       ---------------
   ,g$$P"     """Y$$.".        OS: Debian GNU/Linux 12 (bookworm) x86_64
  ,$$P'              \`$$$.     Host: KVM/QEMU (Standard PC)

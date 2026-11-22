@@ -1,8 +1,8 @@
 import { THEMES, type ThemeDefinition, type ThemeId } from './themes';
 import type { ITheme } from '@xterm/xterm';
 
-export const THEME_STORAGE_KEY = 'termi_theme';
-export const ACCENT_STORAGE_PREFIX = 'termi_accent_';
+export const THEME_STORAGE_KEY = 'klu_theme';
+export const ACCENT_STORAGE_PREFIX = 'klu_accent_';
 
 /**
  * Returns initial theme ID by checking localStorage, then prefers-color-scheme.

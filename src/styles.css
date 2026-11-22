@@ -166,10 +166,40 @@ pre {
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: 1.15rem;
   letter-spacing: 0.02em;
+}
+
+.logo-mascot-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: #0c1320;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.logo-mascot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.logo-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .logo-prompt {
@@ -607,6 +637,119 @@ pre {
   margin: 4px 0 14px;
   font-size: 1.55rem;
   line-height: 1.25;
+}
+
+/* ------------------------------------------------------------------ klu welcome card */
+.klu-welcome-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 20px;
+  background: var(--panel-hover);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  margin: 6px 0 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.klu-mascot-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0c1320;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.klu-mascot-frame-welcome {
+  width: 120px;
+  height: 120px;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.klu-welcome-mascot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.klu-welcome-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.klu-welcome-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+
+.klu-welcome-desc {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0 !important;
+}
+
+/* Light theme and other theme enhancements for mascot frames */
+[data-theme='light'] .logo-mascot-frame {
+  border: 1px solid rgba(12, 19, 32, 0.18);
+  box-shadow: 0 2px 6px rgba(12, 19, 32, 0.2);
+}
+
+[data-theme='light'] .klu-welcome-card {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 12px rgba(12, 19, 32, 0.06);
+}
+
+[data-theme='light'] .klu-mascot-frame-welcome {
+  border: 1px solid rgba(12, 19, 32, 0.2);
+  box-shadow: 0 6px 18px rgba(12, 19, 32, 0.22);
+}
+
+@media (max-width: 560px) {
+  .klu-welcome-card {
+    gap: 14px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+
+  .klu-mascot-frame-welcome {
+    width: 92px;
+    height: 92px;
+    border-radius: 16px;
+  }
+
+  .klu-welcome-title {
+    font-size: 1.2rem;
+  }
+
+  .klu-welcome-desc {
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .klu-welcome-card {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .klu-mascot-frame-welcome {
+    width: 72px;
+    height: 72px;
+    border-radius: 12px;
+  }
+
+  .klu-welcome-title {
+    font-size: 1.05rem;
+  }
 }
 
 .markdown h3 {

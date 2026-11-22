@@ -69,7 +69,7 @@ export default function App() {
         setShowFileTree(true);
         setMobileTab('terminal');
         const banner =
-          ansi.cyan('── Termi Serbest Mod (Sandbox) ──') +
+          ansi.cyan('── KLU Serbest Mod (Sandbox) ──') +
           '\n' +
           ansi.dim('İstediğin komutları dene. Yan panelde dosya ağacını canlı izleyebilirsin.') +
           '\n';
@@ -132,7 +132,7 @@ export default function App() {
     sandboxShell.reset(fs, fs.home);
     setCurrentCwd(sandboxShell.cwd);
     const banner =
-      ansi.cyan('── Termi Serbest Mod ──') +
+      ansi.cyan('── KLU Serbest Mod ──') +
       '\n' +
       ansi.dim('Sanal dosya sistemi sıfırlandı.') +
       '\n';
@@ -260,7 +260,7 @@ export default function App() {
 
   const [bannerDismissed, setBannerDismissed] = useState(() => {
     try {
-      return localStorage.getItem('termi_dismiss_level0_banner') === '1';
+      return localStorage.getItem('klu_dismiss_level0_banner') === '1';
     } catch {
       return false;
     }
@@ -269,7 +269,7 @@ export default function App() {
   const handleDismissBanner = useCallback(() => {
     setBannerDismissed(true);
     try {
-      localStorage.setItem('termi_dismiss_level0_banner', '1');
+      localStorage.setItem('klu_dismiss_level0_banner', '1');
     } catch {
       // ignore
     }
@@ -394,7 +394,7 @@ export default function App() {
                   <i /> <i /> <i />
                 </span>
                 <span className="terminal-title">
-                  {mode === 'sandbox' ? 'kullanici@termi: bash (serbest mod)' : 'kullanici@termi: bash'}
+                  {mode === 'sandbox' ? 'kullanici@klu: bash (serbest mod)' : 'kullanici@klu: bash'}
                 </span>
                 {mode === 'sandbox' && (
                   <div className="sandbox-chrome-actions">

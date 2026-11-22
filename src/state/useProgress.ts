@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-export const STORAGE_KEY = 'termi.progress.v1';
+export const STORAGE_KEY = 'klu.progress.v1';
 const MAX_SAVED_HISTORY = 200;
 
 export interface ProgressState {

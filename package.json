@@ -1,5 +1,6 @@
 {
-  "name": "termi",
+  "name": "klu",
+  "description": "Tarayıcıda çalışan, sıfırdan ileri seviyeye Linux terminali simülatörü",
   "private": true,
   "version": "0.1.0",
   "type": "module",

@@ -31,7 +31,7 @@ export class Shell {
   constructor(options: ShellOptions) {
     this.fs = options.fs;
     this.registry = options.registry;
-    this.hostname = options.hostname ?? 'termi';
+    this.hostname = options.hostname ?? 'klu';
     this.cwd = options.cwd ?? this.fs.home;
     this.history = options.history ? [...options.history] : [];
     this.env = this.defaultEnv();
@@ -60,7 +60,7 @@ export class Shell {
     this.env = this.defaultEnv();
   }
 
-  /** Coloured prompt, e.g. `kullanici@termi:~$ `. */
+  /** Coloured prompt, e.g. `kullanici@klu:~$ `. */
   get prompt(): string {
     const symbol = this.fs.user === 'root' ? '#' : '$';
     return `\x1b[1;32m${this.fs.user}@${this.hostname}\x1b[0m:\x1b[1;34m${this.fs.prettyPath(this.cwd)}\x1b[0m${symbol} `;

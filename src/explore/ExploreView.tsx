@@ -27,7 +27,7 @@ export function ExploreView() {
       <div className="explore-header">
         <h1>🚀 Meraklısına: Güçlü Linux Araçları</h1>
         <div className="explore-notice">
-          ⚠️ <strong>Önemli Bilgilendirme:</strong> Aşağıda listelenen araçlar gerçek bir Linux dağıtımında (Ubuntu, Debian, Fedora, Arch vb.) terminal üzerinden kullanabileceğin popüler harici araçlardır. <strong>Bu araçlar tarayıcıdaki simüle Termi terminalinde çalışmaz.</strong> Kendi Linux bilgisayarında veya bir sanal makinede deneyebilirsin.
+          ⚠️ <strong>Önemli Bilgilendirme:</strong> Aşağıda listelenen araçlar gerçek bir Linux dağıtımında (Ubuntu, Debian, Fedora, Arch vb.) terminal üzerinden kullanabileceğin popüler harici araçlardır. <strong>Bu araçlar tarayıcıdaki simüle KLU terminalinde çalışmaz.</strong> Kendi Linux bilgisayarında veya bir sanal makinede deneyebilirsin.
         </div>
       </div>
 

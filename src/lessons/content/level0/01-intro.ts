@@ -5,22 +5,32 @@ export const introLesson: Lesson = {
   title: 'Terminal, Kabuk ve Linux Nedir?',
   summary: 'Komut satırı dünyasına giriş: Terminal, kabuk (shell) ve Linux kavramları.',
   content: `
+<div class="klu-welcome-card">
+  <div class="klu-mascot-frame klu-mascot-frame-welcome">
+    <img src="/klu-mascot-512.png" alt="KLU Maskotu" class="klu-welcome-mascot" />
+  </div>
+  <div class="klu-welcome-content">
+    <div class="klu-welcome-title">Merhaba, ben KLU! 👋</div>
+    <p class="klu-welcome-desc">Linux ve terminal dünyasına hoş geldin! Komut satırını adım adım, güvenle birlikte keşfedeceğiz.</p>
+  </div>
+</div>
+
 ### Linux Nedir?
-Linux aslında tek başına tam bir işletim sistemi değil, bir **çekirdektir (kernel)**; yani bilgisayarın donanımı ile çalışan programlar arasında köprü kuran temel motordur. **Ubuntu, Fedora ve Arch** gibi bildiğimiz sistemler ise bu Linux çekirdeğinin üzerine paket yöneticisi ve kullanıcı araçları eklenerek oluşturulan tam işletim sistemleridir (dağıtımlar). Bugün internetteki web sitelerinin büyük kısmı, bulut sunucuları ve milyarlarca Android telefon Linux çekirdeği üzerinde çalışır; yazılımcıların ve sistem yöneticilerinin günlük en önemli çalışma aracı ise terminaldir. Termi'de öğrendiğin komutlar tüm bu Linux sistemlerinde ortak olarak geçerlidir.
+Linux aslında tek başına tam bir işletim sistemi değil, bir **çekirdektir (kernel)**; yani bilgisayarın donanımı ile çalışan programlar arasında köprü kuran temel motordur. **Ubuntu, Fedora ve Arch** gibi bildiğimiz sistemler ise bu Linux çekirdeğinin üzerine paket yöneticisi ve kullanıcı araçları eklenerek oluşturulan tam işletim sistemleridir (dağıtımlar). Bugün internetteki web sitelerinin büyük kısmı, bulut sunucuları ve milyarlarca Android telefon Linux çekirdeği üzerinde çalışır; yazılımcıların ve sistem yöneticilerinin günlük en önemli çalışma aracı ise terminaldir. KLU'da öğrendiğin komutlar tüm bu Linux sistemlerinde ortak olarak geçerlidir.
 
 ### Terminal ve Kabuk (Shell) Nedir?
 - **Terminal:** Bilgisayarla fare ile tıklamak yerine metin yazarak iletişim kurmanı sağlayan penceredir.
-- **Kabuk (Shell):** Yazdığın komutları okuyan, yorumlayan ve işletim sistemine ileten programdır. En yaygın kabuk **Bash**'tir (Termi de bir Bash simülatörüdür).
+- **Kabuk (Shell):** Yazdığın komutları okuyan, yorumlayan ve işletim sistemine ileten programdır. En yaygın kabuk **Bash**'tir (KLU de bir Bash simülatörüdür).
 
 Sağdaki ekranda gördüğün satıra **istem** (prompt) denir:
 \`\`\`
-kullanici@termi:~$
+kullanici@klu:~$
 \`\`\`
 
 | Parça | Anlamı |
 |---|---|
 | \`kullanici\` | Şu anki oturum açmış kullanıcı adı |
-| \`termi\` | Bilgisayarın (makinenin) ağdaki adı (hostname) |
+| \`klu\` | Bilgisayarın (makinenin) ağdaki adı (hostname) |
 | \`~\` | Bulunduğun dizin (\`~\` tilde simgesi, ev dizinini temsil eder) |
 | \`$\` | Standart kullanıcı yetkisi (\`#\` olsaydı yönetici/root yetkisi olurdu) |
 

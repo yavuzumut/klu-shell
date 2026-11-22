@@ -34,7 +34,7 @@ AÇIKLAMA
         return;
       }
       const title = `${name.toUpperCase()}(1)`;
-      const header = `${title}${'Termi Kılavuzu'.padStart(30)}${title.padStart(20)}`;
+      const header = `${title}${'KLU Kılavuzu'.padStart(30)}${title.padStart(20)}`;
       let body = def.manPage;
       if (ctx.isTTY) {
         // Bold section headings (lines in ALL CAPS)

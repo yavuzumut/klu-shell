@@ -92,7 +92,7 @@ describe('validator', () => {
     const state = { fs, cwd: shell.cwd, last, records: [last] };
     expect(evaluateCheck({ type: 'outputContains', text: 'merhaba' }, state)).toBe(true);
     expect(evaluateCheck({ type: 'cwdIs', path: '~' }, state)).toBe(true);
-    expect(evaluateCheck({ type: 'fileContains', path: '/etc/hostname', text: 'termi' }, state)).toBe(true);
+    expect(evaluateCheck({ type: 'fileContains', path: '/etc/hostname', text: 'klu' }, state)).toBe(true);
     expect(
       evaluateCheck(
         {

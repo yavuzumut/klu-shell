@@ -5,7 +5,7 @@ export const modesAndToolsLesson: Lesson = {
   title: 'Modlar ve Araçlar',
   summary: 'Dersler, Serbest Mod, Dosya Ağacı, Hile Kağıdı, Meraklısına ve tema ayarları.',
   content: `
-Termi, öğrenmeyi kolaylaştırmak için farklı çalışma alanları ve yardımcı araçlar sunar:
+KLU, öğrenmeyi kolaylaştırmak için farklı çalışma alanları ve yardımcı araçlar sunar:
 
 ### Üst Gezinme Sekmeleri
 - **📖 Dersler:** Adım adım görevlerle ilerlediğin rehberli mod.
@@ -21,7 +21,7 @@ Termi, öğrenmeyi kolaylaştırmak için farklı çalışma alanları ve yardı
   tasks: [
     {
       id: 'l0-history',
-      description: 'Termi\'de çalıştırdığın komutların dökümünü görmek için `history` komutunu çalıştır.',
+      description: 'KLU\'da çalıştırdığın komutların dökümünü görmek için `history` komutunu çalıştır.',
       hints: ['`history` yazıp Enter tuşuna bas.'],
       solution: 'history',
       check: { type: 'commandUsed', command: 'history' },

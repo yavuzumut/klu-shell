@@ -33,7 +33,7 @@ AÇIKLAMA
     }
     const defs = ctx.shell.registry.list();
     const width = Math.max(...defs.map((d) => d.name.length));
-    let out = paint('Termi kabuğu — kullanılabilir komutlar', color.bold) + '\n\n';
+    let out = paint('KLU kabuğu — kullanılabilir komutlar', color.bold) + '\n\n';
     for (const d of defs) out += `  ${paint(d.name.padEnd(width), color.green)}  ${d.summary}\n`;
     out += `\nBir komut hakkında ayrıntı için: ${paint('man KOMUT', color.cyan)}  (örn. man ls)\n`;
     out += `Kısayollar: Tab = tamamla, ↑/↓ = geçmiş, Ctrl+C = iptal, Ctrl+L = temizle\n`;
