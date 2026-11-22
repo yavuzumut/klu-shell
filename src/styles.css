@@ -165,45 +165,46 @@ pre {
   flex-shrink: 0;
 }
 
-.logo {
-  display: flex;
+.header-logo-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: 0.02em;
+  cursor: pointer;
+  border-radius: 9px;
+  text-decoration: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.logo-mascot-frame {
+.header-logo-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.header-logo-btn:active {
+  transform: translateY(0);
+}
+
+.header-logo-frame {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background-color: #0c1320;
+  height: 42px;
+  background-color: #10161d;
+  border-radius: 9px;
+  overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
   flex-shrink: 0;
 }
 
-.logo-mascot {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.header-logo-img {
+  height: 42px;
+  width: auto;
+  aspect-ratio: 700 / 282;
+  object-fit: contain;
   display: block;
-}
-
-.logo-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.logo-prompt {
-  color: var(--accent);
 }
 
 .icon-btn {
@@ -643,8 +644,8 @@ pre {
 .klu-welcome-card {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 16px 20px;
+  gap: 20px;
+  padding: 18px 22px;
   background: var(--panel-hover);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -652,27 +653,28 @@ pre {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.klu-mascot-frame {
+.klu-logo-frame {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #0c1320;
+  background-color: #10161d;
   overflow: hidden;
   flex-shrink: 0;
 }
 
-.klu-mascot-frame-welcome {
-  width: 120px;
-  height: 120px;
-  border-radius: 20px;
+.klu-logo-frame-welcome {
+  width: 240px;
+  max-width: 100%;
+  aspect-ratio: 700 / 282;
+  border-radius: 14px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.klu-welcome-mascot {
+.klu-welcome-logo {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -696,38 +698,46 @@ pre {
   margin: 0 !important;
 }
 
-/* Light theme and other theme enhancements for mascot frames */
-[data-theme='light'] .logo-mascot-frame {
-  border: 1px solid rgba(12, 19, 32, 0.18);
-  box-shadow: 0 2px 6px rgba(12, 19, 32, 0.2);
+/* Light theme and other theme enhancements for logo frames */
+[data-theme='light'] .header-logo-frame {
+  border: 1px solid rgba(16, 22, 29, 0.18);
+  box-shadow: 0 2px 6px rgba(16, 22, 29, 0.15);
 }
 
 [data-theme='light'] .klu-welcome-card {
   background: #f8fafc;
   border-color: #e2e8f0;
-  box-shadow: 0 4px 12px rgba(12, 19, 32, 0.06);
+  box-shadow: 0 4px 12px rgba(16, 22, 29, 0.06);
 }
 
-[data-theme='light'] .klu-mascot-frame-welcome {
-  border: 1px solid rgba(12, 19, 32, 0.2);
-  box-shadow: 0 6px 18px rgba(12, 19, 32, 0.22);
+[data-theme='light'] .klu-logo-frame-welcome {
+  border: 1px solid rgba(16, 22, 29, 0.18);
+  box-shadow: 0 6px 18px rgba(16, 22, 29, 0.15);
 }
 
-@media (max-width: 560px) {
+@media (max-width: 600px) {
+  .header-logo-frame {
+    height: 38px;
+  }
+  .header-logo-img {
+    height: 38px;
+  }
+
   .klu-welcome-card {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 14px;
-    padding: 12px 14px;
+    padding: 14px;
     margin-bottom: 18px;
   }
 
-  .klu-mascot-frame-welcome {
-    width: 92px;
-    height: 92px;
-    border-radius: 16px;
+  .klu-logo-frame-welcome {
+    width: 200px;
+    border-radius: 12px;
   }
 
   .klu-welcome-title {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
   }
 
   .klu-welcome-desc {
@@ -736,15 +746,21 @@ pre {
 }
 
 @media (max-width: 380px) {
+  .header-logo-frame {
+    height: 34px;
+  }
+  .header-logo-img {
+    height: 34px;
+  }
+
   .klu-welcome-card {
     gap: 10px;
     padding: 10px;
   }
 
-  .klu-mascot-frame-welcome {
-    width: 72px;
-    height: 72px;
-    border-radius: 12px;
+  .klu-logo-frame-welcome {
+    width: 170px;
+    border-radius: 10px;
   }
 
   .klu-welcome-title {

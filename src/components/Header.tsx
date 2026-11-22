@@ -48,20 +48,22 @@ export function Header({
             ☰
           </button>
         )}
-        <span className="logo">
-          <span className="logo-mascot-frame">
+        <button
+          type="button"
+          className="header-logo-btn"
+          onClick={() => onModeChange('lessons')}
+          title="KLU — Ana Sayfa (Dersler)"
+          aria-label="KLU"
+        >
+          <span className="header-logo-frame">
             <img
-              src="/klu-mascot-64.png"
-              alt="KLU Maskotu"
-              className="logo-mascot"
-              width={32}
-              height={32}
+              src="/klu-logo-cropped.webp"
+              alt="KLU"
+              className="header-logo-img"
+              height={42}
             />
           </span>
-          <span className="logo-text">
-            <span className="logo-prompt">&gt;_</span> klu
-          </span>
-        </span>
+        </button>
       </div>
 
       <nav className="mode-nav" aria-label="Gezinme sekmeleri">

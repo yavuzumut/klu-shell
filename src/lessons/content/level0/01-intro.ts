@@ -6,8 +6,8 @@ export const introLesson: Lesson = {
   summary: 'Komut satırı dünyasına giriş: Terminal, kabuk (shell) ve Linux kavramları.',
   content: `
 <div class="klu-welcome-card">
-  <div class="klu-mascot-frame klu-mascot-frame-welcome">
-    <img src="/klu-mascot-512.png" alt="KLU Maskotu" class="klu-welcome-mascot" />
+  <div class="klu-logo-frame klu-logo-frame-welcome">
+    <img src="/klu-logo-cropped.webp" alt="KLU" class="klu-welcome-logo" />
   </div>
   <div class="klu-welcome-content">
     <div class="klu-welcome-title">Merhaba, ben KLU! 👋</div>

@@ -6,7 +6,7 @@ export const howKluWorksLesson: Lesson = {
   summary: 'Tarayıcı içi simülasyon, güvenli ortam, ders paneli, ipuçları ve çözüm akışı.',
   content: `
 ### KLU'nun Adı Nereden Geliyor?
-KLU adı, Tron filmindeki yapay zekâ programı CLU'dan esinlenildi. CLU nasıl yaratıcısı için dijital bir dünya kurup yönetiyorsa, KLU da senin için güvenli bir terminal dünyası kuruyor ve gerçek bilgisayarına hiç dokunmadan Linux öğrenmeni sağlıyor. İsmin başındaki "K" harfi ise komut satırının temeli olan Türkçe **komut** sözcüğünden geliyor.
+KLU adı, Tron filmindeki yapay zekâ programı CLU'dan esinlenildi. CLU nasıl yaratıcısı için dijital bir dünya kurup yönetiyorsa, KLU da senin için güvenli bir terminal dünyası kuruyor ve gerçek bilgisayarına hiç dokunmadan Linux öğrenmeni sağlıyor. İsimdeki K, Türkçe "komut" kelimesinden geliyor.
 
 ### Tarayıcıda Güvenli Bir Laboratuvar
 KLU; harici bir sunucuya veya kuruluma gerek kalmadan, tamamen tarayıcının belleğinde çalışan **sanal bir dosya sistemi ve komut kabuğudur**.
