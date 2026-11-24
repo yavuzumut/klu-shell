@@ -373,7 +373,7 @@ export class VirtualFS {
   // ------------------------------------------------------------- helpers
 
   private makeDir(name: string, owner = this.user): DirNode {
-    return { type: 'dir', name, children: {}, mode: 0o755, owner, group: owner, mtime: this.now() };
+    return { type: 'dir', name, children: Object.create(null), mode: 0o755, owner, group: owner, mtime: this.now() };
   }
 
   private makeFile(name: string, content: string, owner = this.user): FileNode {
@@ -389,7 +389,7 @@ export function isSubPath(path: string, ancestor: string): boolean {
 
 function cloneNode(node: FsNode): FsNode {
   if (node.type === 'file') return { ...node };
-  const children: Record<string, FsNode> = {};
+  const children: Record<string, FsNode> = Object.create(null);
   for (const [k, v] of Object.entries(node.children)) children[k] = cloneNode(v);
   return { ...node, children };
 }

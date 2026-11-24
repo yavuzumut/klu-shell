@@ -29,6 +29,14 @@ const plain = (md: string) => md.replace(/`([^`]+)`/g, '$1').replace(/\*\*([^*]+
 
 type MobileTab = 'lesson' | 'terminal' | 'tree';
 
+/** Quote path for shell insertion if it contains characters outside [A-Za-z0-9_./~-]. */
+export function quotePath(path: string): string {
+  if (/[^A-Za-z0-9_./~-]/.test(path)) {
+    return `'${path.replace(/'/g, "'\\''")}'`;
+  }
+  return path;
+}
+
 export default function App() {
   const { progress, actions } = useProgress(FIRST_LESSON_ID);
   const found = findLesson(progress.currentLessonId) ?? findLesson(FIRST_LESSON_ID)!;
@@ -218,7 +226,7 @@ export default function App() {
 
   const handleTreeSelectPath = useCallback((path: string, node: { type: 'file' | 'dir' }) => {
     const pretty = activeShell.fs.prettyPath(path);
-    const target = pretty.includes(' ') ? `"${pretty}"` : pretty;
+    const target = quotePath(pretty);
     const cmd = node.type === 'dir' ? `cd ${target}` : `cat ${target}`;
     setMobileTab('terminal');
     requestAnimationFrame(() => {

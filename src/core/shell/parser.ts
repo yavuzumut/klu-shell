@@ -225,3 +225,12 @@ export function parse(input: string, env: ParseEnv): CommandList {
   }
   return { items };
 }
+
+/** Quote path for shell insertion if it contains characters outside [A-Za-z0-9_./~-]. */
+export function quotePath(path: string): string {
+  if (/[^A-Za-z0-9_./~-]/.test(path)) {
+    return `'${path.replace(/'/g, "'\\''")}'`;
+  }
+  return path;
+}
+

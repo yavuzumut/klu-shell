@@ -244,6 +244,25 @@ export interface DirNode extends BaseNode {
 export type FsNode = FileNode | DirNode;
 ```
 
+`DirNode.children` bir `Record<string, FsNode>` nesnesidir. JavaScript prototip zincirinden (`Object.prototype`) miras alınacak `toString`, `valueOf`, `constructor`, `__proto__` gibi yerleşik özelliklerin sanal dosya sistemi işlemleriyle çakışmasını veya prototip kirlenmesini (prototype pollution) önlemek için, dizin oluşturma (`makeDir`) ve ağaç klonlama (`cloneNode`) süreçlerinde `children` nesnesi `Object.create(null)` ile prototipsiz olarak üretilir:
+
+// Kaynak dosya: src/core/fs/VirtualFS.ts
+```typescript
+  private makeDir(name: string, owner = this.user): DirNode {
+    return { type: 'dir', name, children: Object.create(null), mode: 0o755, owner, group: owner, mtime: this.now() };
+  }
+```
+
+// Kaynak dosya: src/core/fs/VirtualFS.ts
+```typescript
+function cloneNode(node: FsNode): FsNode {
+  if (node.type === 'file') return { ...node };
+  const children: Record<string, FsNode> = Object.create(null);
+  for (const [k, v] of Object.entries(node.children)) children[k] = cloneNode(v);
+  return { ...node, children };
+}
+```
+
 ### Olay Dinleyici / Abonelik Mekanizması (`subscribe`)
 // Kaynak dosya: src/core/fs/VirtualFS.ts
 ```typescript
@@ -297,7 +316,7 @@ Gerçek Linux POSIX hata kodları aynen kullanılır:
 `FileTree` bileşeni `VirtualFS` abonelik mekanizmasını doğrudan kullanır:
 1. `useEffect` içerisinde `fs.subscribe` çağrılır ve `setVersion((v) => v + 1)` ile ağacın React render döngüsü tetiklenir.
 2. Bir dosya veya klasör oluşturulduğunda (`action === 'create'` veya `'move'`), etkilenen öğenin tüm üst dizinleri `openDirs` kümesine otomatik olarak eklenir; böylece kullanıcı terminalde bir dosya oluşturduğu an ağaçta ilgili klasör otomatik açılır.
-3. Yeni düğüm `highlightedNode` olarak işaretlenir ve CSS animasyonu (`--tree-flash-start` / `--tree-flash-glow`) ile parlama efekti verilir.
+3. Yeni veya taşınan öğenin yolu `highlightedPath` prop'u (veya bileşen içi `internalHighlight` durumu) üzerinden eşleştirilerek `tree-node-highlight` CSS sınıfı verilir ve CSS animasyonu (`--tree-flash-start` / `--tree-flash-glow`) ile parlama efekti uygulanır.
 
 ---
 
@@ -529,7 +548,7 @@ KLU projesi katı tip denetimi ve otomatik birim testleriyle korunmaktadır.
 
 ### Komutlar
 ```bash
-# Birim ve entegrasyon testlerini çalıştırır (106 test)
+# Birim ve entegrasyon testlerini çalıştırır (111 test)
 npm test
 
 # TypeScript tip denetimi (sıfır hata hedeflenir)
@@ -592,3 +611,34 @@ npm run build
   - **Git 2 (İnce Ayar & Düzeltmeler):** `git diff`, `git restore`, `.gitignore` desteği, `git commit --amend`.
   - **Git 3 (Dallanma & Birleştirme):** `git branch`, `git switch` / `git checkout`, `git merge`.
   - **Git 4 (İşbirliği & Uzak Depo):** `git remote`, `git clone`, `git push`, `git pull` ve tarayıcı içi simüle uzak depo (fake remote).
+
+---
+
+## 13. Güvenlik Notları (Security Notes)
+
+KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içinde çalışan statik bir web uygulamasıdır. Kod tabanında uygulanan güvenlik mekanizmaları ve dikkat edilmesi gereken noktalar şunlardır:
+
+### 1. Markdown İşleme ve XSS (`src/components/LessonPanel.tsx`)
+- Ders metinleri (`lesson.content`), görev açıklamaları (`task.description`), ipuçları (`hint`) ve çözümler (`task.solution`), `marked.parse` ve `marked.parseInline` fonksiyonlarıyla HTML'e dönüştürülmekte ve `dangerouslySetInnerHTML` ile DOM'a aktarılmaktadır.
+- Projede herhangi bir HTML sanitizer (temizleyici - örn. `DOMPurify`) kullanılmamaktadır.
+- Mevcut mimaride tüm dersler `src/lessons/content/` dizinindeki statik TypeScript dosyalarından derleme zamanında (build-time) yüklendiği için içerikler güvenilir kabul edilir.
+- **Kritik Kural:** Gelecekte kullanıcı girdisinden, harici dosyalardan veya URL parametrelerinden dinamik ders yükleme özelliği eklenirse, XSS (Cross-Site Scripting) açıklarını önlemek amacıyla `marked` çıktısı DOM'a basılmadan önce mutlaka `DOMPurify` veya benzeri bir kütüphane ile temizlenmelidir.
+
+### 2. İçerik Güvenliği Politikası (Content-Security-Policy - `vite.config.ts`)
+- CSP meta etiketi `index.html` dosyasına statik olarak eklenmemiştir.
+- Geliştirme ortamını (`npm run dev`) ve Vite'ın yerel HMR (Hot Module Replacement) sunucusunu kısıtlamamak için `vite.config.ts` içinde `apply: 'build'` kuralı tanımlanmış özel bir eklenti (`cspPlugin`) kullanılmıştır.
+- Bu sayede CSP meta etiketi yalnızca üretim derlemesi (`npm run build` sonucu üretilen `dist/index.html`) başlığına (`<head>`) eklenir:
+  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'`
+- Geliştirme sunucusunda (`vite dev`) bu CSP meta etiketi bulunmaz.
+
+### 3. Prototip Kirlenmesi Koruması (Prototype Pollution - `src/core/fs/VirtualFS.ts`)
+- Dizin düğümlerindeki `children` nesnesi (`Record<string, FsNode>`), JavaScript standart nesnelerinin prototipinde bulunan `__proto__`, `constructor`, `toString`, `valueOf` gibi yerleşik özellikleri miras almaması için `Object.create(null)` ile üretilir (`makeDir` ve `cloneNode`).
+- Bu sayede temiz bir dosya sisteminde `fs.exists('/toString')` sorgusu `false` döner; `Object.prototype` fonksiyonları yanlışlıkla var olan bir dosya veya dizin olarak algılanmaz.
+- `__proto__`, `constructor` ve `toString` adlarına sahip dosya ve dizinler standart dosyalar gibi sorunsuzca oluşturulabilir (`touch`, `mkdir`), okunabilir (`cat`), listelenebilir (`ls`) ve silinebilir (`rm`, `rm -rf`).
+- Bu davranış `src/core/fs/VirtualFS.test.ts` ve `src/core/commands/commands.test.ts` altındaki birim testlerle doğrulanmıştır.
+
+### 4. Özel Vurgu Rengi Doğrulaması (`src/themes/themeManager.ts`)
+- Kullanıcının belirlediği tema vurgu renkleri (`customAccent`), `HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/` düzenli ifadesiyle katı biçimde doğrulanır.
+- `saveCustomAccent`: Girilen renk 6 haneli geçerli bir hex renk kodu değilse (örn. `'red'`, `'#123'`, `'url(...)'`), işlem iptal edilir ve `localStorage`'a yazılmaz.
+- `getCustomAccent`: `localStorage` üzerinde depolanmış olan değer okunurken regex kontrolünden geçirilir; format geçersizse `null` döner ve sistem ilgili temanın varsayılan vurgu rengine geri döner.
+- Bu doğrulama mekanizması `src/themes/themes.test.ts` dosyasındaki birim testlerle doğrulanmıştır.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { quotePath } from '../shell/parser';
 import { createTestShell } from '../test/helpers';
 
 describe('shell basics', () => {
@@ -329,4 +330,60 @@ describe('clear / help / man / history', () => {
     await run('pwd');
     expect((await run('history')).out).toBe('    1  pwd\n    2  history\n');
   });
+
+  it('touch, mkdir, cat and ls work with __proto__, constructor and toString', async () => {
+    const { run } = createTestShell();
+    await run('mkdir /tmp/special');
+    await run('cd /tmp/special');
+
+    // Create files with special names
+    for (const name of ['__proto__', 'constructor', 'toString']) {
+      await run(`touch ${name}`);
+      await run(`echo "data_${name}" > ${name}`);
+      const catRes = await run(`cat ${name}`);
+      expect(catRes.out).toBe(`data_${name}\n`);
+    }
+
+    const lsRes = await run('ls');
+    expect(lsRes.out).toContain('__proto__');
+    expect(lsRes.out).toContain('constructor');
+    expect(lsRes.out).toContain('toString');
+
+    // Create directories with special names
+    for (const name of ['dir___proto__', 'dir_constructor', 'dir_toString']) {
+      await run(`mkdir ${name}`);
+      await run(`touch ${name}/file.txt`);
+      const dirLs = await run(`ls ${name}`);
+      expect(dirLs.out).toContain('file.txt');
+    }
+  });
+
+  it('correctly resolves commands for special file paths like "rapor;ls" and "a b"', async () => {
+    const { run } = createTestShell();
+    await run('mkdir /tmp/quoting');
+    await run('cd /tmp/quoting');
+
+    // Create files with special characters in names
+    await run(`echo "content 1" > ${quotePath('rapor;ls')}`);
+    await run(`echo "content 2" > ${quotePath('a b')}`);
+
+    expect(quotePath('rapor;ls')).toBe("'rapor;ls'");
+    expect(quotePath('a b')).toBe("'a b'");
+
+    // Command produced by handleTreeSelectPath for clicking "rapor;ls"
+    const cmd1 = `cat ${quotePath('rapor;ls')}`;
+    const res1 = await run(cmd1);
+    expect(res1.exitCode).toBe(0);
+    expect(res1.out).toBe('content 1\n');
+    expect(res1.err).toBe('');
+
+    // Command produced by handleTreeSelectPath for clicking "a b"
+    const cmd2 = `cat ${quotePath('a b')}`;
+    const res2 = await run(cmd2);
+    expect(res2.exitCode).toBe(0);
+    expect(res2.out).toBe('content 2\n');
+    expect(res2.err).toBe('');
+  });
 });
+
+

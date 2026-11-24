@@ -48,6 +48,8 @@ export function saveThemeId(themeId: ThemeId, storage?: Storage): void {
   }
 }
 
+const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
+
 /**
  * Retrieves custom accent color for a specific theme if set.
  */
@@ -55,7 +57,11 @@ export function getCustomAccent(themeId: ThemeId, storage?: Storage): string | n
   const store = storage ?? (typeof window !== 'undefined' ? window.localStorage : undefined);
   if (!store) return null;
   try {
-    return store.getItem(`${ACCENT_STORAGE_PREFIX}${themeId}`);
+    const val = store.getItem(`${ACCENT_STORAGE_PREFIX}${themeId}`);
+    if (val && HEX_COLOR_REGEX.test(val)) {
+      return val;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -65,6 +71,7 @@ export function getCustomAccent(themeId: ThemeId, storage?: Storage): string | n
  * Saves custom accent color for a specific theme.
  */
 export function saveCustomAccent(themeId: ThemeId, color: string, storage?: Storage): void {
+  if (!HEX_COLOR_REGEX.test(color)) return;
   const store = storage ?? (typeof window !== 'undefined' ? window.localStorage : undefined);
   if (!store) return;
   try {

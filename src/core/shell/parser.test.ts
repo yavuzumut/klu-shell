@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { globToRegExp } from './glob';
 import { parse, ParseError, tokenize } from './parser';
 
 const env = { vars: { HOME: '/home/kullanici', USER: 'kullanici', '?': '0', EMPTY: '' }, home: '/home/kullanici' };
@@ -79,5 +80,17 @@ describe('parse', () => {
     expect(() => parse('ls |', env)).toThrow("syntax error near unexpected token `newline'");
     expect(() => parse('echo >', env)).toThrow("syntax error near unexpected token `newline'");
     expect(() => parse('ls && && pwd', env)).toThrow(ParseError);
+  });
+});
+
+describe('globToRegExp', () => {
+  it('collapses consecutive stars and finishes in under 100ms on non-matching text', () => {
+    const pattern = '*'.repeat(30) + 'x';
+    const re = globToRegExp(pattern);
+    const start = performance.now();
+    const matched = re.test('a'.repeat(50));
+    const elapsed = performance.now() - start;
+    expect(matched).toBe(false);
+    expect(elapsed).toBeLessThan(100);
   });
 });

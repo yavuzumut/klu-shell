@@ -86,6 +86,29 @@ describe('Theme Manager', () => {
       clearCustomAccent('dark', mockStorage);
       expect(getCustomAccent('dark', mockStorage)).toBeNull();
     });
+
+    it('validates hex color format and rejects invalid values', () => {
+      // Invalid colors should not be saved
+      saveCustomAccent('dark', 'red', mockStorage);
+      expect(getCustomAccent('dark', mockStorage)).toBeNull();
+
+      saveCustomAccent('dark', '#123', mockStorage);
+      expect(getCustomAccent('dark', mockStorage)).toBeNull();
+
+      saveCustomAccent('dark', 'url(https://evil.com)', mockStorage);
+      expect(getCustomAccent('dark', mockStorage)).toBeNull();
+
+      saveCustomAccent('dark', '#gggggg', mockStorage);
+      expect(getCustomAccent('dark', mockStorage)).toBeNull();
+
+      // If invalid value exists in storage, getCustomAccent returns null
+      mockStorage.setItem('klu_accent_dark', 'invalid-color');
+      expect(getCustomAccent('dark', mockStorage)).toBeNull();
+
+      // Valid 6-digit hex is accepted
+      saveCustomAccent('dark', '#00AABB', mockStorage);
+      expect(getCustomAccent('dark', mockStorage)).toBe('#00AABB');
+    });
   });
 
   describe('getContrastColor', () => {

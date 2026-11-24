@@ -105,4 +105,43 @@ describe('VirtualFS operations', () => {
     expect(modeString(fs.lookup('/etc/hostname'))).toBe('-rw-r--r--');
     expect(modeString(fs.lookup('/root'))).toBe('drwx------');
   });
+
+  it('handles prototype properties and special names without prototype pollution', () => {
+    const fs = new VirtualFS();
+    // Clean file system must not report phantom prototype properties as existing
+    expect(fs.exists('/toString')).toBe(false);
+    expect(fs.exists('/constructor')).toBe(false);
+    expect(fs.exists('/__proto__')).toBe(false);
+    expect(fs.exists('/valueOf')).toBe(false);
+    expect(fs.tryLookup('/toString')).toBeNull();
+
+    // Files named __proto__, constructor, toString can be created, read, and removed normally
+    fs.mkdir('/tmp');
+    for (const name of ['__proto__', 'constructor', 'toString']) {
+      const p = `/tmp/${name}`;
+      fs.touch(p);
+      expect(fs.exists(p)).toBe(true);
+      expect(fs.isFile(p)).toBe(true);
+      fs.writeFile(p, `content of ${name}`);
+      expect(fs.readFile(p)).toBe(`content of ${name}`);
+      fs.remove(p);
+      expect(fs.exists(p)).toBe(false);
+    }
+
+    // Directories named __proto__, constructor, toString can be created and hold files
+    for (const name of ['__proto__', 'constructor', 'toString']) {
+      const dirPath = `/tmp/dir_${name}`;
+      fs.mkdir(dirPath);
+      expect(fs.exists(dirPath)).toBe(true);
+      expect(fs.isDir(dirPath)).toBe(true);
+      const child = `${dirPath}/sample.txt`;
+      fs.writeFile(child, 'hello');
+      expect(fs.readFile(child)).toBe('hello');
+      const list = fs.readdir(dirPath).map((n) => n.name);
+      expect(list).toEqual(['sample.txt']);
+      fs.remove(dirPath, { recursive: true });
+      expect(fs.exists(dirPath)).toBe(false);
+    }
+  });
 });
+

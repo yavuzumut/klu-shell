@@ -2,16 +2,17 @@ import { basename, type VirtualFS } from '../fs/VirtualFS';
 
 /** Convert a shell glob segment (`*.txt`, `a?c`, `[ab]*`) into a RegExp. */
 export function globToRegExp(pattern: string): RegExp {
+  const normalized = pattern.replace(/\*+/g, '*');
   let re = '^';
-  for (let i = 0; i < pattern.length; i++) {
-    const c = pattern[i];
+  for (let i = 0; i < normalized.length; i++) {
+    const c = normalized[i];
     if (c === '*') re += '.*';
     else if (c === '?') re += '.';
     else if (c === '[') {
-      const end = pattern.indexOf(']', i + 1);
+      const end = normalized.indexOf(']', i + 1);
       if (end === -1) re += '\\[';
       else {
-        let cls = pattern.slice(i + 1, end);
+        let cls = normalized.slice(i + 1, end);
         if (cls.startsWith('!')) cls = '^' + cls.slice(1);
         re += '[' + cls.replace(/\\/g, '\\\\') + ']';
         i = end;
