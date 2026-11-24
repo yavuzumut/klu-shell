@@ -1,85 +1,285 @@
+export type ExploreCategory = 'media' | 'system' | 'files' | 'productivity' | 'fun';
+
+export interface DistroInstall {
+  debian?: string;
+  fedora?: string;
+  arch?: string;
+  note?: string;
+}
+
 export interface ExploreTool {
   id: string;
   name: string;
-  summary: string;
+  category: ExploreCategory;
+  replaces?: string;
   description: string;
-  installCommand: string;
   exampleCommand: string;
   exampleOutput: string;
+  install: DistroInstall;
   warning?: string;
+  sourceUrl?: string;
+  summary?: string;
+  installCommand?: string;
 }
 
 export const EXPLORE_TOOLS: ExploreTool[] = [
   {
     id: 'yt-dlp',
     name: 'yt-dlp',
-    summary: 'Gelişmiş komut satırı video ve ses indiricisi (youtube-dl çatallaması)',
-    description:
-      'YouTube ve yüzlerce farklı video platformundan video veya yalnızca ses akışlarını en yüksek kalitede indirmenizi, format dönüştürmenizi sağlayan popüler bir CLI aracıdır.',
-    installCommand: 'sudo apt install yt-dlp   # veya: pip install yt-dlp',
-    exampleCommand: 'yt-dlp -f "bestvideo+bestaudio" "https://www.youtube.com/watch?v=kendi_videonuz"',
-    exampleOutput: `[youtube] Extracting URL: https://www.youtube.com/watch?v=kendi_videonuz
-[youtube] kendi_videonuz: Downloading webpage
-[youtube] kendi_videonuz: Downloading ios player API JSON
-[info] kendi_videonuz: Downloading 1 format(s): 137+140
-[download] Destination: Videom [kendi_videonuz].f137.mp4
-[download] 100% of   45.20MiB in 00:00:03 at 14.82MiB/s
-[download] Destination: Videom [kendi_videonuz].f140.m4a
-[download] 100% of    4.10MiB in 00:00:00 at 8.90MiB/s
-[Merger] Merging formats into "Videom [kendi_videonuz].mp4"
-Deleting original file Videom [kendi_videonuz].f137.mp4 (pass -k to keep)`,
+    category: 'media',
+    description: 'YouTube ve birçok sitedeki videoyu veya sesi indirir.',
+    exampleCommand: 'yt-dlp -x --audio-format mp3 "VIDEO_LINKI"',
+    exampleOutput: `[youtube] Extracting URL: VIDEO_LINKI
+[download] Destination: ses.webm
+[ExtractAudio] Destination: ses.mp3`,
+    install: {
+      debian: 'sudo apt install yt-dlp',
+      fedora: 'sudo dnf install yt-dlp',
+      arch: 'sudo pacman -S yt-dlp',
+      note: 'Dağıtım depolarındaki sürüm geride kalabilir. Projenin önerdiği yol çalıştırılabilir dosyayı doğrudan indirmek: sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp ve ardından sudo chmod a+rx /usr/local/bin/yt-dlp; güncelleme: sudo yt-dlp -U. Yeni Ubuntu\'da pip install "externally-managed-environment" hatası verebilir. MP3\'e dönüştürmek için ffmpeg gerekir.',
+    },
     warning:
-      'Önemli Uyarı: Telif hakkı ile korunan içerikleri izinsiz indirmek ilgili platformun hizmet şartlarına ve yerel yasalara aykırı olabilir. Komutu test ederken yalnızca kendi oluşturduğunuz videoları veya kamu malı / Creative Commons lisanslı serbest içerikleri kullanınız.',
+      'Telif hakkı olan içeriği indirmek hizmet şartlarına aykırı olabilir; kendi videon veya lisansı serbest içerik kullan. Ayrıca not: internetten indirdiğin programı sudo ile kurmadan önce kaynağın resmî olduğundan emin ol.',
+    sourceUrl: 'https://github.com/yt-dlp/yt-dlp/wiki/Installation',
+  },
+  {
+    id: 'wttr-in',
+    name: 'wttr.in',
+    category: 'media',
+    description: 'Terminalde hava durumu, kurulum gerekmez ama curl lazım.',
+    exampleCommand: 'curl wttr.in/Istanbul',
+    exampleOutput: `Weather report: Istanbul
+      \\   /     Clear
+       .-.      +18 °C
+    ― (   ) ―   ↗ 15 km/h`,
+    install: {
+      note: 'Kurulum gerekmez ama curl lazım. Örnekler: curl wttr.in/Istanbul, curl wttr.in/Istanbul?format=3 (tek satır), curl wttr.in/Moon (ay evresi).',
+    },
+    warning:
+      'Üçüncü taraf ücretsiz bir servis; konum yazmazsan IP adresine göre konum tahmin edilir; internet gerekir.',
+    sourceUrl: 'https://github.com/chubin/wttr.in',
   },
   {
     id: 'fastfetch',
     name: 'fastfetch',
-    summary: 'C ile yazılmış, son derece hızlı ve modern sistem bilgi aracı',
-    description:
-      'Neofetch gibi sistem donanımı, dağıtımı, çekirdek sürümü ve bellek kullanımını şık bir ASCII logosuyla birlikte terminalde gösteren ultra hızlı bir araçtır.',
-    installCommand: 'sudo apt install fastfetch',
+    category: 'system',
+    replaces: 'neofetch',
+    description: 'Sistem bilgisini şık biçimde gösterir.',
     exampleCommand: 'fastfetch',
-    exampleOutput: `       _,met$$$$$gg.          kullanici@klu
-    ,g$$$$$$$$$$$$$$$P.       ---------------
-  ,g$$P"     """Y$$.".        OS: Debian GNU/Linux 12 (bookworm) x86_64
- ,$$P'              \`$$$.     Host: KVM/QEMU (Standard PC)
-',$$P       ,ggs.     \`$$b:   Kernel: 6.1.0-20-amd64
-\`d$$'     ,$P"'   .    $$$    Uptime: 2 days, 4 hours, 12 mins
- $$P      d$'     ,    $$P    Packages: 1420 (dpkg)
- $$:      $$.   -    ,d$$'    Shell: bash 5.2.15
- $$;      Y$b._   _,d$P'      Terminal: xterm-256color
- Y$$.    \`."Y$$$$P"'          CPU: AMD EPYC 7763 (4) @ 2.445GHz
- \`$$b      "-.__              GPU: Red Hat, Inc. Virtio GPU
-  \`Y$$                        Memory: 1.45 GiB / 7.76 GiB (18%)
-   \`$$b.                      Disk (/): 18.2 GiB / 48.0 GiB (38%)
-     \`Y$$b.                   Locale: tr_TR.UTF-8
-        \`"Y$b._
-            \`"""`,
+    exampleOutput: `OS: Linux x86_64
+Host: PC
+Kernel: 6.x
+Uptime: 2 hours
+Memory: 1.45 GiB / 8.00 GiB`,
+    install: {
+      debian: 'sudo apt install fastfetch',
+      fedora: 'sudo dnf install fastfetch',
+      arch: 'sudo pacman -S fastfetch',
+      note: 'apt ile doğrudan kurulum Debian 13 ve Ubuntu 25.04+ için geçerli; eski Ubuntu\'da önce sudo add-apt-repository ppa:zhangsongcui3371/fastfetch, sonra sudo apt update ve sudo apt install fastfetch.',
+    },
+    warning:
+      'Neofetch Nisan 2024\'te arşivlendi, fastfetch devamı sayılır. Ekran görüntüsü paylaşırsan yerel IP adresin görünebilir.',
+    sourceUrl: 'https://github.com/fastfetch-cli/fastfetch',
+  },
+  {
+    id: 'btop',
+    name: 'btop',
+    category: 'system',
+    description: 'İşlemci, bellek, disk, ağ ve işlemleri renkli grafiklerle gösteren sistem izleyici.',
+    exampleCommand: 'btop',
+    exampleOutput: `CPU 42% [||||||||        ]  Mem 3.2G/8G [||||||||||||    ]
+Disks: / 24G/100G [||||        ]
+Processes: 142 total, 1 running`,
+    install: {
+      debian: 'sudo snap install btop',
+      arch: 'sudo pacman -S btop',
+    },
+  },
+  {
+    id: 'ncdu',
+    name: 'ncdu',
+    category: 'system',
+    description: 'Hangi klasörün diskte ne kadar yer kapladığını boyuta göre sıralı gösterir (du\'nun etkileşimli hali).',
+    exampleCommand: 'ncdu',
+    exampleOutput: `--- /home/kullanici ---
+   1.2 GiB [##########] /Downloads
+ 450.0 MiB [###       ] /Documents
+ 120.0 MiB [#         ] /Pictures`,
+    install: {
+      debian: 'sudo apt install ncdu',
+      fedora: 'sudo dnf install ncdu',
+      arch: 'sudo pacman -S ncdu',
+    },
+  },
+  {
+    id: 'ripgrep',
+    name: 'ripgrep',
+    category: 'files',
+    replaces: 'grep',
+    description: 'Çok hızlı arama, .gitignore\'u dikkate alır. Komut adı rg.',
+    exampleCommand: 'rg "TODO"',
+    exampleOutput: `src/index.ts:15: // TODO: refactor
+src/utils.ts:42: // TODO: validation`,
+    install: {
+      debian: 'sudo apt install ripgrep',
+      fedora: 'sudo dnf install ripgrep',
+      arch: 'sudo pacman -S ripgrep',
+    },
+    sourceUrl: 'https://github.com/BurntSushi/ripgrep',
+  },
+  {
+    id: 'fd',
+    name: 'fd',
+    category: 'files',
+    replaces: 'find',
+    description: 'Basit ve hızlı dosya arama.',
+    exampleCommand: 'fd ".txt"',
+    exampleOutput: `notlar.txt
+belgeler/rehber.txt
+yedek/liste.txt`,
+    install: {
+      debian: 'sudo apt install fd-find',
+      fedora: 'sudo dnf install fd-find',
+      arch: 'sudo pacman -S fd',
+      note: 'Debian/Ubuntu\'da komut adı fdfind olabilir.',
+    },
+    sourceUrl: 'https://github.com/sharkdp/fd',
+  },
+  {
+    id: 'bat',
+    name: 'bat',
+    category: 'files',
+    replaces: 'cat',
+    description: 'Sözdizimi renklendirmesi, satır numarası ve git işaretleri.',
+    exampleCommand: 'bat dosya.py',
+    exampleOutput: `───────┬────────────────────────
+       │ File: dosya.py
+───────┼────────────────────────
+   1   │ def merhaba():
+   2   │     print("merhaba")
+───────┴────────────────────────`,
+    install: {
+      debian: 'sudo apt install bat',
+      fedora: 'sudo dnf install bat',
+      arch: 'sudo pacman -S bat',
+      note: 'Debian/Ubuntu\'da komut adı batcat olabilir.',
+    },
+    sourceUrl: 'https://github.com/sharkdp/bat',
+  },
+  {
+    id: 'eza',
+    name: 'eza',
+    category: 'files',
+    replaces: 'ls',
+    description: 'Renkler, simgeler ve git bilgisiyle ls.',
+    exampleCommand: 'eza -l',
+    exampleOutput: `.rw-r--r-- 1.2k kullanici notlar.txt
+drwxr-xr-x    - kullanici projeler`,
+    install: {
+      debian: 'sudo apt install eza',
+      fedora: 'sudo dnf install eza',
+      arch: 'sudo pacman -S eza',
+      note: 'Eski dağıtım sürümlerinde paket olmayabilir.',
+    },
+    warning: 'Eskiden önerilen exa projesinin bakımı bırakıldı, eza onun devamıdır; "exa" kurma.',
+  },
+  {
+    id: 'fzf',
+    name: 'fzf',
+    category: 'files',
+    description:
+      'Bulanık (fuzzy) arama aracı, listeyi yazdıkça filtreler. Kabuk entegrasyonu açılırsa Ctrl+R ile komut geçmişinde de arar.',
+    exampleCommand: 'fzf',
+    exampleOutput: `> src/
+  src/index.ts
+  src/styles.css
+  package.json
+  3/3`,
+    install: {
+      debian: 'sudo apt install fzf',
+      fedora: 'sudo dnf install fzf',
+      arch: 'sudo pacman -S fzf',
+    },
   },
   {
     id: 'tldr',
     name: 'tldr',
-    summary: 'Uzun man sayfalarına pratik, topluluk odaklı komut örnekleri',
-    description:
-      'Karmaşık ve yüzlerce sayfalık Linux man sayfalarını okumak yerine, bir komutun günlük hayatta en çok kullanılan 4-5 pratik kullanım senaryosunu hızlıca sunar.',
-    installCommand: 'sudo apt install tldr   # veya: npm install -g tldr',
+    category: 'productivity',
+    description: 'man sayfalarının kısa, örnekli özeti.',
     exampleCommand: 'tldr tar',
     exampleOutput: `tar
-
-Arşivleme yardımcı programı.
-Çoğunlukla gzip veya bzip2 gibi bir sıkıştırma yöntemiyle birlikte kullanılır.
-Daha fazla bilgi için: https://www.gnu.org/software/tar/manual.
-
-- Bir arşiv oluştur ve bunu bir dosyaya yaz:
-  tar cf hedef.tar yol/dosya1 yol/dosya2 ...
-
-- Gzip ile sıkıştırılmış bir arşiv oluştur:
-  tar czf hedef.tar.gz yol/dosya1 yol/dosya2 ...
-
-- Bir arşivin içeriğini geçerli dizine çıkart:
-  tar xf kaynak.tar[.gz|.bz2|.xz]
-
-- Arşivin içeriğini ayrıntılı şekilde listele:
-  tar tvf kaynak.tar`,
+Arşivleme aracı.
+- Arşiv oluştur:
+  tar -cf dosya.tar dosya1 dosya2
+- Arşiv aç:
+  tar -xf dosya.tar`,
+    install: {
+      debian: 'sudo apt install tldr',
+      fedora: 'sudo dnf install tldr',
+    },
+  },
+  {
+    id: 'tmux',
+    name: 'tmux',
+    category: 'productivity',
+    description: 'Tek terminalde birden fazla bölme ve oturum, bağlantı kopsa bile oturumu korur.',
+    exampleCommand: 'tmux',
+    exampleOutput: '[0] 0:bash* "kullanici@host"',
+    install: {
+      debian: 'sudo apt install tmux',
+      fedora: 'sudo dnf install tmux',
+      arch: 'sudo pacman -S tmux',
+      note: 'Ayrılmak için Ctrl+b sonra d; geri dönmek için tmux attach.',
+    },
+  },
+  {
+    id: 'cmatrix',
+    name: 'cmatrix',
+    category: 'fun',
+    description: 'Matrix filmindeki yağan kod animasyonu.',
+    exampleCommand: 'cmatrix',
+    exampleOutput: `0  1  0  1  0
+1  0  1  1  0
+0  1  0  0  1`,
+    install: {
+      debian: 'sudo apt install cmatrix',
+      fedora: 'sudo dnf install cmatrix',
+      arch: 'sudo pacman -S cmatrix',
+    },
+    warning: 'İşlemciyi yorabilir; Ctrl+C ile çık.',
+  },
+  {
+    id: 'cowsay-figlet-lolcat',
+    name: 'cowsay + figlet + lolcat',
+    category: 'fun',
+    description: 'Yazıyı inek konuşturur, büyük ASCII başlık yapar, gökkuşağı renklendirir.',
+    exampleCommand: 'cowsay "Merhaba"',
+    exampleOutput: ` < Merhaba >
+ ---------
+        \\   ^__^
+         \\  (oo)\\_______
+            (__)\\       )\\/\\
+                ||----w |
+                ||     ||`,
+    install: {
+      debian: 'sudo apt install cowsay figlet lolcat',
+      fedora: 'sudo dnf install cowsay figlet lolcat',
+      arch: 'sudo pacman -S cowsay figlet',
+      note: '| işareti (boru hattı) ileride gelecek Seviye 2\'de anlatılacak. Örnekler: cowsay "Merhaba", figlet KLU, figlet KLU | lolcat.',
+    },
+  },
+  {
+    id: 'sl',
+    name: 'sl',
+    category: 'fun',
+    description: 'ls yerine yanlışlıkla sl yazarsan ekrandan bir buharlı tren geçer.',
+    exampleCommand: 'sl',
+    exampleOutput: `==== o O ===~
+  (@@@@@@@@)`,
+    install: {
+      debian: 'sudo apt install sl',
+      fedora: 'sudo dnf install sl',
+      arch: 'sudo pacman -S sl',
+    },
   },
 ];
