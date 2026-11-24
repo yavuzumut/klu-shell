@@ -12,11 +12,12 @@ Herhangi bir uzak sunucuya, Docker konteynerine, WebSocket bağlantısına veya 
 
 ### Teknoloji Bileşenleri (`package.json`)
 - **Arayüz Kütüphanesi:** React 18 (`react`: `^18.3.1`, `react-dom`: `^18.3.1`)
-- **Derleme ve Geliştirme Aracı:** Vite (`vite`: `^5.4.8`, `@vitejs/plugin-react`: `^4.3.2`)
+- **Derleme ve Geliştirme Aracı:** Vite (`vite`: `^7.3.8`, `@vitejs/plugin-react`: `^4.3.2`)
 - **Programlama Dili:** TypeScript (`typescript`: `~5.6.2`, `@types/react`: `^18.3.11`, `@types/react-dom`: `^18.3.1`)
 - **Terminal Motoru:** `@xterm/xterm` (`^5.5.0`) ve `@xterm/addon-fit` (`^0.10.0`)
-- **Birim ve Entegrasyon Testleri:** Vitest (`vitest`: `^2.1.2`)
+- **Birim ve Entegrasyon Testleri:** Vitest (`vitest`: `^5.1.1`)
 - **Markdown Dönüştürücü:** Marked (`marked`: `^14.1.0`)
+- **Çalışma Zamanı (engines):** Node.js (`node`: `>=22.12.0`)
 
 ---
 
@@ -642,3 +643,6 @@ KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içi
 - `saveCustomAccent`: Girilen renk 6 haneli geçerli bir hex renk kodu değilse (örn. `'red'`, `'#123'`, `'url(...)'`), işlem iptal edilir ve `localStorage`'a yazılmaz.
 - `getCustomAccent`: `localStorage` üzerinde depolanmış olan değer okunurken regex kontrolünden geçirilir; format geçersizse `null` döner ve sistem ilgili temanın varsayılan vurgu rengine geri döner.
 - Bu doğrulama mekanizması `src/themes/themes.test.ts` dosyasındaki birim testlerle doğrulanmıştır.
+
+### 5. Bağımlılık Güvenliği (Dependency Security)
+- Geliştirme bağımlılıkları Vite 7 ve Vitest 5'e güncellendi, npm audit temiz.

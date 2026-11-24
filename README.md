@@ -45,7 +45,7 @@ KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafı
 ## 🚀 Başlangıç & Kurulum
 
 ### 1. Gereksinimler
-Node.js LTS (v20 veya v22+) sürümü önerilir. `nvm` kullanıyorsanız:
+Node.js >= 22.12 gereklidir. `nvm` kullanıyorsanız:
 
 ```bash
 # nvm ile LTS sürümünü kurun ve etkinleştirin
