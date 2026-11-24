@@ -292,8 +292,19 @@ Archiving utility.
     category: 'fun',
     description: 'ls yerine yanlışlıkla sl yazarsan ekrandan bir buharlı tren geçer.',
     exampleCommand: 'sl',
-    exampleOutput: `==== o O ===~
-  (@@@@@@@@)`,
+    // sl programının çıktısından esinlenilmiştir
+    exampleOutput: String.raw`      (@@) (  ) (@@)
+    (@@@@)
+ ====        ________
+_D _|  |_______/        \__I_I_
+ |(_)---  |   H\________/ |   |
+ /     |  |   H  |  |     |   |
+|      |  |   H__|__-------| [___]|
+|  ________|___H__/__|_____/[][]~\_
+|/ |   |-----------I_____I [][] []  D
+__/ =| o |=-~~\  /~~\  /~~\  /~~\ ____Y_
+ |/-=|___|=O=====O=====O=====O   |_____/~\
+  \_/      \__/  \__/  \__/  \__/      \_/`,
     install: {
       debian: 'sudo apt install sl',
       fedora: 'sudo dnf install sl',
