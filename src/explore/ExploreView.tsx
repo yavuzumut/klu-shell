@@ -99,7 +99,7 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
           </pre>
         ) : (
           <div className="distro-empty">
-            Bu dağıtım için doğrudan paket bilgisi bulunmuyor veya kurulum gerekmiyor.
+            Bu dağıtım için doğrulanmış komut yok; dağıtımının paket deposunda ara.
           </div>
         )}
 
@@ -109,6 +109,19 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
           </div>
         )}
       </div>
+
+      {tool.tips && tool.tips.length > 0 && (
+        <div className="explore-section">
+          <div className="section-head">
+            <span className="section-title">İpuçları:</span>
+          </div>
+          <ul className="explore-tips-list">
+            {tool.tips.map((tip, idx) => (
+              <li key={idx}>{tip}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="explore-section">
         <div className="section-head">

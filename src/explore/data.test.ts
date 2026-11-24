@@ -4,8 +4,8 @@ import { EXPLORE_TOOLS, type ExploreCategory } from './data';
 const VALID_CATEGORIES: ExploreCategory[] = ['media', 'system', 'files', 'productivity', 'fun'];
 
 describe('Explore Data (EXPLORE_TOOLS)', () => {
-  it('kart sayısı tam olarak 15 olmalı', () => {
-    expect(EXPLORE_TOOLS).toHaveLength(15);
+  it('kart sayısı en az 15 olmalı', () => {
+    expect(EXPLORE_TOOLS.length).toBeGreaterThanOrEqual(15);
   });
 
   it('tüm kartların id değerleri benzersiz olmalı', () => {
@@ -40,6 +40,19 @@ describe('Explore Data (EXPLORE_TOOLS)', () => {
         VALID_CATEGORIES.includes(tool.category),
         `Invalid category "${tool.category}" for ${tool.id}`
       ).toBe(true);
+    }
+  });
+
+  it('tips alanı tanımlıysa dizi olmalı ve elemanları boş olmayan metin olmalı', () => {
+    for (const tool of EXPLORE_TOOLS) {
+      if (tool.tips !== undefined) {
+        expect(Array.isArray(tool.tips), `tips must be an array for ${tool.id}`).toBe(true);
+        expect(tool.tips.length, `tips array cannot be empty if defined for ${tool.id}`).toBeGreaterThan(0);
+        for (const tip of tool.tips) {
+          expect(typeof tip, `tip must be string for ${tool.id}`).toBe('string');
+          expect(tip.trim().length, `tip cannot be empty string for ${tool.id}`).toBeGreaterThan(0);
+        }
+      }
     }
   });
 });

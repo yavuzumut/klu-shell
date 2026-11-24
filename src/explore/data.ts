@@ -16,6 +16,7 @@ export interface ExploreTool {
   exampleCommand: string;
   exampleOutput: string;
   install: DistroInstall;
+  tips?: string[];
   warning?: string;
   sourceUrl?: string;
   summary?: string;
@@ -39,7 +40,7 @@ export const EXPLORE_TOOLS: ExploreTool[] = [
       note: 'Dağıtım depolarındaki sürüm geride kalabilir. Projenin önerdiği yol çalıştırılabilir dosyayı doğrudan indirmek: sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp ve ardından sudo chmod a+rx /usr/local/bin/yt-dlp; güncelleme: sudo yt-dlp -U. Yeni Ubuntu\'da pip install "externally-managed-environment" hatası verebilir. MP3\'e dönüştürmek için ffmpeg gerekir.',
     },
     warning:
-      'Telif hakkı olan içeriği indirmek hizmet şartlarına aykırı olabilir; kendi videon veya lisansı serbest içerik kullan. Ayrıca not: internetten indirdiğin programı sudo ile kurmadan önce kaynağın resmî olduğundan emin ol.',
+      'Telif hakkı olan içeriği indirmek hizmet şartlarına aykırı olabilir; kendi videon veya lisansı serbest içerik kullan. İnternetten indirdiğin programı sudo ile kurmadan önce kaynağın resmî olduğundan emin ol.',
     sourceUrl: 'https://github.com/yt-dlp/yt-dlp/wiki/Installation',
   },
   {
@@ -53,8 +54,13 @@ export const EXPLORE_TOOLS: ExploreTool[] = [
        .-.      +18 °C
     ― (   ) ―   ↗ 15 km/h`,
     install: {
-      note: 'Kurulum gerekmez ama curl lazım. Örnekler: curl wttr.in/Istanbul, curl wttr.in/Istanbul?format=3 (tek satır), curl wttr.in/Moon (ay evresi).',
+      note: 'Kurulum gerekmez, curl yeterli.',
     },
+    tips: [
+      'curl wttr.in/Istanbul',
+      'curl wttr.in/Istanbul?format=3',
+      'curl wttr.in/Moon',
+    ],
     warning:
       'Üçüncü taraf ücretsiz bir servis; konum yazmazsan IP adresine göre konum tahmin edilir; internet gerekir.',
     sourceUrl: 'https://github.com/chubin/wttr.in',
@@ -93,6 +99,7 @@ Processes: 142 total, 1 running`,
     install: {
       debian: 'sudo snap install btop',
       arch: 'sudo pacman -S btop',
+      note: "Bu komut Ubuntu içindir (snap gerekir); Debian'da varsayılan olarak snap gelmez.",
     },
   },
   {
@@ -173,8 +180,8 @@ yedek/liste.txt`,
     replaces: 'ls',
     description: 'Renkler, simgeler ve git bilgisiyle ls.',
     exampleCommand: 'eza -l',
-    exampleOutput: `.rw-r--r-- 1.2k kullanici notlar.txt
-drwxr-xr-x    - kullanici projeler`,
+    exampleOutput: `.rw-r--r-- 1.2k kullanici 25 Nov 00:00 notlar.txt
+drwxr-xr-x    - kullanici 25 Nov 00:00 projeler`,
     install: {
       debian: 'sudo apt install eza',
       fedora: 'sudo dnf install eza',
@@ -208,11 +215,13 @@ drwxr-xr-x    - kullanici projeler`,
     description: 'man sayfalarının kısa, örnekli özeti.',
     exampleCommand: 'tldr tar',
     exampleOutput: `tar
-Arşivleme aracı.
-- Arşiv oluştur:
-  tar -cf dosya.tar dosya1 dosya2
-- Arşiv aç:
-  tar -xf dosya.tar`,
+Archiving utility.
+
+- Create an archive:
+  tar -cf archive.tar file1 file2
+
+- Extract an archive:
+  tar -xf archive.tar`,
     install: {
       debian: 'sudo apt install tldr',
       fedora: 'sudo dnf install tldr',
@@ -229,8 +238,11 @@ Arşivleme aracı.
       debian: 'sudo apt install tmux',
       fedora: 'sudo dnf install tmux',
       arch: 'sudo pacman -S tmux',
-      note: 'Ayrılmak için Ctrl+b sonra d; geri dönmek için tmux attach.',
     },
+    tips: [
+      'Ayrılmak için Ctrl+b sonra d',
+      'Geri dönmek için: tmux attach',
+    ],
   },
   {
     id: 'cmatrix',
@@ -254,8 +266,9 @@ Arşivleme aracı.
     category: 'fun',
     description: 'Yazıyı inek konuşturur, büyük ASCII başlık yapar, gökkuşağı renklendirir.',
     exampleCommand: 'cowsay "Merhaba"',
-    exampleOutput: ` < Merhaba >
- ---------
+    exampleOutput: ` ___________
+< Merhaba >
+ -----------
         \\   ^__^
          \\  (oo)\\_______
             (__)\\       )\\/\\
@@ -265,8 +278,13 @@ Arşivleme aracı.
       debian: 'sudo apt install cowsay figlet lolcat',
       fedora: 'sudo dnf install cowsay figlet lolcat',
       arch: 'sudo pacman -S cowsay figlet',
-      note: '| işareti (boru hattı) ileride gelecek Seviye 2\'de anlatılacak. Örnekler: cowsay "Merhaba", figlet KLU, figlet KLU | lolcat.',
     },
+    tips: [
+      'cowsay "Merhaba"',
+      'figlet KLU',
+      'figlet KLU | lolcat',
+      '| işareti ileride gelecek Seviye 2\'de anlatılacak.',
+    ],
   },
   {
     id: 'sl',
