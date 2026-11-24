@@ -1,6 +1,6 @@
 # KLU — Mimari Dokümantasyonu (ARCHITECTURE.md)
 
-Bu belge, **KLU** (Linux ve Kabuk Eğitimi Simülatörü) projesinin mimari tasarımını, temel modüllerini, veri yapılarını, bileşen etkileşimlerini ve geliştirme yönergelerini ayrıntılı olarak açıklamaktadır. Belgede yer alan tüm teknik detaylar doğrudan kaynak kodlar üzerinden doğrulanmıştır.
+Bu belge, **KLU** projesinin mimari tasarımını, temel modüllerini, veri yapılarını, bileşen etkileşimlerini ve geliştirme yönergelerini ayrıntılı olarak açıklamaktadır. Belgede yer alan tüm teknik detaylar doğrudan kaynak kodlar üzerinden doğrulanmıştır.
 
 ---
 
@@ -8,16 +8,15 @@ Bu belge, **KLU** (Linux ve Kabuk Eğitimi Simülatörü) projesinin mimari tasa
 
 KLU, modern web tarayıcıları üzerinde çalışan, tamamen istemci taraflı (zero-backend, client-side only) etkileşimli bir Linux kabuk ve terminal simülasyonudur.
 
-Herhangi bir uzak sunucuya, Docker konteynerine, WebSocket bağlantısına veya sanal makineye (VM) ihtiyaç duymaz. Bütün kabuk ayrıştırma (parsing), boru hatları (pipeline), dosya sistemi (VirtualFS), komut yürütme ve durum yönetimi doğrudan kullanıcının tarayıcısında (in-memory) gerçekleşir.
+Herhangi bir uzak sunucuya, Docker konteynerine, WebSocket bağlantısına veya sanal makineye (VM) ihtiyaç duymaz. Bütün kabuk ayrıştırma (parsing), boru hatları (pipeline), dosya sistemi (VirtualFS), komut yürütme ve durum yönetimi doğrudan kullanıcının tarayıcısında (`in-memory`) gerçekleşir.
 
-### Teknoloji Bileşenleri
-- **Arayüz Kütüphanesi:** React 19 (`react`, `react-dom` ^19.0.0)
-- **Derleme ve Geliştirme Aracı:** Vite (^5.4.1)
-- **Programlama Dili:** TypeScript (~5.5.3, katı tip denetimi `strict: true`)
-- **Terminal Motoru:** `@xterm/xterm` (^5.5.0) ve `@xterm/addon-fit` (^0.10.0)
-- **Birim ve Entegrasyon Testleri:** Vitest (^2.1.4)
-- **İkon Seti:** Lucide React (^0.454.0)
-- **Markdown Dönüştürücü:** Marked (^15.0.3)
+### Teknoloji Bileşenleri (`package.json`)
+- **Arayüz Kütüphanesi:** React 18 (`react`: `^18.3.1`, `react-dom`: `^18.3.1`)
+- **Derleme ve Geliştirme Aracı:** Vite (`vite`: `^5.4.8`, `@vitejs/plugin-react`: `^4.3.2`)
+- **Programlama Dili:** TypeScript (`typescript`: `~5.6.2`, `@types/react`: `^18.3.11`, `@types/react-dom`: `^18.3.1`)
+- **Terminal Motoru:** `@xterm/xterm` (`^5.5.0`) ve `@xterm/addon-fit` (`^0.10.0`)
+- **Birim ve Entegrasyon Testleri:** Vitest (`vitest`: `^2.1.2`)
+- **Markdown Dönüştürücü:** Marked (`marked`: `^14.1.0`)
 
 ---
 
@@ -66,100 +65,152 @@ termi/
 
 KLU'daki her komut bağımsız bir TypeScript modülü olarak yazılır ve ortak bir kayıt defterine (`CommandRegistry`) kaydedilir.
 
-### `CommandContext` Arayüzü (`src/core/shell/types.ts`)
-Bir komut çalıştırıldığında ihtiyaç duyduğu tüm çevresel kaynaklar `CommandContext` üzerinden sunulur:
-
+### `CommandContext` Arayüzü
+// Kaynak dosya: src/core/shell/types.ts
 ```typescript
+/** Everything a command needs while it runs. */
 export interface CommandContext {
-  args: string[];                      // Komuta aktarılan bayraklar ve parametreler
-  stdin: string;                       // Standart girdi (pipeline veya girdi yönlendirmesinden gelen metin)
-  stdout: (text: string) => void;      // Standart çıktı yazma fonksiyonu
-  stderr: (text: string) => void;      // Standart hata yazma fonksiyonu
-  fs: VirtualFS;                       // Sanal dosya sistemi örneği
-  cwd: string;                         // Geçerli çalışma dizini (mutlak yol)
-  setCwd: (path: string) => void;      // Çalışma dizinini güncelleme metodu
-  env: Record<string, string>;         // Ortam değişkenleri tablosu
-  setEnv: (key: string, value: string) => void;
-  commands: CommandRegistry;           // Diğer komutlara ve yardım içeriklerine erişim
-  history: string[];                   // Komut geçmişi listesi
+  /** Name the command was invoked with (argv[0]). */
+  name: string;
+  fs: VirtualFS;
+  shell: Shell;
+  /** Current working directory (absolute). */
+  cwd: string;
+  env: Record<string, string>;
+  /** Data piped/redirected into the command, or null when reading from the terminal. */
+  stdin: string | null;
+  /** True when stdout goes straight to the terminal (enables colors/columns). */
+  isTTY: boolean;
+  stdout(text: string): void;
+  stderr(text: string): void;
+  /** Resolve a user supplied path against the cwd. */
+  resolve(path: string): string;
 }
 ```
 
 ### `CommandDefinition` Arayüzü
+// Kaynak dosya: src/core/shell/types.ts
 ```typescript
 export interface CommandDefinition {
-  name: string;                        // Komut adı (örn. 'pwd')
-  description: string;                 // help komutunda gösterilecek tek satırlık özet
-  usage: string;                       // Kullanım şablonu (örn. 'pwd [-L | -P]')
-  category: 'navigation' | 'file-ops' | 'reading' | 'system' | 'help';
-  execute(ctx: CommandContext): Promise<number> | number; // Çıkış kodu (0: başarı, >0: hata)
-  man?: {
-    synopsis: string;
-    description: string;
-    options?: { flag: string; desc: string }[];
-    examples?: { cmd: string; desc: string }[];
-    seeAlso?: string[];
-  };
+  name: string;
+  /** One-line Turkish summary used by `help`. */
+  summary: string;
+  /** Usage line, e.g. "ls [-la] [DOSYA]...". */
+  usage: string;
+  /** Turkish manual page body used by `man`. */
+  manPage: string;
+  /** Run the command and return an exit code (0 = success). */
+  run(args: string[], ctx: CommandContext): number | Promise<number>;
+  /** Optional: restrict tab completion of arguments ("dirs" only for cd). */
+  completion?: 'files' | 'dirs' | 'commands' | 'none';
 }
 ```
 
-### Örnek Komut İncelemesi: `pwd` (`src/core/commands/pwd.ts`)
+### Örnek Komut İncelemesi: `pwd`
+// Kaynak dosya: src/core/commands/pwd.ts
 ```typescript
 import type { CommandDefinition } from '../shell/types';
 
 export const pwd: CommandDefinition = {
   name: 'pwd',
-  description: 'Mevcut çalışma dizinini yazdırır',
+  summary: 'Bulunduğun dizinin tam yolunu yazdırır.',
   usage: 'pwd',
-  category: 'navigation',
-  execute(ctx) {
-    for (const a of ctx.args) {
-      if (a === '-L' || a === '-P') continue;
-      if (a.startsWith('-')) {
-        ctx.stderr(`pwd: ${a}: invalid option\n`);
-        return 2;
-      }
-    }
-    ctx.stdout(`${ctx.cwd}\n`);
+  completion: 'none',
+  manPage: `AD
+    pwd - çalışma dizininin adını yazdırır (print working directory)
+
+KULLANIM
+    pwd
+
+AÇIKLAMA
+    Şu anda içinde bulunduğun dizinin kök dizinden (/) başlayan tam
+    yolunu (mutlak yol) ekrana yazar.
+
+ÖRNEK
+    $ pwd
+    /home/kullanici`,
+  run(_args, ctx) {
+    ctx.stdout(ctx.shell.cwd + '\n');
     return 0;
-  },
-  man: {
-    synopsis: 'pwd [SEÇENEK]...',
-    description: 'Geçerli çalışma dizininin tam dosya adı yolunu yazdırır.',
-    examples: [{ cmd: 'pwd', desc: 'Bulunduğun dizini gösterir' }],
-    seeAlso: ['cd', 'ls'],
   },
 };
 ```
 
-### Registry Kaydı (`src/core/commands/index.ts`)
-Tüm komutlar bir dizide toplanır ve `createRegistry` fonksiyonu ile bir haritaya (`Map<string, CommandDefinition>`) dönüştürülür:
-
+### Registry Mekanizması
+// Kaynak dosya: src/core/shell/registry.ts
 ```typescript
-export const ALL_COMMANDS: CommandDefinition[] = [
-  pwd, ls, cd, mkdir, touch, cat, echo, cp, mv, rm, clear, help, man, history,
-];
+import type { CommandDefinition } from './types';
 
-export function createRegistry(commands = ALL_COMMANDS): CommandRegistry {
-  const map = new Map<string, CommandDefinition>();
-  for (const cmd of commands) map.set(cmd.name, cmd);
-  return map;
+/** Holds all available commands. Commands register themselves via `register`. */
+export class CommandRegistry {
+  private commands = new Map<string, CommandDefinition>();
+
+  register(def: CommandDefinition): this {
+    this.commands.set(def.name, def);
+    return this;
+  }
+
+  get(name: string): CommandDefinition | undefined {
+    return this.commands.get(name);
+  }
+
+  has(name: string): boolean {
+    return this.commands.has(name);
+  }
+
+  list(): CommandDefinition[] {
+    return [...this.commands.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  names(): string[] {
+    return this.list().map((c) => c.name);
+  }
 }
 ```
 
+// Kaynak dosya: src/core/commands/index.ts
+```typescript
+export const ALL_COMMANDS: CommandDefinition[] = [
+  pwd,
+  ls,
+  cd,
+  mkdir,
+  touch,
+  cat,
+  echo,
+  cp,
+  mv,
+  rm,
+  clear,
+  help,
+  man,
+  history,
+];
+
+export function createRegistry(commands: CommandDefinition[] = ALL_COMMANDS): CommandRegistry {
+  const registry = new CommandRegistry();
+  commands.forEach((c) => registry.register(c));
+  return registry;
+}
+```
+
+### Yeni Komut Ekleme Adımları (`src/core/commands/index.ts` yönergesine göre)
+1. `src/core/commands/<name>.ts` dosyası oluşturun ve `CommandDefinition` tipinde bir nesne dışa aktarın (`export`).
+2. Yeni komutu `src/core/commands/index.ts` içine import edin ve `ALL_COMMANDS` dizisine ekleyin.
+3. `src/core/commands/commands.test.ts` dosyasına komutun birim testlerini ekleyin.
+
 ### Shell'in Komut Satırını İşleme Aşamaları (`src/core/shell/Shell.ts`)
-Kullanıcı Enter tuşuna bastığında komut dizisi şu adımlarla çalıştırılır:
-1. **Ayrıştırma (`parseCommandLine` - `src/core/shell/parser.ts`):** Komut satırı mantıksal zincirlere (`&&`, `||`) ve boru hatlarına (`|`) bölünür. Tırnak işaretleri (`"..."`, `'...'`), kaçış dizileri (`\`) ve I/O yönlendirmeleri (`<`, `>`, `>>`, `2>`, `2>>`) ayıklanır.
-2. **Genişletme (`expandWords` - `src/core/shell/Shell.ts`):** 
-   - Değişken açılımı: `$VAR` veya `${VAR}` ifadeleri `this.env` üzerinden çözülür.
-   - Tilde açılımı: `~` veya `~/...` öneki `$HOME` dizinine çevrilir.
-   - Glob açılımı: `*` ve `?` joker karakterleri `expandGlobs()` (`src/core/shell/glob.ts`) aracılığıyla sanal dosya sistemindeki gerçek dosya/dizin adlarıyla eşleştirilir.
-3. **Boru Hattı Yürütme (`runPipeline` - `src/core/shell/Shell.ts`):**
-   - Zincirdeki komutlar sırayla koşturulur.
-   - Giriş yönlendirmesi (`< file`): `fs.readFile()` ile okunup ilk komutun `stdin` akışına verilir.
-   - Pipeline (`cmd1 | cmd2`): `cmd1` komutunun `stdout` çıktısı yakalanarak `cmd2` komutunun `ctx.stdin` verisi haline getirilir.
-   - Çıkış yönlendirmeleri (`>`, `>>`, `2>`, `2>>`): Standart çıktı ve hata akışları `fs.writeFile()` ile hedef dosyalara yazılır veya eklenir (`append: true`).
-4. **Geçmişe Ekleme:** Başarılı/başarısız tüm komut satırları kabuk geçmişine (`this.history`) eklenir.
+Kullanıcı Enter tuşuna bastığında `Shell.execute(line)` şu işlem adımlarını yürütür:
+1. **Ayrıştırma (`parse` - `src/core/shell/parser.ts`):** `parse(trimmed, { vars: this.env, home: this.fs.home })` çağrılır. Komut dizisi boru hatlarına (`Pipeline`), mantıksal zincirlere (`;`, `&&`, `||`) ve yönlendirmelere ayrıştırılır; ortam değişkenleri (`$VAR`, `${VAR}`) ve tilde (`~`) açılır.
+2. **Mantıksal Akış Denetimi (`execute` - `src/core/shell/Shell.ts`):** Komut listesi öğeleri sırayla koşturulur. Önceki komut başarısız olduysa ve bağlaç `&&` ise veya önceki komut başarılı olduysa ve bağlaç `||` ise sıradaki boru hattı atlanır.
+3. **Sözcük ve Glob Genişletmesi (`expandWords` - `src/core/shell/Shell.ts`):** Basit komuttaki sözcüklerde joker karakterler varsa (`w.glob === true`), `expandGlob()` (`src/core/shell/glob.ts`) ile sanal dosya sistemi üzerindeki eşleşen dosya yollarına genişletilir.
+4. **Değişken Atamaları:** Argümanlar yalnızca `DEGISKEN=deger` biçimindeyse komut çalıştırılmaz; doğrudan `this.env` tablosu güncellenir.
+5. **Yönlendirmeler ve Boru Hattı (`runPipeline` - `src/core/shell/Shell.ts`):**
+   - Giriş yönlendirmesi (`< path`): `this.fs.readFile(path)` ile okunup `stdin` akışına verilir.
+   - Çıkış yönlendirmeleri (`>`, `>>`, `2>`, `2>>`): Hedef dosyalar bash standardına uygun olarak hemen oluşturulur veya kesilir (`this.fs.writeFile`).
+   - Boru hattı (`cmd1 | cmd2`): Önceki komutun çıktısı yakalanarak sonraki komutun `stdin` akışına aktarılır.
+6. **Yürütme (`runCommand` - `src/core/shell/Shell.ts`):** Komut adı kayıt defterinde aranır (`this.registry.get(name)`). Bulunamazsa stderr'e `bash: <name>: command not found` yazılır ve çıkış kodu `127` döner. Bulunursa `def.run(args, ctx)` çalıştırılır.
+7. **Çıkış ve Durum Kaydı:** Çıkış kodu `this.lastExitCode` ve `this.env['?']` değişkenine atanır, komut geçmişi (`this.history`) güncellenir (`MAX_HISTORY = 500`) ve `CommandRecord` nesnesi dinleyicilere bildirilir.
 
 ---
 
@@ -168,24 +219,70 @@ Kullanıcı Enter tuşuna bastığında komut dizisi şu adımlarla çalıştır
 `VirtualFS` (`src/core/fs/VirtualFS.ts`), Linux dosya hiyerarşisini bellekte bir nesne ağacı olarak simüle eden çekirdek sınıftır.
 
 ### Düğüm Yapısı
-Her dosya ve dizin bir düğümdür (Node):
-- **`BaseNode`:** `id`, `name`, `type: 'file' | 'dir'`, `mode: number` (POSIX izinleri, örn: `0o755`), `owner: string`, `group: string`, `ctime: number`, `mtime: number`.
-- **`FileNode`:** `BaseNode` + `content: string`.
-- **`DirNode`:** `BaseNode` + `children: Map<string, FsNode>`.
+// Kaynak dosya: src/core/fs/VirtualFS.ts
+```typescript
+interface BaseNode {
+  name: string;
+  /** Permission bits, e.g. 0o755. Not enforced yet (reserved for chmod). */
+  mode: number;
+  owner: string;
+  group: string;
+  /** Last modification time (ms since epoch). */
+  mtime: number;
+}
 
-### Temel API Metotları
-| Metot | Açıklama |
+export interface FileNode extends BaseNode {
+  type: 'file';
+  content: string;
+}
+
+export interface DirNode extends BaseNode {
+  type: 'dir';
+  children: Record<string, FsNode>;
+}
+
+export type FsNode = FileNode | DirNode;
+```
+
+### Olay Dinleyici / Abonelik Mekanizması (`subscribe`)
+// Kaynak dosya: src/core/fs/VirtualFS.ts
+```typescript
+export type FsChangeAction = 'create' | 'modify' | 'delete' | 'move';
+
+export interface FsChangeEvent {
+  action: FsChangeAction;
+  path: string;
+  targetPath?: string;
+}
+
+export type FsChangeListener = (event: FsChangeEvent) => void;
+```
+
+### Temel Public Metotlar ve İmzaları (`VirtualFS.ts`)
+| Metot İmzası | Açıklama |
 |---|---|
-| `resolve(path, baseCwd?)` | Bağıl yolları (`..`, `.`, `~`) normalize edilmiş mutlak yola çevirir. |
-| `lookup(path)` | Verilen mutlak yoldaki düğümü (`FsNode`) bulur; bulamazsa `ENOENT` hatası fırlatır. |
-| `readdir(path)` | Dizindeki çocuk düğümlerin isimlerini sıralı liste olarak döner. |
-| `readFile(path)` | Dosyanın metin içeriğini döner (`EISDIR` ve `ENOENT` denetimli). |
-| `writeFile(path, content, opts)` | Dosyayı oluşturur/üzerine yazar veya `append: true` ise sonuna ekler. |
-| `touch(path)` | Dosya varsa erişim/değişiklik zamanını günceller, yoksa boş dosya açar. |
-| `mkdir(path, opts)` | Yeni dizin oluşturur (`recursive: true` seçeneği `-p` bayrağını destekler). |
-| `remove(path, opts)` | Dosya veya dizini siler (`recursive: true` seçeneği `-r` bayrağını destekler). |
-| `copy(src, dst, opts)` | Dosya/dizin kopyalar (`recursive: true` seçeneği `-r` bayrağını destekler). |
-| `move(src, dst)` | Dosya veya dizini taşır / yeniden adlandırır. |
+| `subscribe(listener: FsChangeListener): () => void` | Dosya sistemi mutasyon olaylarını (`create`, `modify`, `delete`, `move`) dinler; dinleyiciyi kaldıran fonksiyon döner. |
+| `resolve(path: string, cwd = '/'): string` | Bağıl yolları (`.`, `..`, `~`, `~/...`) `cwd` bağlamında mutlak ve normalize edilmiş yola çevirir. |
+| `prettyPath(abs: string): string` | Kullanıcının ev dizinini (`/home/kullanici`) `~` kısaltmasıyla gösterir. |
+| `lookup(abs: string): FsNode` | Verilen mutlak yoldaki düğümü döner; bulamazsa `ENOENT`, yolda dizin olmayan parça varsa `ENOTDIR` fırlatır. |
+| `tryLookup(abs: string): FsNode \| null` | Düğümü arar; bulamazsa hata fırlatmak yerine `null` döner. |
+| `exists(abs: string): boolean` | Verilen mutlak yolda bir dosya veya dizin olup olmadığını döner (`true`/`false`). |
+| `isDir(abs: string): boolean` | Verilen yolun var olan bir dizin olup olmadığını denetler. |
+| `isFile(abs: string): boolean` | Verilen yolun var olan normal bir dosya olup olmadığını denetler. |
+| `readdir(abs: string): FsNode[]` | Dizindeki çocuk düğümleri (`children`) isimlerine göre alfabetik sıralı dizi olarak döner (`ENOTDIR` denetimli). |
+| `readFile(abs: string): string` | Dosyanın metin içeriğini döner (`EISDIR` ve `ENOENT` denetimli). |
+| `writeFile(abs: string, content: string, options: { append?: boolean } = {}): void` | Dosyaya yazar; yoksa oluşturur, varsa üzerine yazar (`append: true` ise sonuna ekler). `create` veya `modify` olayı yayınlar. |
+| `touch(abs: string): void` | Dosya varsa `mtime` değerini günceller (`modify`), yoksa boş dosya oluşturur (`create`). |
+| `mkdir(abs: string, options: { parents?: boolean } = {}): void` | Yeni dizin oluşturur (`create`). `parents: true` (`mkdir -p`) ise eksik üst dizinleri de oluşturur ve var olan dizinlerde hata fırlatmaz. |
+| `remove(abs: string, options: { recursive?: boolean } = {}): void` | Dosyayı veya dizini siler (`delete`). Dizin silerken `recursive: true` verilmezse `EISDIR` fırlatır. |
+| `rmdir(abs: string): void` | Yalnızca boş olan bir dizini siler; doluysa `ENOTEMPTY`, dizin değilse `ENOTDIR` fırlatır. |
+| `copy(src: string, dest: string, options: { recursive?: boolean } = {}): void` | Düğümü kopyalar (`create`). Dizin kopyalamada `recursive: true` gerekir; bir dizin kendi içine kopyalanamaz (`isSubPath`). |
+| `move(src: string, dest: string): void` | Düğümü taşır veya adını değiştirir (`move`). Hedef dolu dizinse `ENOTEMPTY` fırlatır. |
+| `seed(seed: FsSeed): void` | Dizin ve dosya tohumlarını (`seed.dirs`, `seed.files`) sanal dosya sistemine topluca aktarır. |
+| `chown(abs: string, owner: string, options: { recursive?: boolean; mode?: number } = {}): void` | Düğümün sahibini/grubunu günceller (`recursive: true` ile alt öğelere de uygular). |
+| `toJSON(): DirNode` | Kök düğümden itibaren tüm ağacın bağımsız derin kopyasını (`cloneNode`) nesne olarak döner. |
+| `static fromJSON(root: DirNode, options: VirtualFSOptions = {}): VirtualFS` | Verilen `DirNode` kökünden yeni bir `VirtualFS` örneği oluşturur. |
+| `clone(): VirtualFS` | Mevcut dosya sisteminin bağımsız bir klonunu üretir. |
 
 ### Hata Kodları (`FsErrorCode` ve `FsError`)
 Gerçek Linux POSIX hata kodları aynen kullanılır:
@@ -196,27 +293,10 @@ Gerçek Linux POSIX hata kodları aynen kullanılır:
 - `ENOTEMPTY`: "Directory not empty"
 - `EINVAL`: "Invalid argument"
 
-### Olay Dinleyici / Abonelik Mekanizması (`subscribe`)
-VirtualFS üzerinde gerçekleşen her mutasyon (dosya/dizin oluşturma, düzenleme, silme, taşıma) kayıtlı dinleyicilere bir `FsChangeEvent` yayınlar:
-
-```typescript
-export interface FsChangeEvent {
-  type: 'create' | 'modify' | 'delete' | 'move';
-  path: string;
-  targetPath?: string;
-  nodeType?: 'file' | 'dir';
-}
-
-// Abonelik:
-const unsubscribe = fs.subscribe((event) => {
-  // Olay tetiklendiğinde arayüzü güncelle
-});
-```
-
 ### Canlı Dosya Ağacı Entegrasyonu (`src/components/FileTree.tsx`)
 `FileTree` bileşeni `VirtualFS` abonelik mekanizmasını doğrudan kullanır:
 1. `useEffect` içerisinde `fs.subscribe` çağrılır ve `setVersion((v) => v + 1)` ile ağacın React render döngüsü tetiklenir.
-2. Bir dosya veya klasör oluşturulduğunda (`type === 'create'` veya `'move'`), etkilenen öğenin tüm üst dizinleri `openDirs` kümesine otomatik olarak eklenir; böylece kullanıcı terminalde bir dosya oluşturduğu an ağaçta ilgili klasör otomatik açılır.
+2. Bir dosya veya klasör oluşturulduğunda (`action === 'create'` veya `'move'`), etkilenen öğenin tüm üst dizinleri `openDirs` kümesine otomatik olarak eklenir; böylece kullanıcı terminalde bir dosya oluşturduğu an ağaçta ilgili klasör otomatik açılır.
 3. Yeni düğüm `highlightedNode` olarak işaretlenir ve CSS animasyonu (`--tree-flash-start` / `--tree-flash-glow`) ile parlama efekti verilir.
 
 ---
@@ -225,55 +305,121 @@ const unsubscribe = fs.subscribe((event) => {
 
 KLU'nun eğitim yapısı `src/lessons/` altında kurgulanmıştır.
 
-### Veri Tipleri (`src/lessons/types.ts`)
-- **`Lesson`:** `id`, `title`, `description` (Markdown), `tasks: Task[]`, `setup?: FsSeed & { cwd?: string }`.
-- **`Task`:** `id`, `description`, `check: TaskCheck`, `hints: string[]`, `solution?: string`.
-- **`Level`:** `id`, `title`, `description`, `badge`, `lessons: Lesson[]`, `comingSoon?: boolean`.
+### Veri Tipleri
+// Kaynak dosya: src/lessons/types.ts
+```typescript
+/** State a task check can look at after each command. */
+export interface CheckState {
+  fs: VirtualFS;
+  cwd: string;
+  /** The command line that was just executed. */
+  last: CommandRecord;
+  /** All command records since the lesson started (oldest first). */
+  records: CommandRecord[];
+}
 
-### Görev Kontrol Türleri (`TaskCheck`)
-`TaskCheck` bir union tipidir ve şu denetim çeşitlerini sunar:
-1. `command-match`: Regex deseniyle komut kontrolü (`commandRegex: string | RegExp`).
-2. `command-exact`: Birebir komut eşleme (`command: string`).
-3. `file-exists`: Belirtilen yolda dosya oluştu mu (`path: string`).
-4. `dir-exists`: Belirtilen yolda dizin oluştu mu (`path: string`).
-5. `file-contains`: Dosya içeriğinde belirli bir metin var mı (`path: string`, `contains: string`).
-6. `cwd-match`: Kullanıcı hedef dizine geçti mi (`path: string`).
-7. `custom`: Özel durumlar için fonksiyon kontrolü (`fn(fs, cwd, lastCommand): boolean`).
+/**
+ * Declarative task checks. They are plain data so lessons can be written in
+ * JSON as well as TypeScript. Paths may use `~`.
+ */
+export type TaskCheck =
+  /** A path exists (optionally of a given kind). */
+  | { type: 'pathExists'; path: string; kind?: 'file' | 'dir' }
+  /** A path does not exist. */
+  | { type: 'pathNotExists'; path: string }
+  /** A file contains the given text. */
+  | { type: 'fileContains'; path: string; text: string }
+  /** The current working directory equals `path`. */
+  | { type: 'cwdIs'; path: string }
+  /**
+   * The last command line ran `command` successfully.
+   * `args`: each must appear as an argument; `flags`: each short flag
+   * must be given (in any form: `-la`, `-a -l`, ...).
+   */
+  | { type: 'commandUsed'; command: string; args?: string[]; flags?: string[]; allowFailure?: boolean }
+  /** The last command printed `text` (stdout). */
+  | { type: 'outputContains'; text: string }
+  | { type: 'all'; checks: TaskCheck[] }
+  | { type: 'any'; checks: TaskCheck[] }
+  | { type: 'not'; check: TaskCheck }
+  /** Escape hatch for TS lessons. */
+  | { type: 'custom'; fn: (state: CheckState) => boolean };
+
+export interface Task {
+  id: string;
+  /** Markdown allowed (inline). */
+  description: string;
+  /** Shown progressively after wrong attempts. */
+  hints: string[];
+  /** Command(s) that solve the task; offered after 3 wrong attempts. */
+  solution: string;
+  check: TaskCheck;
+  /**
+   * Commands that should not count as wrong attempts for this task
+   * (useful for multi-step tasks). Exploration commands like ls/pwd/cat
+   * never count.
+   */
+  neutralCommands?: string[];
+}
+
+export interface LessonSetup extends FsSeed {
+  /** Starting working directory (default: home). */
+  cwd?: string;
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  /** Short one-liner shown in lesson lists. */
+  summary: string;
+  /** Lesson body in Markdown. */
+  content: string;
+  /** Example commands shown as clickable chips. */
+  examples: string[];
+  setup?: LessonSetup;
+  tasks: Task[];
+}
+
+export interface Level {
+  id: string;
+  number: number;
+  title: string;
+  description: string;
+  lessons: Lesson[];
+  /** Level is visible but locked until its content is written. */
+  comingSoon?: boolean;
+}
+```
 
 ### Doğrulama Mekanizması (`src/lessons/validator.ts`)
-Kullanıcı her komut çalıştırdığında `evaluateCommand()` çağrılır:
-1. O anki aktif görev belirlenir.
-2. Görevin `TaskCheck` kuralı `evaluateCheck(task.check, state)` fonksiyonuyla değerlendirilir.
-3. Kural sağlanmışsa `completedTaskId` döndürülür ve görev tamamlanır.
-4. Kural sağlanmamışsa, kullanıcının komutu `isWrongAttempt()` süzgecinden geçirilir.
-   - **Önemli Kural:** `EXPLORATION_COMMANDS` listesindeki keşif komutları (`ls`, `pwd`, `cat`, `help`, `man`, `clear`, `history`, `echo`) **asla yanlış deneme olarak sayılmaz**. Kullanıcı dizini veya dosyaları incelerken hata sayacı artmaz.
-   - Keşif komutu olmayan alakasız veya hatalı bir komut çalıştırıldığında hata sayacı artırılır ve sıradaki `hint` (ipucu) terminalde sarı renkli olarak gösterilir.
+// Kaynak dosya: src/lessons/validator.ts
+```typescript
+/** Commands used to look around; they never count as a wrong attempt. */
+export const EXPLORATION_COMMANDS = new Set(['ls', 'pwd', 'cat', 'help', 'man', 'clear', 'history', 'echo']);
+```
+
+Kullanıcı her komut çalıştırdığında `evaluateCommand(lesson, completed, state)` fonksiyonu çağrılır:
+1. `activeTask(lesson, completed)` fonksiyonuyla henüz tamamlanmamış ilk görev (`Task`) bulunur.
+2. Görevin `check` kuralı `evaluateCheck(task.check, state)` ile değerlendirilir. Kural sağlanmışsa `{ completedTaskId: task.id, wrongAttempt: false, activeTaskId: task.id }` döner.
+3. Kural sağlanmamışsa `isWrongAttempt(task, state.last)` çağrılır:
+   - Komut satırı sözdizimi hatası veya başarısız çıkış kodu verdiyse (`record.exitCode !== 0`), her zaman yanlış deneme sayılır.
+   - Görevin beklediği komut (`expectedCommands(task.check)`) çalıştırılmış ama görev henüz tamamlanamamışsa yanlış deneme sayılır.
+   - **Nötr Komutlar (`neutralCommands`):** `EXPLORATION_COMMANDS` kümesinde yer alan keşif komutları (`ls`, `pwd`, `cat`, `help`, `man`, `clear`, `history`, `echo`) ve görev tanımında belirtilmiş olan `task.neutralCommands` listesindeki komutlar **asla yanlış deneme olarak sayılmaz**. Bu sayede kullanıcı hedef dizini incelerken veya çok adımlı görevlerde ara komutlar denerken hata sayacı artmaz.
+   - Nötr olmayan ilgisiz bir komut çalıştırılmışsa yanlış deneme sayısı 1 artırılır.
 
 ### Çözümü Göster Eşiği
 `src/components/LessonPanel.tsx` içerisinde çözüm görüntüleme eşiği tanımlıdır:
 ```typescript
 const SOLUTION_THRESHOLD = 3;
 ```
-Kullanıcı bir görevde 3 kez hatalı deneme yaptığında panelde "Çözümü Göster" düğmesi aktifleşir. Çözüm tıklandığında komut gösterilir ve "Dene" butonuyla terminal satırına kopyalanabilir.
+Kullanıcı bir görevde 3 kez hatalı deneme yaptığında panelde "Çözümü Göster" düğmesi aktifleşir.
 
 ### Seviye Kataloğu (`src/lessons/content/index.ts`)
 Katalog `LEVELS` dizisi olarak tanımlanmıştır:
-1. **Seviye 0 (`level-0`):** "Başlamadan Önce" (5 Ders — `src/lessons/content/level0/index.ts`) — Terminale giriş, KLU mimarisi, araçlar, terminal alışkanlıkları ve gerçek Linux farkları.
-2. **Seviye 1 (`level-1`):** "Temel Komutlar" (7 Ders — `src/lessons/content/level1/index.ts`) — Karşılama, listeleme (`ls`), gezinme (`cd`), oluşturma (`mkdir`, `touch`), okuma (`cat`), kopyalama/taşıma (`cp`, `mv`), silme (`rm`).
-3. **Seviye 2 (`level-2`):** "Boru Hatları ve Arama" (`comingSoon: true`).
-4. **Seviye 3 (`level-3`):** "İzinler ve İleri Düzey" (`comingSoon: true`).
-
-### Yeni Bir Ders Ekleme Adımları
-1. İlgili seviye dizini altında (örn: `src/lessons/content/level1/`) yeni bir TypeScript ders dosyası oluşturun ve `Lesson` tipinde dışa aktarın.
-2. Dersi ilgili seviyenin indeks dosyasına (`src/lessons/content/level1/index.ts`) ekleyin.
-3. Görevleri ve `TaskCheck` kurallarını tanımlayın.
-4. Gerekiyorsa `setup` alanında dersin başlayacağı sanal dosya ve dizin tohumunu (`dirs`, `files`, `cwd`) belirtin.
-5. `npm test` ile doğrulayıcının çalıştığını test edin.
-
-### Yeni Bir Seviye Ekleme Adımları
-1. `src/lessons/content/` altında yeni seviye dizinini ve indeks dosyasını oluşturun.
-2. `src/lessons/content/index.ts` dosyası içindeki `LEVELS` dizisine yeni `Level` nesnesini ekleyin.
-3. Eğer seviye henüz hazır değilse `comingSoon: true` bayrağı ile listeleyin.
+1. **Seviye 0 (`level-0`):** "Başlamadan Önce" (5 Ders — `src/lessons/content/level0/index.ts`) — Terminal, kabuk ve Linux temelleri; KLU çalışma mantığı ve ipuçları.
+2. **Seviye 1 (`level-1`):** "Başlangıç" (7 Ders — `src/lessons/content/level1/index.ts`) — Terminalde gezinme, dosya ve dizin işlemleri (`ls`, `cd`, `mkdir`, `touch`, `cat`, `cp`, `mv`, `rm`).
+3. **Seviye 2 (`level-2`):** "Orta" (`comingSoon: true`) — Pipe (`|`), yönlendirme (`>`, `>>`), `grep`, `find` ve dosya izinleri (`chmod`).
+4. **Seviye 3 (`level-3`):** "İleri" (`comingSoon: true`) — Süreçler, bash scripting, ağ komutları ve paket yönetimi.
 
 ---
 
@@ -289,14 +435,20 @@ KLU, istemci tarafında kalıcı verileri tarayıcının `localStorage` API'si �
 | `klu_accent_<themeId>` | `src/themes/themeManager.ts` | Temaya özel kullanıcı tanımlı hex vurgu rengi (örn: `#7ee787`). |
 | `klu_dismiss_level0_banner` | `src/App.tsx` | Seviye 0 başlangıç bilgi şeridinin kapatılma bayrağı (`'1'`). |
 
-### İlerleme Durumu Yapısı (`ProgressState`)
+### İlerleme Durumu Yapısı
+// Kaynak dosya: src/state/useProgress.ts
 ```typescript
 export interface ProgressState {
+  version: 1;
   currentLessonId: string;
-  completed: Record<string, string[]>; // { [lessonId]: [taskId1, taskId2] }
-  attempts: Record<string, number>;    // { [`${lessonId}:${taskId}`]: count }
-  revealed: Record<string, boolean>;   // { [`${lessonId}:${taskId}`]: true }
-  history: string[];                   // Terminal komut geçmişi
+  /** lessonId -> completed task ids */
+  completed: Record<string, string[]>;
+  /** "lessonId/taskId" -> wrong attempt count */
+  attempts: Record<string, number>;
+  /** "lessonId/taskId" -> solution revealed */
+  revealed: Record<string, boolean>;
+  /** Saved shell history (for ↑ across reloads) */
+  history: string[];
 }
 ```
 
@@ -312,6 +464,21 @@ export interface ProgressState {
 KLU, 5 kapsamlı tema ve kullanıcıya özel vurgu (accent) rengi seçimi sunar.
 
 ### Tanımlı Temalar (`src/themes/themes.ts`)
+// Kaynak dosya: src/themes/themes.ts
+```typescript
+export type ThemeId = 'dark' | 'light' | 'dracula' | 'solarized' | 'retro';
+
+export interface ThemeDefinition {
+  id: ThemeId;
+  name: string;
+  isDark: boolean;
+  defaultAccent: string;
+  defaultAccentContrast: string;
+  cssVars: Record<string, string>;
+  terminalTheme: ITheme;
+}
+```
+
 1. **Koyu (`dark`):** KLU'nun klasik koyu teması, zümrüt yeşili varsayılan vurgu rengi.
 2. **Açık (`light`):** Temiz, yüksek kontrastlı açık tema.
 3. **Dracula (`dracula`):** Mor/pembe tabanlı vampir teması.
@@ -322,15 +489,13 @@ KLU, 5 kapsamlı tema ve kullanıcıya özel vurgu (accent) rengi seçimi sunar.
 Arayüz renkleri `applyThemeToDocument()` (`src/themes/themeManager.ts`) fonksiyonuyla `:root` üzerindeki CSS değişkenlerine (`--bg`, `--panel`, `--text`, `--accent`, `--border` vb.) ve `document.documentElement.dataset.theme` değerine anında yazılır.
 
 **Terminal Renklerinin Yeniden Başlatılmadan Güncellenmesi:**
-Terminalin xterm.js motorundaki renkleri, terminal oturumunu ve mevcut çıktıları kaybetmeden güncellemek için `src/terminal/TerminalView.tsx` bileşeni `terminalTheme` prop'unu dinler:
-
+// Kaynak dosya: src/terminal/TerminalView.tsx
 ```typescript
-// src/terminal/TerminalView.tsx
-useEffect(() => {
-  if (termRef.current && terminalTheme) {
-    termRef.current.options.theme = terminalTheme;
-  }
-}, [terminalTheme]);
+  useEffect(() => {
+    if (termRef.current && terminalTheme) {
+      termRef.current.options.theme = terminalTheme;
+    }
+  }, [terminalTheme]);
 ```
 
 Kullanıcı tema veya vurgu rengi değiştirdiği anda `terminal.options.theme` anında güncellenir ve terminal yazıları korunur.
@@ -404,8 +569,9 @@ npm run build
 
 ## 12. Planlanan Geliştirmeler ve Yol Haritası (Roadmap)
 
-### Seviye 2: Boru Hatları ve Arama
-- Boru hattı mantığı (`|`) ve G/Ç yönlendirmelerinin (`>`, `>>`, `<`) ders formatında anlatımı.
+### Seviye 2: Orta Seviye (Ön Koşul: Yönlendirme Dersi)
+- Seviye 2'ye geçilmeden önce dosya yönlendirmeleri (`>`, `>>`) ve dosya yazma temelleri ders olarak pekiştirilmelidir.
+- Boru hattı mantığı (`|`) ve G/Ç yönlendirmelerinin (`>`, `>>`, `<`) uygulamalı anlatımı.
 - `grep` (metin içi arama ve filtreleme) komutunun çekirdeğe eklenmesi.
 - `find` (dosya sisteminde arama) komutunun çekirdeğe eklenmesi.
 - `chmod` ve `chown` komutlarıyla gerçek dosya izin sisteminin aktif hale getirilmesi.
@@ -417,6 +583,12 @@ npm run build
 - Ağ araçları (`curl`, `ping` simülasyonları).
 
 ### Etkileşimli Git Motoru
-- `VirtualFS` içinde sanal `.git` dizin yapısı (objects, refs, HEAD, index).
-- `git init`, `git add`, `git commit`, `git status`, `git log`, `git branch`, `git checkout` komutlarının `CommandRegistry`ye eklenmesi.
-- Çalışma Alanı, Staging Alanı ve Depo Alanını gerçek zamanlı görselleştiren etkileşimli Git paneli.
+- **Konumlandırma:** Git simülasyonu, Linux seviyelerinden (Seviye 0-3) bağımsız olarak üst sekmelerde ("Git" sekmesi) ayrı bir eğitim ve pratik alanı olarak çalışır.
+- **Depolama Modeli:** Repo durumu `VirtualFS` içinde `.git/` klasöründe JSON formatında saklanır (gerçek Git binary/packfile formatı değil; hafif, şeffaf ve bellek içi JSON nesnesi).
+- **Gerçekçi Çıktı:** Komut çıktıları (`git status`, `git log` vb.) gerçek Git ile birebir aynı metin ve ANSI renklerinde üretilir.
+- **Canlı Panel:** Çalışma Alanı (Working Tree) / Hazırlık Alanı (Staging) / Depo (Repository) ve commit grafiği, `VirtualFS.subscribe` olay dinleyicisi üzerinden gerçek zamanlı güncellenir.
+- **4 Aşamalı Plan:**
+  - **Git 1 (Temel Akış):** `git init`, `git config`, `git status`, `git add`, `git commit`, `git log`.
+  - **Git 2 (İnce Ayar & Düzeltmeler):** `git diff`, `git restore`, `.gitignore` desteği, `git commit --amend`.
+  - **Git 3 (Dallanma & Birleştirme):** `git branch`, `git switch` / `git checkout`, `git merge`.
+  - **Git 4 (İşbirliği & Uzak Depo):** `git remote`, `git clone`, `git push`, `git pull` ve tarayıcı içi simüle uzak depo (fake remote).
