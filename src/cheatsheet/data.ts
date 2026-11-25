@@ -85,7 +85,7 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'grep',
-        description: 'Metin içinde desen arar (-i harf duyarsız, -n satır no, -r alt dizinler).',
+        description: 'Metin içinde kelime veya karakter arar (-i harf duyarsız, -n satır no, -r alt dizinler).',
         example: 'grep -i "error" /var/log/syslog',
       },
       {
