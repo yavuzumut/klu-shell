@@ -19,6 +19,13 @@ export const EXPLORATION_COMMANDS = new Set([
   'sort',
   'uniq',
   'find',
+  // Read-only / inspection Level 3 commands
+  'whoami',
+  'uname',
+  'date',
+  'env',
+  'which',
+  'ps',
 ]);
 
 // eslint-disable-next-line no-control-regex
@@ -43,6 +50,10 @@ export function evaluateCheck(check: TaskCheck, state: CheckState): boolean {
     }
     case 'cwdIs':
       return state.cwd === state.fs.resolve(check.path, '/');
+    case 'fileMode': {
+      const node = state.fs.tryLookup(resolve(check.path));
+      return !!node && (node.mode & 0o777) === (check.mode & 0o777);
+    }
     case 'commandUsed': {
       if (!check.allowFailure && state.last.exitCode !== 0) return false;
       return state.last.commands.some(([name, ...args]) => {

@@ -15,12 +15,12 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'pwd',
-        description: 'Bulunduğun çalışma dizininin tam (mutlak) yolunu gösterir.',
+        description: 'Bulunduğun çalışma dizininin tam yolunu gösterir.',
         example: 'pwd',
       },
       {
         command: 'cd',
-        description: 'Dizinler arasında geçiş yapar (.. üst dizin, ~ ev dizini, - önceki dizin).',
+        description: 'Klasörler arasında geçiş yapar (.. üst, ~ ev, - önceki).',
         example: 'cd Belgeler',
       },
     ],
@@ -30,7 +30,7 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'ls',
-        description: 'Dizin içeriğini listeler (-l ayrıntılı liste, -a gizli dosyalar).',
+        description: 'Klasör içeriğini listeler (-l ayrıntılı, -a gizli dosyalar).',
         example: 'ls -la',
       },
     ],
@@ -40,18 +40,18 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'mkdir',
-        description: 'Yeni dizin (klasör) oluşturur (-p iç içe dizinler açar).',
-        example: 'mkdir -p projeler/2026',
+        description: 'Yeni klasör oluşturur (-p iç içe klasörler açar).',
+        example: 'mkdir -p proje/src',
       },
       {
         command: 'touch',
-        description: 'Boş dosya oluşturur veya dosya zaman damgasını günceller.',
-        example: 'touch notlar.txt',
+        description: 'Boş dosya açar veya dosya zaman damgasını günceller.',
+        example: 'touch not.txt',
       },
       {
         command: 'echo',
         description: 'Verilen metni ekrana (veya yönlendirmeyle dosyaya) yazar.',
-        example: 'echo "Merhaba Linux"',
+        example: 'echo "Merhaba"',
       },
     ],
   },
@@ -60,23 +60,23 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'cat',
-        description: 'Dosya içeriğini ekrana yazdırır veya dosyaları birleştirir (-n satır numaralı).',
-        example: 'cat -n merhaba.txt',
+        description: 'Dosya içeriğini ekrana yazdırır (-n satır numaralı).',
+        example: 'cat -n not.txt',
       },
       {
         command: 'head',
         description: 'Dosyanın ilk satırlarını gösterir (-n satır sayısı).',
-        example: 'head -n 5 /etc/passwd',
+        example: 'head -n 5 log.txt',
       },
       {
         command: 'tail',
-        description: 'Dosyanın son satırlarını gösterir (-n satır sayısı, -n +N).',
-        example: 'tail -n 3 /var/log/syslog',
+        description: 'Dosyanın son satırlarını gösterir (-n satır sayısı).',
+        example: 'tail -n 3 log.txt',
       },
       {
         command: 'wc',
-        description: 'Satır, kelime ve bayt sayısını hesaplar (-l satır, -w kelime).',
-        example: 'wc -l Belgeler/alisveris.txt',
+        description: 'Satır, kelime ve bayt sayısını hesaplar (-l satır).',
+        example: 'wc -l not.txt',
       },
     ],
   },
@@ -85,8 +85,8 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'grep',
-        description: 'Metin içinde kelime veya karakter arar (-i harf duyarsız, -n satır no, -r alt dizinler).',
-        example: 'grep -i "error" log.txt',
+        description: 'Metin içinde kelime arar (-i büyük/küçük harf duyarsız, -n satır no).',
+        example: 'grep -i "hata" log.txt',
       },
       {
         command: 'find',
@@ -100,13 +100,78 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'sort',
-        description: 'Satırları alfabetik veya sayısal sıralar (-r ters, -n sayısal, -u tekil).',
-        example: 'sort -n puanlar.txt',
+        description: 'Satırları alfabetik veya sayısal sıralar (-r ters, -n sayısal).',
+        example: 'sort -n puan.txt',
       },
       {
         command: 'uniq',
-        description: 'Ardışık tekrar eden satırları ayıklar (-c sayımlı, -d tekrarlananlar).',
-        example: 'sort liste.txt | uniq -c',
+        description: 'Ardışık tekrar eden satırları ayıklar (-c sayımlı).',
+        example: 'sort a.txt | uniq -c',
+      },
+    ],
+  },
+  {
+    title: 'İzinler ve Güvenlik',
+    items: [
+      {
+        command: 'chmod',
+        description: 'Dosya ve klasör erişim izinlerini değiştirir (sayısal veya +x).',
+        example: 'chmod 755 betik.sh',
+      },
+    ],
+  },
+  {
+    title: 'Sistem ve Kullanıcı Bilgisi',
+    items: [
+      {
+        command: 'whoami',
+        description: 'Şu an oturum açmış aktif kullanıcının adını gösterir.',
+        example: 'whoami',
+      },
+      {
+        command: 'uname',
+        description: 'İşletim sistemi ve çekirdek bilgilerini yazdırır (-a hepsi).',
+        example: 'uname -a',
+      },
+      {
+        command: 'date',
+        description: 'Sistem tarih ve saatini ekrana yazdırır.',
+        example: 'date',
+      },
+    ],
+  },
+  {
+    title: 'Ortam ve Değişkenler',
+    items: [
+      {
+        command: 'env',
+        description: 'Kayıtlı tüm ortam değişkenlerini listeler.',
+        example: 'env | grep USER',
+      },
+      {
+        command: 'export',
+        description: 'Yeni ortam değişkeni tanımlar veya dışa aktarır.',
+        example: 'export AD=KLU',
+      },
+      {
+        command: 'which',
+        description: 'Bir komutun çalıştırılabilir dosya yolunu bulur.',
+        example: 'which ls',
+      },
+    ],
+  },
+  {
+    title: 'Süreç Yönetimi',
+    items: [
+      {
+        command: 'ps',
+        description: 'Çalışan süreçleri ve PID numaralarını listeler (aux tümü).',
+        example: 'ps aux',
+      },
+      {
+        command: 'kill',
+        description: 'Belirtilen PID numaralı süreci sonlandırır (-9 zorla).',
+        example: 'kill -9 1420',
       },
     ],
   },
@@ -115,13 +180,13 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'cp',
-        description: 'Dosya ve dizinleri kopyalar (-r dizin kopyalamak için zorunludur).',
-        example: 'cp -r Belgeler yedek',
+        description: 'Dosya ve klasörleri kopyalar (-r klasör kopyalamak için zorunlu).',
+        example: 'cp -r Belge yedek',
       },
       {
         command: 'mv',
-        description: 'Dosya veya dizinleri taşır ya da yeniden adlandırır.',
-        example: 'mv taslak.txt son.txt',
+        description: 'Dosya veya klasörleri taşır ya da yeniden adlandırır.',
+        example: 'mv eski.txt yeni.txt',
       },
     ],
   },
@@ -130,8 +195,8 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'rm',
-        description: 'Dosya ve dizinleri siler (-r dizin içeriğiyle siler, -f sormadan siler).',
-        example: 'rm -rf cop_dizini',
+        description: 'Dosya ve klasörleri siler (-r klasör içeriğiyle, -f zorla).',
+        example: 'rm -rf cop',
       },
     ],
   },
@@ -140,12 +205,12 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     items: [
       {
         command: 'help',
-        description: 'Kullanılabilir kabuk komutlarının kısa özetini gösterir.',
+        description: 'Kullanılabilir komutların kısa özetini gösterir.',
         example: 'help',
       },
       {
         command: 'man',
-        description: 'Bir komutun ayrıntılı kılavuz (manual) sayfasını açar.',
+        description: 'Bir komutun ayrıntılı kılavuz sayfasını açar.',
         example: 'man ls',
       },
       {
@@ -155,7 +220,7 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
       },
       {
         command: 'history',
-        description: 'Daha önce çalıştırılan komutların listesini döker.',
+        description: 'Daha önce çalıştırılan komutların geçmişini döker.',
         example: 'history',
       },
     ],

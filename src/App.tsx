@@ -122,7 +122,7 @@ export default function App() {
   const startLessonSession = useCallback(
     (message?: string) => {
       const fs = createLessonFS(lesson);
-      lessonShell.reset(fs, lessonStartCwd(lesson, fs));
+      lessonShell.reset(fs, lessonStartCwd(lesson, fs), lesson.setup?.processes);
       setCurrentCwd(lessonShell.cwd);
       recordsRef.current = [];
       const banner =
@@ -174,6 +174,8 @@ export default function App() {
         cwd: activeShell.cwd,
         last: record,
         records: recordsRef.current,
+        shell: activeShell,
+        env: activeShell.env,
       });
 
       if (result.completedTaskId) {

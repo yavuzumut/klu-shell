@@ -104,7 +104,7 @@ export class VirtualFS {
   root: DirNode;
   readonly user: string;
   readonly home: string;
-  private readonly now: () => number;
+  readonly now: () => number;
   private changeListeners = new Set<FsChangeListener>();
 
   constructor(options: VirtualFSOptions = {}) {
@@ -343,6 +343,20 @@ export class VirtualFS {
       this.mkdir(dirname(abs), { parents: true });
       this.writeFile(abs, content);
     }
+  }
+
+  /** Change file mode bits (and optionally all descendants). */
+  chmod(
+    abs: string,
+    modeOrUpdater: number | ((current: number) => number),
+    options: { recursive?: boolean } = {},
+  ): void {
+    const apply = (node: FsNode) => {
+      node.mode = typeof modeOrUpdater === 'function' ? modeOrUpdater(node.mode) : modeOrUpdater;
+      if (options.recursive && node.type === 'dir') Object.values(node.children).forEach(apply);
+    };
+    apply(this.lookup(abs));
+    this.notify({ action: 'modify', path: abs });
   }
 
   /** Set the owner of a node (and optionally all descendants). */

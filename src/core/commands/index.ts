@@ -27,6 +27,16 @@ import { tail } from './tail';
 import { touch } from './touch';
 import { uniq } from './uniq';
 import { wc } from './wc';
+// Level 3: permissions, system info, environment, processes
+import { chmod } from './chmod';
+import { whoami } from './whoami';
+import { uname } from './uname';
+import { date } from './date';
+import { env } from './env';
+import { exportCmd } from './export';
+import { which } from './which';
+import { ps } from './ps';
+import { kill } from './kill';
 
 export const ALL_COMMANDS: CommandDefinition[] = [
   pwd,
@@ -51,6 +61,16 @@ export const ALL_COMMANDS: CommandDefinition[] = [
   sort,
   uniq,
   find,
+  // Level 3: permissions, system info, environment, processes
+  chmod,
+  whoami,
+  uname,
+  date,
+  env,
+  exportCmd,
+  which,
+  ps,
+  kill,
 ];
 
 export function createRegistry(commands: CommandDefinition[] = ALL_COMMANDS): CommandRegistry {

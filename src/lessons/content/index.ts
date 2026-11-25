@@ -2,15 +2,9 @@ import type { Level } from '../types';
 import { level0 } from './level0';
 import { level1 } from './level1';
 import { level2 } from './level2';
+import { level3 } from './level3';
 
-export const level3: Level = {
-  id: 'level-3',
-  number: 3,
-  title: 'İleri',
-  description: 'Süreçler, bash scripting, ağ komutları ve paket yönetimi.',
-  lessons: [],
-  comingSoon: true,
-};
+export { level3 };
 
 export const LEVELS: Level[] = [level0, level1, level2, level3];
 

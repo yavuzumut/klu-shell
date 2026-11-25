@@ -1,5 +1,6 @@
 import type { FsSeed, VirtualFS } from '../core/fs/VirtualFS';
-import type { CommandRecord } from '../core/shell/types';
+import type { CommandRecord, ShellProcess } from '../core/shell/types';
+import type { Shell } from '../core/shell/Shell';
 
 /** State a task check can look at after each command. */
 export interface CheckState {
@@ -9,6 +10,8 @@ export interface CheckState {
   last: CommandRecord;
   /** All command records since the lesson started (oldest first). */
   records: CommandRecord[];
+  shell?: Shell;
+  env?: Record<string, string>;
 }
 
 /**
@@ -24,6 +27,8 @@ export type TaskCheck =
   | { type: 'fileContains'; path: string; text: string }
   /** The current working directory equals `path`. */
   | { type: 'cwdIs'; path: string }
+  /** File permission bits match mode (e.g. 0o755). */
+  | { type: 'fileMode'; path: string; mode: number }
   /**
    * The last command line ran `command` successfully.
    * `args`: each must appear as an argument; `flags`: each short flag
@@ -58,6 +63,8 @@ export interface Task {
 export interface LessonSetup extends FsSeed {
   /** Starting working directory (default: home). */
   cwd?: string;
+  /** Extra background processes running when the lesson starts. */
+  processes?: (Partial<ShellProcess> & { pid: number; command: string })[];
 }
 
 export interface Lesson {

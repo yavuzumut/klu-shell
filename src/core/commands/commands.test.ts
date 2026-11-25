@@ -509,6 +509,214 @@ describe('clear / help / man / history', () => {
       expect(rDepth.out).not.toContain('/tmp/search/sub/c.txt');
     });
   });
+
+  describe('chmod', () => {
+    it('changes permissions using octal mode', async () => {
+      const { run, fs } = createTestShell();
+      await run('touch /tmp/test.sh');
+      const r = await run('chmod 755 /tmp/test.sh');
+      expect(r.exitCode).toBe(0);
+      expect(fs.lookup('/tmp/test.sh').mode).toBe(0o755);
+    });
+
+    it('changes permissions using symbolic mode (+x, -w, u+x)', async () => {
+      const { run, fs } = createTestShell();
+      await run('touch /tmp/script.sh');
+      // default file mode is 0o644
+      await run('chmod +x /tmp/script.sh');
+      expect(fs.lookup('/tmp/script.sh').mode).toBe(0o755);
+
+      await run('chmod -w /tmp/script.sh');
+      expect(fs.lookup('/tmp/script.sh').mode & 0o222).toBe(0);
+    });
+
+    it('supports -R recursive mode', async () => {
+      const { run, fs } = createTestShell();
+      await run('mkdir -p /tmp/rec/sub && touch /tmp/rec/sub/f.txt');
+      const r = await run('chmod -R 700 /tmp/rec');
+      expect(r.exitCode).toBe(0);
+      expect(fs.lookup('/tmp/rec').mode).toBe(0o700);
+      expect(fs.lookup('/tmp/rec/sub').mode).toBe(0o700);
+      expect(fs.lookup('/tmp/rec/sub/f.txt').mode).toBe(0o700);
+    });
+
+    it('reports errors for missing operands or non-existent files', async () => {
+      const { run } = createTestShell();
+      expect((await run('chmod')).err).toContain('missing operand');
+      expect((await run('chmod 755')).err).toContain('missing operand after');
+      expect((await run('chmod bad /tmp/f')).err).toContain('invalid mode');
+      expect((await run('chmod 755 /tmp/nonexistent')).err).toContain('No such file or directory');
+    });
+  });
+
+  describe('whoami', () => {
+    it('prints current user', async () => {
+      const { run } = createTestShell();
+      const r = await run('whoami');
+      expect(r.exitCode).toBe(0);
+      expect(r.out.trim()).toBe('kullanici');
+    });
+
+    it('reports error on extra operand', async () => {
+      const { run } = createTestShell();
+      const r = await run('whoami extra');
+      expect(r.exitCode).toBe(1);
+      expect(r.err).toContain('extra operand');
+    });
+  });
+
+  describe('uname', () => {
+    it('prints Linux by default', async () => {
+      const { run } = createTestShell();
+      const r = await run('uname');
+      expect(r.exitCode).toBe(0);
+      expect(r.out.trim()).toBe('Linux');
+    });
+
+    it('supports -a and individual flags', async () => {
+      const { run } = createTestShell();
+      const rAll = await run('uname -a');
+      expect(rAll.exitCode).toBe(0);
+      expect(rAll.out).toContain('Linux');
+      expect(rAll.out).toContain('klu');
+      expect(rAll.out).toContain('x86_64');
+
+      const rRel = await run('uname -r');
+      expect(rRel.out.trim()).toBe('6.8.0-klu');
+    });
+  });
+
+  describe('date', () => {
+    it('prints formatted date', async () => {
+      const { run } = createTestShell();
+      const r = await run('date');
+      expect(r.exitCode).toBe(0);
+      expect(r.out).toContain('2024'); // default FIXED_NOW year
+    });
+
+    it('supports custom format string', async () => {
+      const { run } = createTestShell();
+      const r = await run('date +%Y-%m-%d');
+      expect(r.exitCode).toBe(0);
+      expect(r.out.trim()).toBe('2024-11-19');
+    });
+  });
+
+  describe('env', () => {
+    it('lists environment variables', async () => {
+      const { run } = createTestShell();
+      const r = await run('env');
+      expect(r.exitCode).toBe(0);
+      expect(r.out).toContain('USER=kullanici');
+      expect(r.out).toContain('HOME=/home/kullanici');
+      expect(r.out).toContain('SHELL=/bin/bash');
+    });
+
+    it('works in pipelines', async () => {
+      const { run } = createTestShell();
+      const r = await run('env | grep USER');
+      expect(r.out.trim()).toBe('USER=kullanici');
+    });
+  });
+
+  describe('export', () => {
+    it('sets and exports environment variables', async () => {
+      const { run } = createTestShell();
+      await run('export YENI=test_deger');
+      const rEcho = await run('echo $YENI');
+      expect(rEcho.out.trim()).toBe('test_deger');
+
+      const rEnv = await run('env | grep YENI');
+      expect(rEnv.out.trim()).toBe('YENI=test_deger');
+    });
+
+    it('lists exported variables with -p or without arguments', async () => {
+      const { run } = createTestShell();
+      const r = await run('export');
+      expect(r.out).toContain('declare -x USER="kullanici"');
+    });
+
+    it('rejects invalid variable identifiers', async () => {
+      const { run } = createTestShell();
+      const r = await run('export 123bad=val');
+      expect(r.exitCode).toBe(1);
+      expect(r.err).toContain('not a valid identifier');
+    });
+  });
+
+  describe('which', () => {
+    it('finds path of existing commands', async () => {
+      const { run } = createTestShell();
+      const rLs = await run('which ls');
+      expect(rLs.exitCode).toBe(0);
+      expect(rLs.out.trim()).toBe('/bin/ls');
+
+      const rGrep = await run('which grep');
+      expect(rGrep.exitCode).toBe(0);
+      expect(rGrep.out.trim()).toBe('/usr/bin/grep');
+    });
+
+    it('returns error when command is not found', async () => {
+      const { run } = createTestShell();
+      const r = await run('which bulunamayan');
+      expect(r.exitCode).toBe(1);
+      expect(r.err).toContain('which: no bulunamayan in');
+    });
+  });
+
+  describe('ps and kill', () => {
+    it('lists processes with ps and ps aux', async () => {
+      const { run, shell } = createTestShell();
+      shell.addProcess({ pid: 1420, command: 'python3 worker.py' });
+
+      const rPs = await run('ps');
+      expect(rPs.out).toContain('bash');
+      expect(rPs.out).toContain('ps');
+
+      const rAux = await run('ps aux');
+      expect(rAux.out).toContain('/sbin/init');
+      expect(rAux.out).toContain('python3 worker.py');
+    });
+
+    it('terminates processes with kill', async () => {
+      const { run, shell } = createTestShell();
+      shell.addProcess({ pid: 1420, command: 'python3 worker.py' });
+
+      const rKill = await run('kill 1420');
+      expect(rKill.exitCode).toBe(0);
+      expect(shell.processes.some((p) => p.pid === 1420)).toBe(false);
+
+      const rAgain = await run('kill 1420');
+      expect(rAgain.exitCode).toBe(1);
+      expect(rAgain.err).toContain('No such process');
+    });
+
+    it('refuses to kill PID 1', async () => {
+      const { run } = createTestShell();
+      const r = await run('kill 1');
+      expect(r.exitCode).toBe(1);
+      expect(r.err).toContain('Operation not permitted');
+    });
+  });
+
+  describe('executable script execution', () => {
+    it('denies execution without +x and runs with +x', async () => {
+      const { run } = createTestShell();
+      await run('echo "echo Merhaba Betik" > /tmp/betik.sh');
+
+      // Without +x -> 126 Permission denied
+      const rNoExec = await run('/tmp/betik.sh');
+      expect(rNoExec.exitCode).toBe(126);
+      expect(rNoExec.err).toContain('Permission denied');
+
+      // With +x -> executes successfully
+      await run('chmod +x /tmp/betik.sh');
+      const rExec = await run('/tmp/betik.sh');
+      expect(rExec.exitCode).toBe(0);
+      expect(rExec.out.trim()).toBe('Merhaba Betik');
+    });
+  });
 });
+
 
 

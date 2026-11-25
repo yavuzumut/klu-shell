@@ -8,15 +8,25 @@ import type { Lesson } from './types';
 import { evaluateCheck, evaluateCommand, isWrongAttempt } from './validator';
 
 function sessionFor(lesson: Lesson) {
-  const { cwd, ...seed } = lesson.setup ?? {};
+  const { cwd, processes, ...seed } = lesson.setup ?? {};
   const fs = createDefaultFS(seed);
   const shell = new Shell({ fs, registry: createRegistry(), cwd });
+  if (processes) {
+    for (const p of processes) shell.addProcess(p);
+  }
   const records: CommandRecord[] = [];
   const completed: string[] = [];
   const run = async (line: string) => {
     const last = await shell.execute(line);
     records.push(last);
-    const result = evaluateCommand(lesson, completed, { fs: shell.fs, cwd: shell.cwd, last, records });
+    const result = evaluateCommand(lesson, completed, {
+      fs: shell.fs,
+      cwd: shell.cwd,
+      last,
+      records,
+      shell,
+      env: shell.env,
+    });
     if (result.completedTaskId) completed.push(result.completedTaskId);
     return result;
   };
@@ -36,6 +46,7 @@ describe('lesson content', () => {
     expect(LEVELS[0].lessons.length).toBeGreaterThan(0);
     expect(LEVELS[1].lessons.length).toBeGreaterThan(0);
     expect(LEVELS[2].lessons.length).toBeGreaterThan(0);
+    expect(LEVELS[3].lessons.length).toBeGreaterThan(0);
   });
 
   // Every task must be solvable by its own published solution.

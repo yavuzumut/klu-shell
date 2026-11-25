@@ -2,7 +2,7 @@ import { FsError, fsErrorMessage, type VirtualFS } from '../fs/VirtualFS';
 import { expandGlob } from './glob';
 import { parse, ParseError, type Pipeline, type SimpleCommand } from './parser';
 import type { CommandRegistry } from './registry';
-import type { CommandContext, CommandRecord, OutputChunk } from './types';
+import type { CommandContext, CommandRecord, OutputChunk, ShellProcess } from './types';
 
 export interface ShellOptions {
   fs: VirtualFS;
@@ -10,6 +10,7 @@ export interface ShellOptions {
   cwd?: string;
   hostname?: string;
   history?: string[];
+  processes?: ShellProcess[];
 }
 
 type Listener = (record: CommandRecord) => void;
@@ -26,6 +27,7 @@ export class Shell {
   env: Record<string, string>;
   history: string[];
   lastExitCode = 0;
+  processes: ShellProcess[];
   private listeners = new Set<Listener>();
 
   constructor(options: ShellOptions) {
@@ -35,6 +37,77 @@ export class Shell {
     this.cwd = options.cwd ?? this.fs.home;
     this.history = options.history ? [...options.history] : [];
     this.env = this.defaultEnv();
+    this.processes = options.processes ? [...options.processes] : this.defaultProcesses();
+  }
+
+  defaultProcesses(): ShellProcess[] {
+    return [
+      {
+        pid: 1,
+        user: 'root',
+        cpu: '0.0',
+        mem: '0.1',
+        vsz: 21580,
+        rss: 4028,
+        tty: '?',
+        stat: 'Ss',
+        start: '00:00',
+        time: '0:01',
+        command: '/sbin/init',
+      },
+      {
+        pid: 85,
+        user: 'root',
+        cpu: '0.0',
+        mem: '0.1',
+        vsz: 8340,
+        rss: 2100,
+        tty: '?',
+        stat: 'Ss',
+        start: '00:00',
+        time: '0:00',
+        command: '/usr/sbin/cron',
+      },
+      {
+        pid: 100,
+        user: this.fs.user,
+        cpu: '0.0',
+        mem: '0.2',
+        vsz: 14200,
+        rss: 5120,
+        tty: 'pts/0',
+        stat: 'Ss',
+        start: '00:00',
+        time: '0:00',
+        command: 'bash',
+      },
+    ];
+  }
+
+  addProcess(proc: Partial<ShellProcess> & { pid: number; command: string }): void {
+    const full: ShellProcess = {
+      pid: proc.pid,
+      user: proc.user ?? this.fs.user,
+      cpu: proc.cpu ?? '0.0',
+      mem: proc.mem ?? '0.1',
+      vsz: proc.vsz ?? 12000,
+      rss: proc.rss ?? 3200,
+      tty: proc.tty ?? 'pts/0',
+      stat: proc.stat ?? 'S',
+      start: proc.start ?? '00:01',
+      time: proc.time ?? '0:00',
+      command: proc.command,
+    };
+    this.processes = [...this.processes.filter((p) => p.pid !== proc.pid), full];
+  }
+
+  killProcess(pid: number): boolean {
+    const exists = this.processes.some((p) => p.pid === pid);
+    if (exists) {
+      this.processes = this.processes.filter((p) => p.pid !== pid);
+      return true;
+    }
+    return false;
   }
 
   private defaultEnv(): Record<string, string> {
@@ -52,12 +125,18 @@ export class Shell {
   }
 
   /** Replace the file system (e.g. when a lesson starts) and reset the cwd. */
-  reset(fs: VirtualFS, cwd?: string): void {
+  reset(fs: VirtualFS, cwd?: string, extraProcesses?: (Partial<ShellProcess> & { pid: number; command: string })[]): void {
     this.fs = fs;
     this.cwd = cwd ? fs.resolve(cwd) : fs.home;
     this.prevCwd = null;
     this.lastExitCode = 0;
     this.env = this.defaultEnv();
+    this.processes = this.defaultProcesses();
+    if (extraProcesses) {
+      for (const p of extraProcesses) {
+        this.addProcess(p);
+      }
+    }
   }
 
   /** Coloured prompt, e.g. `kullanici@klu:~$ `. */
@@ -237,6 +316,34 @@ export class Shell {
     const [name, ...args] = argv;
     const def = this.registry.get(name);
     if (!def) {
+      if (name.includes('/')) {
+        const abs = this.fs.resolve(name, this.cwd);
+        const node = this.fs.tryLookup(abs);
+        if (!node) {
+          ctx.stderr(`bash: ${name}: No such file or directory\n`);
+          return 127;
+        }
+        if (node.type === 'dir') {
+          ctx.stderr(`bash: ${name}: Is a directory\n`);
+          return 126;
+        }
+        if ((node.mode & 0o111) === 0) {
+          ctx.stderr(`bash: ${name}: Permission denied\n`);
+          return 126;
+        }
+        const lines = node.content.split('\n');
+        let code = 0;
+        for (const raw of lines) {
+          const trimmed = raw.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const rec = await this.execute(trimmed);
+          code = rec.exitCode;
+          if (rec.stdout) ctx.stdout(rec.stdout);
+          if (rec.stderr) ctx.stderr(rec.stderr);
+          if (code !== 0) break;
+        }
+        return code;
+      }
       ctx.stderr(`bash: ${name}: command not found\n`);
       return 127;
     }

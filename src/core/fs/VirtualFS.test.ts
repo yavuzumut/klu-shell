@@ -143,5 +143,32 @@ describe('VirtualFS operations', () => {
       expect(fs.exists(dirPath)).toBe(false);
     }
   });
+
+  describe('chmod', () => {
+    it('changes node mode and notifies listeners', () => {
+      const fs = new VirtualFS();
+      fs.writeFile('/test.txt', 'hello');
+      const events: string[] = [];
+      fs.subscribe((e) => events.push(`${e.action}:${e.path}`));
+
+      fs.chmod('/test.txt', 0o755);
+      expect(fs.lookup('/test.txt').mode).toBe(0o755);
+      expect(events).toContain('modify:/test.txt');
+
+      fs.chmod('/test.txt', (m) => m & ~0o055);
+      expect(fs.lookup('/test.txt').mode).toBe(0o700);
+    });
+
+    it('changes mode recursively for directories', () => {
+      const fs = new VirtualFS();
+      fs.mkdir('/dir');
+      fs.writeFile('/dir/sub.txt', 'sub');
+
+      fs.chmod('/dir', 0o700, { recursive: true });
+      expect(fs.lookup('/dir').mode).toBe(0o700);
+      expect(fs.lookup('/dir/sub.txt').mode).toBe(0o700);
+    });
+  });
 });
+
 

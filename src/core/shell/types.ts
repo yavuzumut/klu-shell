@@ -52,3 +52,17 @@ export interface CommandRecord {
   cwdBefore: string;
   cwdAfter: string;
 }
+
+export interface ShellProcess {
+  pid: number;
+  user: string;
+  cpu: string;
+  mem: string;
+  vsz: number;
+  rss: number;
+  tty: string;
+  stat: string;
+  start: string;
+  time: string;
+  command: string;
+}
