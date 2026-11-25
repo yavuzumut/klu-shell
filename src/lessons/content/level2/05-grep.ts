@@ -11,9 +11,9 @@ export const grepLesson: Lesson = {
     },
   },
   content: `
-### grep — Global Regular Expression Print
+### grep — arama yapma
 
-\`grep\`, dosyalarda veya boru hattından gelen akışta belirli bir kelimeyi/deseni arayan en popüler Linux komutudur.
+**\`grep\`**, bir dosyanın ya da bir komutun çıktısının içinde istediğin kelimeyi arayıp sadece o kelimenin geçtiği satırları önüne getirir. Kısacası terminalin \`Ctrl + F\`'idir.
 
 \`\`\`bash
 $ grep DESEN DOSYA

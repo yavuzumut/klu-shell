@@ -10,23 +10,17 @@ export const pipes: Lesson = {
     },
   },
   content: `
-### Boru Hattı (|) Nedir?
+### Pipe (\`|\`) Nedir?
 
-Unix felsefesinin en güçlü ilkesi şudur: **"Her komut tek bir işi iyi yapsın ve komutlar birlikte çalışabilsin."**
+Normalde bir komut çalıştırdığında sonucu ekrana basar ve iş biter. Ama bazen ilk komutun sonucunu ekrana basmak yerine, doğrudan başka bir komuta işlenmesi için göndermek istersin.
 
-Boru hattı (\`|\`, pipe) tam olarak bunu sağlar:
-Solundaki komutun standart çıktısını (*stdout*), sağındaki komutun standart girdisine (*stdin*) bağlar.
+\`|\` işareti tam olarak bunu yapar: **soldaki komutun ürettiği sonucu alır, sağdaki komuta malzeme olarak verir.**
 
-\`\`\`bash
-$ KOMUT1 | KOMUT2
-\`\`\`
-
-Örneğin, bir dosyanın içeriğini \`cat\` ile basıp kaç satır olduğunu \`wc -l\` ile sayabilirsin:
-
-\`\`\`bash
-$ cat gorevler.txt | wc -l
-5
-\`\`\`
+Örneğin bir fabrika bandı gibi düşün:
+\`cat gunluk.txt | grep "hata"\`
+1. \`cat gunluk.txt\` dosyanın içini okur.
+2. \`|\` bu metni ekrana basmak yerine \`grep\`'e aktarır.
+3. \`grep "hata"\` sadece içinde \`"hata"\` geçen satırları süzer ve sana gösterir.
 
 ### Zincirleme Veri Akışı
 
