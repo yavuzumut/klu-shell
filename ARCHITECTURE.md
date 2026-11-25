@@ -533,7 +533,9 @@ Kullanıcı tema veya vurgu rengi değiştirdiği anda `terminal.options.theme` 
 ### Meraklısına (`src/explore/`)
 - **Görünüm:** `src/explore/ExploreView.tsx`
 - **Veri Kaynağı:** `src/explore/data.ts`
-- **İçerik:** Gerçek Linux ortamında yaygın olarak kullanılan modern CLI araçlarını tanıtan kartlar (`yt-dlp`, `fastfetch`, `tldr`).
+- **İçerik:** Gerçek Linux ortamında yaygın olarak kullanılan modern CLI araçlarını tanıtan 15 adet kart (`yt-dlp`, `wttr.in`, `fastfetch`, `btop`, `ncdu`, `ripgrep`, `fd`, `bat`, `eza`, `fzf`, `tldr`, `tmux`, `cmatrix`, `cowsay-figlet-lolcat`, `sl`).
+- **Kategoriler:** 5 kategori filtresi (`media`, `system`, `files`, `productivity`, `fun`).
+- **Özellikler:** Dağıtıma özel kurulum sekmeleri (`debian`, `fedora`, `arch`), kullanım ipuçları (`tips`), ASCII tren sanatı (`sl`), `fastfetch` sistem çıktısı ve tek tıkla kopyalama desteği.
 - **Önemli Ayrım:** Bu araçlar KLU'nun simüle terminalinde çalışmaz; sayfanın başında bu durum kullanıcıya açıkça bildirilir.
 
 ### Git Giriş Sayfası (`src/git/`)
@@ -549,8 +551,11 @@ KLU projesi katı tip denetimi ve otomatik birim testleriyle korunmaktadır.
 
 ### Komutlar
 ```bash
-# Birim ve entegrasyon testlerini çalıştırır (111 test)
+# Birim ve entegrasyon testlerini çalıştırır (116 test, 9 test dosyası)
 npm test
+
+# İzleme (watch) modunda testleri sürekli çalıştırmak için:
+npm run test:watch
 
 # TypeScript tip denetimi (sıfır hata hedeflenir)
 npx tsc --noEmit
@@ -558,6 +563,18 @@ npx tsc --noEmit
 # Üretim paketi derleme (dist/ dizinine çıktı üretir)
 npm run build
 ```
+
+### Test Dosyaları ve Kapsam
+Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konumlandırılmıştır:
+1. `src/core/commands/commands.test.ts` (39 test): 14 çekirdek komutun bayrakları, argümanları ve uç durumları.
+2. `src/core/fs/VirtualFS.test.ts` (19 test): Dizin oluşturma, okuma, yazma, silme, kopyalama, taşıma, hata kodları ve prototip kirlenmesi koruması.
+3. `src/core/fs/treeListener.test.ts` (3 test): `VirtualFS.subscribe` olay mekanizması ve dosya ağacı tetikleyicileri.
+4. `src/core/shell/parser.test.ts` (13 test): Tırnaklar, boru hattı (`|`), yönlendirmeler (`>`, `>>`), tilde (`~`) ve `$VAR` açılımı.
+5. `src/core/shell/completion.test.ts` (5 test): Tab ile komut ve dosya/dizin otomatik tamamlama.
+6. `src/lessons/validator.test.ts` (16 test): Görev doğrulama kuralları, keşif/nötr komutlar ve yanlış deneme mantığı.
+7. `src/explore/data.test.ts` (5 test): 15 araç kartının şema doğrulaması ve kategori bütünlüğü.
+8. `src/themes/themes.test.ts` (9 test): 5 tema tanımı, hex renk doğrulama regex'i ve CSS değişkenleri.
+9. `src/state/progress.test.ts` (7 test): İlerleme durumu, localStorage senkronizasyonu ve geçmiş yönetimi.
 
 ### Test Yardımcıları (`src/core/test/helpers.ts`)
 - **`createTestShell(options)`:** Testler için izole bir sanal dosya sistemi ve kabuk ortamı üretir.
@@ -584,6 +601,8 @@ npm run build
    Mevcut durumda Seviye 0 ve Seviye 1 tam fonksiyoneldir; Seviye 2 ve Seviye 3 ise katalogda `comingSoon: true` olarak işaretlenmiştir. Git sekmesi şu an bilgilendirme modundadır; sanal `.git` motoru veya `git` komut seti henüz terminale entegre edilmemiştir.
 4. **Mobil Klavye Kısayolları:**
    Mobil cihazlar için ekranda temel gezinme tuşlarını içeren bir çubuk (`.key-bar` — Tab, ↑, ↓, ←, →, ~, /, -, Ctrl+C) bulunmaktadır; ancak boru hattı (`|`), yönlendirme (`>`, `<`) ve kesme tuşları gibi gelişmiş terminal operatörleri için zengin bir sanal tuş takımı henüz geliştirilmemiştir.
+5. **Dosya İsimlerinde ANSI Kaçış Filtreleme:**
+   `ls` komutu ve `LineEditor`, kullanıcı tarafından oluşturulmuş dosya adlarındaki raw ANSI kaçış karakterlerini henüz filtrelememektedir (düşük öncelikli görsel risk).
 
 ---
 
@@ -644,5 +663,45 @@ KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içi
 - `getCustomAccent`: `localStorage` üzerinde depolanmış olan değer okunurken regex kontrolünden geçirilir; format geçersizse `null` döner ve sistem ilgili temanın varsayılan vurgu rengine geri döner.
 - Bu doğrulama mekanizması `src/themes/themes.test.ts` dosyasındaki birim testlerle doğrulanmıştır.
 
-### 5. Bağımlılık Güvenliği (Dependency Security)
-- Geliştirme bağımlılıkları Vite 7 ve Vitest 5'e güncellendi, npm audit temiz.
+### 5. Kabuk Glob ReDoS Koruması (`src/core/shell/glob.ts`)
+- `globToRegExp` fonksiyonu, kabuk glob desenindeki ardışık `*` karakterlerini `pattern.replace(/\*+/g, '*')` ile tek bir yıldıza indirger.
+- Böylece `ls *************************x` gibi girdi durumlarında üstel geri izleme (catastrophic backtracking) ve tarayıcı sekmesinin kilitlenmesi engellenmiştir.
+
+### 6. Dosya Ağacı Metakarakter Kaçışlaması (`src/App.tsx`)
+- Canlı dosya ağacındaki öğelere tıklandığında oluşturulan `cd` veya `cat` komutlarında, yol `quotePath(path)` fonksiyonundan geçirilir.
+- Yol yalnızca güvenli karakterler (`/[^A-Za-z0-9_./~-]/`) içermiyorsa çift tırnak içine alınır ve içerisindeki `"` ile `\` karakterleri kaçışlanır; böylece dosya adlarına gizlenmiş komut enjeksiyonları önlenir.
+
+### 7. Bağımlılık Güvenliği (Dependency Security)
+- Geliştirme bağımlılıkları Vite 7 (`^7.3.8`) ve Vitest 5 (`^5.1.1`) sürümlerine yükseltilmiş, Node.js `>=22.12.0` kuralı getirilmiştir. `npm audit` çıktısı 0 güvenlik açığı (zero vulnerabilities) raporlamaktadır.
+
+---
+
+## 14. Mevcut Durum ve Sonraki Adımlar
+
+### Mevcut Durum Özeti (Kod Tabanında Tam Olarak Var Olanlar)
+1. **Çekirdek Komut Seti (14 Komut):** `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history` tamamen işlevseldir.
+2. **Sanal Dosya Sistemi (VirtualFS):** Bellek içi (in-memory) ağaç yapısı, CRUD operasyonları, POSIX hata kodları, `subscribe` olay dinleme mekanizması ve `Object.create(null)` tabanlı prototip kirlenmesi koruması çalışır durumdadır.
+3. **Kabuk Motoru (Shell):** Boru hatları (`|`), G/Ç yönlendirmeleri (`>`, `>>`, `<`), mantıksal operatörler (`&&`, `||`, `;`), tırnak ayrıştırma, `$VAR` ve `~` genişletmesi, ReDoS korumalı glob (`*.txt`) ve `Tab` otomatik tamamlama mevcuttur.
+4. **Ders İçeriği (12 Ders):**
+   - **Seviye 0 ("Başlamadan Önce"):** 5 ders (`01-intro`, `02-how-klu-works`, `03-modes-and-tools`, `04-habits`, `05-real-linux`).
+   - **Seviye 1 ("Başlangıç"):** 7 ders (`01-welcome`, `02-listing`, `03-navigation`, `04-creating`, `05-reading`, `06-copy-move`, `07-removing`).
+5. **Serbest Mod (Sandbox) & Canlı Dosya Ağacı:** Tam ekran terminal, gerçek zamanlı reaktif dosya ağacı, animasyonlu yeni dosya vurgusu, `quotePath` kaçışlamalı tıklama desteği ve bağımsız sanal FS sıfırlama.
+6. **Hile Kağıdı (Cheat Sheet):** 7 kategoride 14 komutun hızlı başvuru tablosu ve Serbest Mod terminaline aktarım desteği.
+7. **Meraklısına (Explore):** 15 modern CLI aracı, 5 kategori filtresi (`media`, `system`, `files`, `productivity`, `fun`), dağıtım sekmeleri (Debian, Fedora, Arch), ipuçları ve tek tıkla kopyalama.
+8. **Tema Motoru:** 5 renk teması, terminal renklerinin canlı eşzamanlanması, hex doğrulayıcılı özel vurgu rengi seçici.
+9. **Kalite & Test Güvencesi:** 116 birim testi (9 test dosyasında), sıfır TypeScript hatası, `dist/index.html` içinde üretim CSP'si, 0 `npm audit` açığı.
+
+### Henüz Yapılmamış / Gelecek Adımlar (Yapılacaklar)
+1. **`src/git/` Modülü (Etkileşimli Git Terminali):**
+   - *Mevcut Durum:* Şu anda yalnızca statik bilgilendirme ve yol haritası arayüzü (`GitIntroView.tsx`, `intro.ts`) bulunmaktadır.
+   - *Eksik Kısım:* Sanal `.git/` klasör JSON veri modeli, terminal Git komut yorumlayıcısı (`git init`, `status`, `add`, `commit`, `log`, `branch`, `diff` vb.) ve etkileşimli terminal Git deneyimi henüz kodlanmamıştır.
+2. **Seviye 2 ("Orta") Dersleri:**
+   - Katalogda `comingSoon: true` ve `lessons: []` durumundadır.
+   - Boru hattı (`|`) ve yönlendirme (`>`, `>>`) dersleri, `grep`, `find`, `chmod`/`chown` komutlarının çekirdeğe eklenmesi planlanmaktadır.
+3. **Seviye 3 ("İleri") Dersleri:**
+   - Katalogda `comingSoon: true` ve `lessons: []` durumundadır.
+   - Süreç yönetimi (`ps`, `kill`), basit bash script yürütme ve paket yöneticisi simülasyonu planlanmaktadır.
+4. **VirtualFS İzin Denetimi:**
+   - `BaseNode` içindeki `mode` bitleri şu anda simülasyonda zorunlu tutulmamaktadır; gelecekte `chmod`/`chown` ile birlikte yetkilendirme katmanı etkinleştirilecektir.
+5. **Terminal ANSI Filtreleme:**
+   - `ls` komutu ve satır düzenleyicide dosya isimlerindeki ham ANSI kaçış karakterlerinin temizlenmesi tamamlanacaktır.

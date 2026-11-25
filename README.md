@@ -16,36 +16,47 @@ KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafı
   - Desteklenen 14 çekirdek komut: `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history`.
   - Unix boru hattı (pipe: `|`), yönlendirmeler (`>`, `>>`), tırnaklar (`""`, `''`), bayrak ayrıştırma (`-la`, `-rf`) ve glob açılımı (`*.txt`).
   - Terminalde `Tab` ile otomatik tamamlama, `↑`/`↓` ile komut geçmişi gezintisi.
-- **Ders Modu (Seviye 1: Temel Komutlar):**
-  - Adım adım açıklamalar, örnekler ve anında doğrulanabilen interaktif görevler.
+- **Ders Modu (Seviye 0 & Seviye 1: 12 İnteraktif Ders):**
+  - **Seviye 0 ("Başlamadan Önce", 5 ders):** Terminale giriş, KLU'nun çalışma mantığı, modlar ve gerçek Linux terminal alışkanlıkları.
+  - **Seviye 1 ("Başlangıç", 7 ders):** Çalışma dizini (`pwd`), dosya listeleme (`ls`), dizinler arası gezinme (`cd`), dosya/klasör oluşturma (`touch`, `mkdir`), okuma (`cat`), kopyalama/taşıma (`cp`, `mv`) ve silme (`rm`).
+  - Adım adım Türkçe açıklamalar, örnekler ve anında doğrulanabilen interaktif görevler.
   - İpuçları (3 başarısız denemeden sonra çözüm gösterme imkânı).
   - İlerleme durumu `localStorage` üzerinde saklanır.
+  - Seviye 2 (Orta) ve Seviye 3 (İleri) seviyeleri planlanmıştır.
 - **Serbest Mod (Sandbox) & Canlı Dosya Ağacı:**
   - Tam ekran terminal ve yan panelde canlı güncellenen dosya sistemi ağacı.
-  - Ağaçtaki bir klasöre tıklandığında `cd <yol>`, dosyaya tıklandığında `cat <yol>` komutunu terminale otomatik yazma.
-  - Çalışma dizini (`cwd`) vurgulaması ve yeni oluşturulan öğeleri animasyonla belirtme.
+  - Ağaçtaki bir klasöre tıklandığında `cd <yol>`, dosyaya tıklandığında `cat <yol>` komutunu güvenli kaçışlamayla (`quotePath`) terminale otomatik yazma.
+  - Çalışma dizini (`cwd`) vurgulaması ve yeni oluşturulan öğeleri animasyonlu parlama efektiyle belirtme.
   - Ders ilerlemesini sıfırlamadan serbest mod dosya sistemini tek tıkla sıfırlayabilme.
 - **Hile Kağıdı (Cheat Sheet):**
-  - Kategorilere ayrılmış komut rehberi (gezinme, dosya işlemleri, okuma, silme, yardım).
+  - 7 kategoriye ayrılmış 14 çekirdek komut rehberi (gezinme, dosya işlemleri, okuma, silme, yardım vb.).
   - Komutlara veya örneklere tıklayarak doğrudan Serbest Mod terminaline aktarma.
-- **Meraklısına (Linux Araçları):**
-  - Gerçek Linux dünyasında kullanılan popüler harici araçlar (`yt-dlp`, `fastfetch`, `tldr`) için tanıtım kartları, kurulum kodları ve tek tıkla kopyalama desteği.
+- **Meraklısına (Modern Linux CLI Araçları):**
+  - Gerçek Linux dünyasında kullanılan 15 popüler harici araç için tanıtım kartları (`yt-dlp`, `wttr.in`, `fastfetch`, `btop`, `ncdu`, `ripgrep`, `fd`, `bat`, `eza`, `fzf`, `tldr`, `tmux`, `cmatrix`, `cowsay-figlet-lolcat`, `sl`).
+  - 5 kategori filtresi (Medya, Sistem, Dosyalar, Verimlilik, Eğlence).
+  - Dağıtıma özel (Debian/Ubuntu, Fedora, Arch) kurulum komutları, ipuçları (`tips`), ASCII tren sanatı (`sl`), `fastfetch` sistem çıktısı ve tek tıkla kopyalama desteği.
+- **Git Görsel Rehberi:**
+  - Git temelleri, Linus Torvalds ve Linux bağı, 3 Alan Modeli (Çalışma Alanı -> Staging -> Yerel Depo) ve 4 aşamalı yol haritası.
+- **Kişiselleştirilebilir Temalar:**
+  - 5 yerleşik tema (Koyu, Açık, Dracula, Solarized Dark, Retro CRT Yeşil).
+  - xterm.js terminali ile anında canlı renk eşzamanlaması ve regex doğrulamalı özel hex vurgu rengi seçici.
 
 ---
 
 ## 🛠️ Teknoloji Yığını
 
-- **Çatı & Dil:** React 19, TypeScript, Vite
-- **Terminal UI:** `@xterm/xterm`, `@xterm/addon-fit`
-- **Test:** Vitest
-- **Stil:** Modern Saf CSS (Dark Theme, mobil uyumlu, CSS variables)
+- **Çatı & Dil:** React 18 (`^18.3.1`), TypeScript (`~5.6.2`), Vite 7 (`^7.3.8`)
+- **Terminal UI:** `@xterm/xterm` (`^5.5.0`), `@xterm/addon-fit` (`^0.10.0`)
+- **Birim & Entegrasyon Test:** Vitest 5 (`^5.1.1` - 116 test)
+- **Markdown İşleme:** Marked (`^14.1.0`)
+- **Stil:** Modern Saf CSS (5 tema, CSS değişkenleri, duyarlı mobil tuş çubuğu)
 
 ---
 
 ## 🚀 Başlangıç & Kurulum
 
 ### 1. Gereksinimler
-Node.js >= 22.12 gereklidir. `nvm` kullanıyorsanız:
+Node.js >= 22.12.0 gereklidir. `nvm` kullanıyorsanız:
 
 ```bash
 # nvm ile LTS sürümünü kurun ve etkinleştirin
@@ -70,7 +81,7 @@ Terminal çıktısında belirtilen adresi (varsayılan: `http://localhost:5173`)
 
 ### 4. Testleri Çalıştırma
 
-Vitest ile yazılmış 80+ birim testini çalıştırmak için:
+Vitest ile yazılmış 116 birim testini çalıştırmak için:
 
 ```bash
 npm test
@@ -78,7 +89,7 @@ npm test
 
 İzleme (watch) modunda testleri sürekli çalıştırmak için:
 ```bash
-npx vitest
+npm run test:watch
 ```
 
 ### 5. Üretim İçin Derleme (Build)
@@ -86,7 +97,7 @@ npx vitest
 ```bash
 npm run build
 ```
-Derleme çıktısı `dist/` klasörüne kaydedilir. Sonucu önizlemek için:
+Derleme çıktısı `dist/` klasörüne kaydedilir (üretim CSP meta etiketi otomatik enjekte edilir). Sonucu önizlemek için:
 ```bash
 npm run preview
 ```
@@ -97,33 +108,34 @@ npm run preview
 
 ### 1. Yeni Ders Ekleme
 
-Dersler `src/lessons/content/` klasörü altında tanımlanır.
+Dersler Seviye 0 ve Seviye 1 olarak `src/lessons/content/` klasörü altında modüler TypeScript dosyalarında tanımlanır:
 
-1. İlgili seviye dosyasına (örn. `src/lessons/content/level1.ts`) yeni bir `Lesson` nesnesi ekleyin:
+1. İlgili seviye klasöründe (örn. `src/lessons/content/level1/`) yeni bir ders dosyası oluşturun (örn. `08-yeni-ders.ts`):
 
 ```typescript
-import type { Lesson } from '../types';
+import type { Lesson } from '../../types';
 
 export const myNewLesson: Lesson = {
   id: 'yeni-ders-id',
-  levelId: 'level-1',
   title: 'Yeni Ders Başlığı',
-  summary: 'Dersin kısa özeti',
-  bodyMarkdown: `
+  summary: 'Dersin tek satırlık kısa özeti',
+  content: `
 ### Açıklama
 Bu derste yeni bir kavram öğreniyoruz.
 
 \`\`\`bash
-komut --bayrak
+komut --bayrak hedef
 \`\`\`
 `,
   examples: ['komut ornek'],
-  // İsteğe bağlı: derse özel dosya sistemi durumu
-  initialFS: (fs) => {
-    fs.mkdir('/home/kullanici/proje');
-    fs.writeFile('/home/kullanici/proje/not.txt', 'Merhaba');
+  // İsteğe bağlı: derse özel dosya sistemi tohumu ve başlangıç dizini
+  setup: {
+    dirs: ['/home/kullanici/proje'],
+    files: {
+      '/home/kullanici/proje/not.txt': 'Merhaba KLU',
+    },
+    cwd: '/home/kullanici',
   },
-  initialCwd: '/home/kullanici',
   tasks: [
     {
       id: 'gorev-1',
@@ -133,14 +145,14 @@ komut --bayrak
         '`cd proje` yazabilirsin.',
       ],
       solution: 'cd proje',
-      // Görev doğrulama mantığı (fs, cwd, son çalıştırılan komut kaydı)
-      check: ({ cwd }) => cwd === '/home/kullanici/proje',
+      // Bildirimsel görev doğrulama kuralı
+      check: { type: 'cwdIs', path: '~/proje' },
     },
   ],
 };
 ```
 
-2. Bu dersi `src/lessons/content/index.ts` içindeki ilgili seviyenin `lessons` dizisine ekleyin.
+2. Bu dersi `src/lessons/content/level1/index.ts` içindeki `level1.lessons` dizisine ekleyin.
 
 ---
 
@@ -155,44 +167,47 @@ import type { CommandDefinition, CommandContext } from '../shell/types';
 
 export const mycommand: CommandDefinition = {
   name: 'mycommand',
-  summary: 'Komutun tek satırlık özeti',
-  man: `İSİM
+  summary: 'Komutun tek satırlık Türkçe özeti',
+  usage: 'mycommand [SEÇENEKLER] [HEDEF]...',
+  completion: 'files', // 'files' | 'dirs' | 'commands' | 'none'
+  manPage: `AD
     mycommand - detaylı kılavuz sayfası
 
 KULLANIM
-    mycommand [SEÇENEKLER] [HEDEF]...`,
-  async execute(ctx: CommandContext, args: string[]): Promise<number> {
-    // ctx.fs: Sanal dosya sistemi
+    mycommand [SEÇENEKLER] [HEDEF]...
+
+AÇIKLAMA
+    Komutun ne yaptığını açıklayan detaylı metin.`,
+  run(args: string[], ctx: CommandContext): number {
+    // ctx.fs: Sanal dosya sistemi (VirtualFS)
     // ctx.cwd: Mevcut çalışma dizini
-    // ctx.stdout(text): Standart çıktıya satır yaz
-    // ctx.stderr(text): Standart hataya satır yaz
+    // ctx.stdout(text): Standart çıktı akışı
+    // ctx.stderr(text): Standart hata akışı
     // ctx.stdin: Varsa boru hattından gelen veri (pipe)
 
     if (args.includes('--help')) {
-      ctx.stdout(mycommand.summary);
+      ctx.stdout(mycommand.summary + '\n');
       return 0;
     }
 
-    ctx.stdout(`İşlem yapıldı: ${args.join(' ')}`);
-    return 0; // 0: başarılı, >0: hata kodu
+    ctx.stdout(`İşlem yapıldı: ${args.join(' ')}\n`);
+    return 0; // 0: başarılı, >0: POSIX hata kodu
   },
 };
 ```
 
-2. `src/core/commands/index.ts` dosyasına komutu kaydedin:
+2. `src/core/commands/index.ts` dosyasına yeni komutu import edin ve `ALL_COMMANDS` dizisine ekleyin:
 
 ```typescript
 import { mycommand } from './mycommand';
 
-export function createRegistry(): CommandRegistry {
-  const reg = new Map<string, CommandDefinition>();
-  // ...
-  reg.set(mycommand.name, mycommand);
-  return reg;
-}
+export const ALL_COMMANDS: CommandDefinition[] = [
+  // ... diğer komutlar
+  mycommand,
+];
 ```
 
-3. Yeni komut için `tests/core/commands.test.ts` içine birim testlerini ekleyin.
+3. Yeni komut için `src/core/commands/commands.test.ts` içine birim testlerini ekleyin.
 
 ---
 
@@ -236,28 +251,41 @@ export const EXPLORE_TOOLS: ExploreTool[] = [
   {
     id: 'arac-id',
     name: 'arac-adi',
-    summary: 'Aracın ne işe yaradığına dair 1 cümlelik özet',
-    description: 'Aracın detaylı açıklaması ve kullanım alanları.',
-    installCommand: 'sudo apt install arac-adi',
+    category: 'productivity', // 'media' | 'system' | 'files' | 'productivity' | 'fun'
+    replaces: 'eski-arac', // opsiyonel
+    description: 'Aracın ne işe yaradığına dair 1-2 cümlelik Türkçe açıklama.',
     exampleCommand: 'arac-adi --secenek dosya',
     exampleOutput: `[çıktı] Örnek terminal çıktısı metni`,
-    warning: 'Opsiyonel yasal veya güvenlik uyarı metni', // (isteğe bağlı)
+    install: {
+      debian: 'sudo apt install arac-adi',
+      fedora: 'sudo dnf install arac-adi',
+      arch: 'sudo pacman -S arac-adi',
+      note: 'Opsiyonel kuruluma özel not',
+    },
+    tips: ['Kullanım ipucu 1', 'Kullanım ipucu 2'], // opsiyonel
+    warning: 'Opsiyonel yasal veya güvenlik uyarı metni', // opsiyonel
+    sourceUrl: 'https://github.com/...', // opsiyonel
   },
 ];
 ```
 
-Sayfa otomatik olarak kurulum ve örnek kullanım komutlarına "📋 Kopyala" butonu ekleyecek ve stilini oluşturacaktır.
+Sayfa otomatik olarak kategori filtrelerini, dağıtım sekmelerini ve "📋 Kopyala" butonlarını oluşturacaktır.
 
 ---
 
 ## 🧪 Test Stratejisi & Mimarisi
 
-- **Test Kapsamı:**
-  - `path.test.ts`: Sanal dosya yollarının çözümlenmesi (`resolvePath`, `normalize`, `split`).
-  - `fs.test.ts`: Dizin oluşturma, dosya okuma/yazma, silme, kopyalama, taşıma, `subscribe` dinleyicileri.
-  - `parser.test.ts`: Unix kabuk girdi ayrıştırması, tırnaklar, boru hattı (`|`), yönlendirmeler (`>`, `>>`).
-  - `commands.test.ts`: 14 çekirdek komutun uç durumları, argüman ayrıştırması ve hata mesajları.
-  - `lessons.test.ts`: Görev değerlendiricisi (`validator`), ipucu ve çözüm akışı.
+KLU, 9 ayrı test dosyasında 116 birim testi ile korunmaktadır. Test dosyaları test ettikleri modüllerin hemen yanında (`src/`) yer alır:
+
+- `src/core/commands/commands.test.ts`: 14 çekirdek komutun bayrakları, argümanları ve POSIX hata çıktıları (39 test).
+- `src/core/fs/VirtualFS.test.ts`: Dizin ve dosya işlemleri, hata kodları, derin klonlama ve prototip kirlenmesi koruması (19 test).
+- `src/core/fs/treeListener.test.ts`: Dosya sistemi mutasyon dinleyicileri (`subscribe`) ve dosya ağacı tetikleyicileri (3 test).
+- `src/core/shell/parser.test.ts`: Kabuk girdi ayrıştırma, tırnaklar, boru hattı (`|`), yönlendirmeler (`>`, `>>`) ve değişken genişletme (13 test).
+- `src/core/shell/completion.test.ts`: Tab tuşu ile komut ve dosya/dizin adı tamamlama (5 test).
+- `src/lessons/validator.test.ts`: Görev doğrulama kuralları, keşif/nötr komutlar ve yanlış deneme mekanizması (16 test).
+- `src/explore/data.test.ts`: 15 CLI araç kartının şema doğrulaması ve kategori bütünlüğü (5 test).
+- `src/themes/themes.test.ts`: 5 tema tanımı, hex renk doğrulama regex'i ve CSS değişkenleri (9 test).
+- `src/state/progress.test.ts`: İlerleme durumu, localStorage senkronizasyonu ve geçmiş yönetimi (7 test).
 
 Testleri çalıştırmak için:
 ```bash
