@@ -37,6 +37,9 @@ import { exportCmd } from './export';
 import { which } from './which';
 import { ps } from './ps';
 import { kill } from './kill';
+import { stat } from './stat';
+import { realpath } from './realpath';
+import { basename } from './basename';
 
 export const ALL_COMMANDS: CommandDefinition[] = [
   pwd,
@@ -61,7 +64,7 @@ export const ALL_COMMANDS: CommandDefinition[] = [
   sort,
   uniq,
   find,
-  // Level 3: permissions, system info, environment, processes
+  // Level 3: permissions, system info, environment, processes, file inspection
   chmod,
   whoami,
   uname,
@@ -71,6 +74,9 @@ export const ALL_COMMANDS: CommandDefinition[] = [
   which,
   ps,
   kill,
+  stat,
+  realpath,
+  basename,
 ];
 
 export function createRegistry(commands: CommandDefinition[] = ALL_COMMANDS): CommandRegistry {

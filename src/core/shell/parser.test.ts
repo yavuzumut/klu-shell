@@ -71,6 +71,17 @@ describe('parse', () => {
     expect(cmd.redirects.map((r) => r.op)).toEqual(['>>', '2>']);
   });
 
+  it('parses logical AND (&&) and OR (||) operators in pipelines and lists', () => {
+    const ast = parse('cat in.txt | grep foo > out.txt && echo found || echo missing', env);
+    expect(ast.items).toHaveLength(3);
+    expect(ast.items[0].next).toBe('&&');
+    expect(ast.items[0].pipeline.commands).toHaveLength(2);
+    expect(ast.items[1].next).toBe('||');
+    expect(ast.items[1].pipeline.commands[0].words[0].value).toBe('echo');
+    expect(ast.items[2].next).toBeNull();
+    expect(ast.items[2].pipeline.commands[0].words[1].value).toBe('missing');
+  });
+
   it('allows trailing semicolon', () => {
     expect(parse('ls;', env).items).toHaveLength(1);
   });
@@ -80,6 +91,11 @@ describe('parse', () => {
     expect(() => parse('ls |', env)).toThrow("syntax error near unexpected token `newline'");
     expect(() => parse('echo >', env)).toThrow("syntax error near unexpected token `newline'");
     expect(() => parse('ls && && pwd', env)).toThrow(ParseError);
+    expect(() => parse('ls &&', env)).toThrow("syntax error near unexpected token `newline'");
+    expect(() => parse('ls ||', env)).toThrow("syntax error near unexpected token `newline'");
+    expect(() => parse('&& ls', env)).toThrow("syntax error near unexpected token `&&'");
+    expect(() => parse('|| ls', env)).toThrow("syntax error near unexpected token `||'");
+    expect(() => parse('echo a && || echo b', env)).toThrow("syntax error near unexpected token `||'");
   });
 });
 

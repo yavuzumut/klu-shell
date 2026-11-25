@@ -26,6 +26,9 @@ export const EXPLORATION_COMMANDS = new Set([
   'env',
   'which',
   'ps',
+  'stat',
+  'realpath',
+  'basename',
 ]);
 
 // eslint-disable-next-line no-control-regex

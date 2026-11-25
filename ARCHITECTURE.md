@@ -204,6 +204,9 @@ export const ALL_COMMANDS: CommandDefinition[] = [
   which,
   ps,
   kill,
+  stat,
+  realpath,
+  basename,
 ];
 
 export function createRegistry(commands: CommandDefinition[] = ALL_COMMANDS): CommandRegistry {
@@ -457,7 +460,7 @@ Katalog `LEVELS` dizisi olarak tanımlanmıştır:
 1. **Seviye 0 (`level-0`):** "Başlamadan Önce" (5 Ders — `src/lessons/content/level0/index.ts`) — Terminal, kabuk ve Linux temelleri; KLU çalışma mantığı ve ipuçları.
 2. **Seviye 1 (`level-1`):** "Başlangıç" (7 Ders — `src/lessons/content/level1/index.ts`) — Terminalde gezinme, dosya ve dizin işlemleri (`ls`, `cd`, `mkdir`, `touch`, `cat`, `cp`, `mv`, `rm`).
 3. **Seviye 2 (`level-2`):** "Orta" (7 Ders — `src/lessons/content/level2/index.ts`) — Yönlendirme (`>`, `>>`), boru hattı (`|`), metin inceleme (`head`, `tail`, `wc`), filtreleme (`grep`), sıralama/tekilleştirme (`sort`, `uniq`) ve dosya sisteminde arama (`find`).
-4. **Seviye 3 (`level-3`):** "İleri" (7 Ders — `src/lessons/content/level3/index.ts`) — Sistem/kullanıcı bilgisi (`whoami`, `uname`, `date`), ortam değişkenleri (`env`, `export`, `$VAR`), komut arama yolu (`which`, `$PATH`), dosya izinleri (`chmod 755/644`, `chmod +x`), çalıştırılabilir betikler (`./`) ve süreç yönetimi (`ps`, `ps aux`, `kill`).
+4. **Seviye 3 (`level-3`):** "İleri" (9 Ders — `src/lessons/content/level3/index.ts`) — Sistem/kullanıcı bilgisi (`whoami`, `uname`, `date`), ortam değişkenleri (`env`, `export`, `$VAR`), komut arama yolu (`which`, `$PATH`), dosya izinleri (`chmod 755/644`, `chmod +x`), çalıştırılabilir betikler (`./`), süreç yönetimi (`ps`, `ps aux`, `kill`), mantıksal operatörler (`&&`, `||`) ve yol/dosya analizi (`stat`, `realpath`, `basename`).
 
 ---
 
@@ -545,7 +548,7 @@ Kullanıcı tema veya vurgu rengi değiştirdiği anda `terminal.options.theme` 
 ### Hile Kağıdı (`src/cheatsheet/`)
 - **Görünüm:** `src/cheatsheet/CheatSheetView.tsx`
 - **Veri Kaynağı:** `src/cheatsheet/data.ts`
-- **İçerik:** Sistemde mevcut olan 30 komutun kategorize edilmiş listesi (13 kategori: Gezinme, Listeleme, Oluşturma/Yazma, Okuma/İnceleme, Arama, Sıralama, İzinler, Sistem Bilgisi, Ortam/Değişkenler, Süreçler, Kopyalama/Taşıma, Silme, Yardım ve Oturum).
+- **İçerik:** Sistemde mevcut olan 33 komutun kategorize edilmiş listesi (13 kategori: Gezinme, Listeleme, Oluşturma/Yazma, Okuma/İnceleme, Arama, Sıralama, İzinler, Sistem Bilgisi, Ortam/Değişkenler, Süreçler, Kopyalama/Taşıma, Silme, Yardım ve Oturum).
 - **Etkileşim:** Bir komuta tıklandığında uygulama otomatik olarak **Serbest Mod**'a geçer, dosya ağacını açar ve tıklanan komutu Enter'a basmadan terminal girdi satırına yazar.
 
 ### Meraklısına (`src/explore/`)
@@ -569,7 +572,7 @@ KLU projesi katı tip denetimi ve otomatik birim testleriyle korunmaktadır.
 
 ### Komutlar
 ```bash
-# Birim ve entegrasyon testlerini çalıştırır (162 test, 9 test dosyası)
+# Birim ve entegrasyon testlerini çalıştırır (177 test, 9 test dosyası)
 npm test
 
 # İzleme (watch) modunda testleri sürekli çalıştırmak için:
@@ -584,12 +587,12 @@ npm run build
 
 ### Test Dosyaları ve Kapsam
 Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konumlandırılmıştır:
-1. `src/core/commands/commands.test.ts` (69 test): 30 çekirdek komutun bayrakları, argümanları, boru hatları ve çalıştırılabilir betiklerin uç durumları.
+1. `src/core/commands/commands.test.ts` (81 test): 33 çekirdek komutun bayrakları, argümanları, boru hatları, mantıksal zincirler (`&&`, `||`) ve çalıştırılabilir betiklerin uç durumları.
 2. `src/core/fs/VirtualFS.test.ts` (21 test): Dizin oluşturma, okuma, yazma, silme, kopyalama, taşıma, chmod izin değişiklikleri, hata kodları ve prototip kirlenmesi koruması.
 3. `src/core/fs/treeListener.test.ts` (3 test): `VirtualFS.subscribe` olay mekanizması ve dosya ağacı tetikleyicileri.
-4. `src/core/shell/parser.test.ts` (13 test): Tırnaklar, boru hattı (`|`), yönlendirmeler (`>`, `>>`), tilde (`~`) ve `$VAR` açılımı.
+4. `src/core/shell/parser.test.ts` (14 test): Tırnaklar, boru hattı (`|`), yönlendirmeler (`>`, `>>`), mantıksal operatörler (`&&`, `||`), sözdizimi hataları, tilde (`~`) ve `$VAR` açılımı.
 5. `src/core/shell/completion.test.ts` (5 test): Tab ile komut ve dosya/dizin otomatik tamamlama.
-6. `src/lessons/validator.test.ts` (30 test): Görev doğrulama kuralları, keşif/nötr komutlar, 4 seviyedeki 26 dersin yayınlanan çözümüyle başarıyla tamamlandığının testi.
+6. `src/lessons/validator.test.ts` (32 test): Görev doğrulama kuralları, keşif/nötr komutlar, 4 seviyedeki 28 dersin yayınlanan çözümüyle başarıyla tamamlandığının testi.
 7. `src/explore/data.test.ts` (5 test): 15 araç kartının şema doğrulaması ve kategori bütünlüğü.
 8. `src/themes/themes.test.ts` (9 test): 5 tema tanımı, hex renk doğrulama regex'i ve CSS değişkenleri.
 9. `src/state/progress.test.ts` (7 test): İlerleme durumu, localStorage senkronizasyonu ve geçmiş yönetimi.
@@ -697,19 +700,19 @@ KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içi
 ## 14. Mevcut Durum ve Sonraki Adımlar
 
 ### Mevcut Durum Özeti (Kod Tabanında Tam Olarak Var Olanlar)
-1. **Çekirdek Komut Seti (30 Komut):** `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history`, `head`, `tail`, `wc`, `grep`, `sort`, `uniq`, `find`, `chmod`, `whoami`, `uname`, `date`, `env`, `export`, `which`, `ps`, `kill` tamamen işlevseldir.
+1. **Çekirdek Komut Seti (33 Komut):** `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history`, `head`, `tail`, `wc`, `grep`, `sort`, `uniq`, `find`, `chmod`, `whoami`, `uname`, `date`, `env`, `export`, `which`, `ps`, `kill`, `stat`, `realpath`, `basename` tamamen işlevseldir.
 2. **Sanal Dosya Sistemi (VirtualFS):** Bellek içi (in-memory) ağaç yapısı, CRUD operasyonları, POSIX hata kodları, `chmod` ile izin bitleri yönetimi, `subscribe` olay dinleme mekanizması ve `Object.create(null)` tabanlı prototip kirlenmesi koruması çalışır durumdadır.
 3. **Kabuk Motoru (Shell):** Boru hatları (`|`), G/Ç yönlendirmeleri (`>`, `>>`, `<`), mantıksal operatörler (`&&`, `||`, `;`), tırnak ayrıştırma, `$VAR` ve `~` genişletmesi, ReDoS korumalı glob (`*.txt`), çalıştırılabilir betik koşturma (`./betik.sh` yetki denetimli) ve `Tab` otomatik tamamlama mevcuttur.
-4. **Ders İçeriği (26 Ders):**
+4. **Ders İçeriği (28 Ders):**
    - **Seviye 0 ("Başlamadan Önce"):** 5 ders (`01-intro`, `02-how-klu-works`, `03-modes-and-tools`, `04-habits`, `05-real-linux`).
    - **Seviye 1 ("Başlangıç"):** 7 ders (`01-welcome`, `02-listing`, `03-navigation`, `04-creating`, `05-reading`, `06-copy-move`, `07-removing`).
    - **Seviye 2 ("Orta"):** 7 ders (`01-redirection`, `02-pipes`, `03-head-tail`, `04-wc`, `05-grep`, `06-sort-uniq`, `07-find`).
-   - **Seviye 3 ("İleri"):** 7 ders (`01-system-info`, `02-environment`, `03-which-path`, `04-chmod-numeric`, `05-chmod-symbolic`, `06-processes-ps`, `07-kill-process`).
+   - **Seviye 3 ("İleri"):** 9 ders (`01-system-info`, `02-environment`, `03-which-path`, `04-chmod-numeric`, `05-chmod-symbolic`, `06-processes-ps`, `07-kill-process`, `08-logic-operators`, `09-path-and-stat`).
 5. **Serbest Mod (Sandbox) & Canlı Dosya Ağacı:** Tam ekran terminal, gerçek zamanlı reaktif dosya ağacı, animasyonlu yeni dosya vurgusu, `quotePath` kaçışlamalı tıklama desteği ve bağımsız sanal FS sıfırlama.
-6. **Hile Kağıdı (Cheat Sheet):** 13 kategoride 30 komutun hızlı başvuru tablosu ve Serbest Mod terminaline aktarım desteği.
+6. **Hile Kağıdı (Cheat Sheet):** 13 kategoride 33 komutun hızlı başvuru tablosu ve Serbest Mod terminaline aktarım desteği.
 7. **Meraklısına (Explore):** 15 modern CLI aracı, 5 kategori filtresi (`media`, `system`, `files`, `productivity`, `fun`), dağıtım sekmeleri (Debian, Fedora, Arch), ipuçları ve tek tıkla kopyalama.
 8. **Tema Motoru:** 5 renk teması, terminal renklerinin canlı eşzamanlanması, hex doğrulayıcılı özel vurgu rengi seçici.
-9. **Kalite & Test Güvencesi:** 162 birim testi (9 test dosyasında), sıfır TypeScript hatası, `dist/index.html` içinde üretim CSP'si, 0 `npm audit` açığı.
+9. **Kalite & Test Güvencesi:** 177 birim testi (9 test dosyasında), sıfır TypeScript hatası, `dist/index.html` içinde üretim CSP'si, 0 `npm audit` açığı.
 
 ### Henüz Yapılmamış / Gelecek Adımlar (Yapılacaklar)
 1. **`src/git/` Modülü (Etkileşimli Git Terminali):**

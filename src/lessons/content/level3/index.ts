@@ -6,12 +6,15 @@ import { chmodNumeric } from './04-chmod-numeric';
 import { chmodSymbolic } from './05-chmod-symbolic';
 import { processesPs } from './06-processes-ps';
 import { killProcess } from './07-kill-process';
+import { logicOperators } from './08-logic-operators';
+import { pathAndStat } from './09-path-and-stat';
 
 export const level3: Level = {
   id: 'level-3',
   number: 3,
   title: 'İleri',
-  description: 'Sistem bilgisi, ortam değişkenleri ($VAR, env, export), dosya izinleri (chmod), betik çalıştırma ve süreç yönetimi (ps, kill).',
+  description:
+    'Sistem bilgisi, ortam değişkenleri ($VAR, env, export), dosya izinleri (chmod), mantıksal operatörler (&&, ||), yol araçları (stat, realpath, basename) ve süreç yönetimi (ps, kill).',
   lessons: [
     systemInfo,
     environment,
@@ -20,5 +23,7 @@ export const level3: Level = {
     chmodSymbolic,
     processesPs,
     killProcess,
+    logicOperators,
+    pathAndStat,
   ],
 };

@@ -716,7 +716,134 @@ describe('clear / help / man / history', () => {
       expect(rExec.out.trim()).toBe('Merhaba Betik');
     });
   });
+
+  describe('logical operators && and ||', () => {
+    it('executes right side of && only on success', async () => {
+      const { run } = createTestShell();
+      const rSuccess = await run('echo A && echo B');
+      expect(rSuccess.out).toBe('A\nB\n');
+      expect(rSuccess.exitCode).toBe(0);
+
+      const rFail = await run('cat /yok.txt && echo B');
+      expect(rFail.out).toBe('');
+      expect(rFail.exitCode).not.toBe(0);
+    });
+
+    it('executes right side of || only on failure', async () => {
+      const { run } = createTestShell();
+      const rSuccess = await run('echo A || echo B');
+      expect(rSuccess.out).toBe('A\n');
+      expect(rSuccess.exitCode).toBe(0);
+
+      const rFail = await run('cat /yok.txt || echo B');
+      expect(rFail.out).toBe('B\n');
+      expect(rFail.exitCode).toBe(0);
+    });
+
+    it('chains && and || with pipelines and redirection', async () => {
+      const { run } = createTestShell();
+      await run('echo "arama metni" > /tmp/metin.txt');
+
+      const rMatch = await run('cat /tmp/metin.txt | grep "arama" && echo "bulundu" || echo "yok"');
+      expect(rMatch.out).toContain('bulundu');
+      expect(rMatch.out).not.toContain('yok');
+
+      const rNoMatch = await run('cat /tmp/metin.txt | grep "kayip" && echo "bulundu" || echo "yok"');
+      expect(rNoMatch.out).toContain('yok');
+      expect(rNoMatch.out).not.toContain('bulundu');
+    });
+  });
+
+  describe('stat', () => {
+    it('displays file metadata including size, mode, and owner', async () => {
+      const { run } = createTestShell();
+      await run('echo "KLU Linux" > /tmp/stat_test.txt');
+      const r = await run('stat /tmp/stat_test.txt');
+      expect(r.exitCode).toBe(0);
+      expect(r.out).toContain('File: /tmp/stat_test.txt');
+      expect(r.out).toContain('regular file');
+      expect(r.out).toContain('Access: (0644/-rw-r--r--)');
+      expect(r.out).toContain('Uid: ( 1000/kullanici)');
+    });
+
+    it('supports custom formatting with -c', async () => {
+      const { run } = createTestShell();
+      await run('echo "12345" > /tmp/fmt.txt');
+      const r = await run('stat -c "%s %a %F" /tmp/fmt.txt');
+      expect(r.exitCode).toBe(0);
+      expect(r.out.trim()).toBe('6 644 regular file');
+    });
+
+    it('reports error on missing operand or non-existent file', async () => {
+      const { run } = createTestShell();
+      expect((await run('stat')).err).toContain('missing operand');
+      expect((await run('stat /yok.txt')).err).toContain('No such file or directory');
+    });
+  });
+
+  describe('realpath', () => {
+    it('resolves relative paths, .., and ~ to absolute canonical paths', async () => {
+      const { run } = createTestShell();
+      const rDot = await run('realpath .');
+      expect(rDot.exitCode).toBe(0);
+      expect(rDot.out.trim()).toBe('/home/kullanici');
+
+      const rParent = await run('realpath ..');
+      expect(rParent.out.trim()).toBe('/home');
+
+      const rTilde = await run('realpath ~/Belgeler/../Muzik');
+      expect(rTilde.out.trim()).toBe('/home/kullanici/Muzik');
+    });
+
+    it('reports error for non-existent path unless -m is given', async () => {
+      const { run } = createTestShell();
+      const rErr = await run('realpath /olmayan/dosya.txt');
+      expect(rErr.exitCode).toBe(1);
+      expect(rErr.err).toContain('No such file or directory');
+
+      const rMissing = await run('realpath -m /olmayan/dosya.txt');
+      expect(rMissing.exitCode).toBe(0);
+      expect(rMissing.out.trim()).toBe('/olmayan/dosya.txt');
+    });
+  });
+
+  describe('basename', () => {
+    it('strips directory prefixes', async () => {
+      const { run } = createTestShell();
+      const r1 = await run('basename /usr/local/bin/sort');
+      expect(r1.out.trim()).toBe('sort');
+
+      const r2 = await run('basename /etc/nginx/');
+      expect(r2.out.trim()).toBe('nginx');
+
+      const rRoot = await run('basename /');
+      expect(rRoot.out.trim()).toBe('/');
+    });
+
+    it('strips suffix when provided', async () => {
+      const { run } = createTestShell();
+      const rSuff = await run('basename /home/kullanici/app.js .js');
+      expect(rSuff.out.trim()).toBe('app');
+
+      const rOption = await run('basename -s .txt /home/kullanici/notlar.txt');
+      expect(rOption.out.trim()).toBe('notlar');
+    });
+
+    it('supports multiple arguments with -a', async () => {
+      const { run } = createTestShell();
+      const r = await run('basename -a /a/b.js /c/d.py');
+      expect(r.out).toBe('b.js\nd.py\n');
+    });
+
+    it('reports error on missing operand', async () => {
+      const { run } = createTestShell();
+      const r = await run('basename');
+      expect(r.exitCode).toBe(1);
+      expect(r.err).toContain('missing operand');
+    });
+  });
 });
+
 
 
 

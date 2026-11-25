@@ -23,6 +23,16 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
         description: 'Klasörler arasında geçiş yapar (.. üst, ~ ev, - önceki).',
         example: 'cd Belgeler',
       },
+      {
+        command: 'realpath',
+        description: 'Göreceli yolu mutlak (tam) yola çevirir.',
+        example: 'realpath ..',
+      },
+      {
+        command: 'basename',
+        description: 'Yolun sonundaki dosya adını ayıklar.',
+        example: 'basename /a/b.txt',
+      },
     ],
   },
   {
@@ -77,6 +87,11 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
         command: 'wc',
         description: 'Satır, kelime ve bayt sayısını hesaplar (-l satır).',
         example: 'wc -l not.txt',
+      },
+      {
+        command: 'stat',
+        description: 'Dosyanın boyut, izin ve tarih meta verilerini gösterir.',
+        example: 'stat not.txt',
       },
     ],
   },
