@@ -14,31 +14,29 @@ export const findLesson: Lesson = {
     },
   },
   content: `
-### find — dosya hiyerarşisinde arama
+### \`find\` — Kayıp Dosyaları Bul
 
-\`grep\` dosyaların **içindeki** metinleri ararken; \`find\` dosya sisteminde dosya ve klasörlerin **kendilerini (adlarını, türlerini)** arar.
+\`grep\` dosyaların **içindeki yazıları** arar. \`find\` ise doğrudan **dosyanın veya klasörün kendisini** bulur — tıpkı bilgisayardaki dosya arama çubuğu gibi.
 
-\`\`\`bash
-$ find [BAŞLANGIÇ_DİZİNİ] [KRİTERLER]
-\`\`\`
-
-Dizin belirtilmezse arama bulunduğun dizinden (\`.\`) başlar ve tüm alt klasörlerin içine iner.
-
-### Temel Kriterler
-
-- \`-name "DESEN"\` — Dosya adına göre arama (\`*\`, \`?\` kullanılabilir).
-- \`-iname "DESEN"\` — Büyük/küçük harf duyarsız ad araması.
-- \`-type f\` — Yalnızca normal dosyaları bulur.
-- \`-type d\` — Yalnızca dizinleri (klasörleri) bulur.
-- \`-maxdepth N\` — Aramanın kaç alt dizin derine ineceğini sınırlar.
+\`find\` komutuna sadece iki şey söylersin: **Nerede arayayım?** ve **Neyi arayayım?**
 
 \`\`\`bash
-$ find . -name "*.txt"          # tüm txt dosyalarını bul
-$ find proje -type d            # proje altındaki klasörleri listele
-$ find / -maxdepth 1 -type d    # kök dizindeki klasörler
+find proje -name "*.txt"    # proje klasöründeki tüm .txt dosyalarını bul
+find . -type d              # bulunduğun yerdeki (.) tüm klasörleri bul
+find . -maxdepth 1 -type f  # alt klasörlere inmeden sadece buradaki dosyalar
 \`\`\`
 
-> 💡 **Önemli İpucu:** \`-name\` deseninde yıldız (\`*\`) kullanırken deseni her zaman tırnak içine al (\`"*.js"\`). Tırnak koymazsan kabuk yıldızı henüz \`find\` çalışmadan açmaya kalkar.
+*(Nerede arayacağını \`.\` olarak yazarsan bulunduğun yerden başlar ve tüm alt klasörlerin içine otomatik bakar.)*
+
+### En Çok İşine Yarayacak Seçenekler
+
+- \`-name "*.txt"\` — Adına göre bul (\`*\` "ne olursa olsun" demektir).
+- \`-iname "*.txt"\` — Aynısı, ama büyük/küçük harf fark etmez.
+- \`-type f\` — Sadece **dosyaları** getir (*f = file*).
+- \`-type d\` — Sadece **klasörleri** getir (*d = directory*).
+- \`-maxdepth 1\` — Çok derine inme, sadece ilk kata bak.
+
+> 💡 **Küçük Not:** \`*\` işareti kullanırken mutlaka tırnak içine al (\`"*.js"\`). Tırnak koymazsan terminal yıldızı \`find\`'a bırakmadan kendi yorumlamaya çalışır ve arama bozulabilir.
 `,
   examples: [
     'find . -name "*.js"',
