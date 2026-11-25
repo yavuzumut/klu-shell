@@ -117,7 +117,7 @@ export function LessonPanel(props: Props) {
         {lessonDone && (
           <div className="lesson-complete">
             <strong>🎉 Ders tamamlandı!</strong>
-            <span>{props.hasNext ? 'Sonraki derse geçmeye hazırsın.' : 'Seviye 1’in tüm derslerini bitirdin. Harika iş!'}</span>
+            <span>{props.hasNext ? 'Sonraki derse geçmeye hazırsın.' : 'Tüm dersleri tamamladın. Harika iş!'}</span>
           </div>
         )}
       </section>

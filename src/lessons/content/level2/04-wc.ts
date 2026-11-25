@@ -16,7 +16,7 @@ export const wordCount: Lesson = {
 
 \`\`\`bash
 $ wc siir.txt
-      3       9      62 siir.txt
+      3      10      62 siir.txt
 \`\`\`
 
 Çıktıdaki sütunlar sırasıyla:

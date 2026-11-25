@@ -9,6 +9,7 @@ import { GitIntroView } from './git/GitIntroView';
 import { createRegistry } from './core/commands';
 import { createDefaultFS } from './core/fs/defaultTree';
 import { Shell } from './core/shell/Shell';
+import { quotePath } from './core/shell/parser';
 import type { CommandRecord } from './core/shell/types';
 import { ALL_LESSONS, findLesson, LEVELS } from './lessons/content';
 import { createLessonFS, lessonStartCwd } from './lessons/session';
@@ -28,14 +29,6 @@ const ansi = {
 const plain = (md: string) => md.replace(/`([^`]+)`/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1');
 
 type MobileTab = 'lesson' | 'terminal' | 'tree';
-
-/** Quote path for shell insertion if it contains characters outside [A-Za-z0-9_./~-]. */
-export function quotePath(path: string): string {
-  if (/[^A-Za-z0-9_./~-]/.test(path)) {
-    return `'${path.replace(/'/g, "'\\''")}'`;
-  }
-  return path;
-}
 
 export default function App() {
   const { progress, actions } = useProgress(FIRST_LESSON_ID);

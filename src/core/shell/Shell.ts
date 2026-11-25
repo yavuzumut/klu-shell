@@ -158,13 +158,14 @@ export class Shell {
   }
 
   /** Parse and run a full command line. */
-  async execute(line: string): Promise<CommandRecord> {
+  async execute(line: string, options?: { recordHistory?: boolean }): Promise<CommandRecord> {
     const output: OutputChunk[] = [];
     const commands: string[][] = [];
     const cwdBefore = this.cwd;
     const trimmed = line.trim();
+    const recordHistory = options?.recordHistory ?? true;
 
-    if (trimmed) {
+    if (trimmed && recordHistory) {
       if (this.history[this.history.length - 1] !== trimmed) this.history.push(trimmed);
       if (this.history.length > MAX_HISTORY) this.history.shift();
     }
@@ -336,7 +337,7 @@ export class Shell {
         for (const raw of lines) {
           const trimmed = raw.trim();
           if (!trimmed || trimmed.startsWith('#')) continue;
-          const rec = await this.execute(trimmed);
+          const rec = await this.execute(trimmed, { recordHistory: false });
           code = rec.exitCode;
           if (rec.stdout) ctx.stdout(rec.stdout);
           if (rec.stderr) ctx.stderr(rec.stderr);

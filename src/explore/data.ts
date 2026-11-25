@@ -295,7 +295,7 @@ Archiving utility.
       'cowsay "Merhaba"',
       'figlet KLU',
       'figlet KLU | lolcat',
-      '| işareti ileride gelecek Seviye 2\'de anlatılacak.',
+      '| işareti Seviye 2\'de anlatılıyor.',
     ],
   },
   {

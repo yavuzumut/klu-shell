@@ -8,6 +8,21 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
+function getLocalTimeZone(d: Date): string {
+  try {
+    const part = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+      .formatToParts(d)
+      .find((p) => p.type === 'timeZoneName');
+    if (part?.value) return part.value;
+  } catch {
+    // fallback
+  }
+  const offset = -d.getTimezoneOffset();
+  const sign = offset >= 0 ? '+' : '-';
+  const hours = Math.floor(Math.abs(offset) / 60);
+  return `UTC${sign}${hours}`;
+}
+
 function formatDate(d: Date, format: string | null, utc: boolean): string {
   const year = utc ? d.getUTCFullYear() : d.getFullYear();
   const month = (utc ? d.getUTCMonth() : d.getMonth()) + 1;
@@ -20,7 +35,7 @@ function formatDate(d: Date, format: string | null, utc: boolean): string {
   const epochSec = Math.floor(d.getTime() / 1000);
 
   if (!format) {
-    const tz = utc ? 'UTC' : 'UTC';
+    const tz = utc ? 'UTC' : getLocalTimeZone(d);
     return `${dayName} ${monthName} ${String(day).padStart(2, ' ')} ${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)} ${tz} ${year}`;
   }
 

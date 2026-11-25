@@ -8,7 +8,7 @@ export const realLinuxLesson: Lesson = {
 ### KLU ile Gerçek Linux Arasındaki Farklar
 - **Bellek İçi Simülasyon:** KLU'da yaptığın her değişiklik tarayıcı belleğindedir. Gerçek Linux'ta komutlar doğrudan diskteki dosyalara, ağ kartına ve donanıma etki eder.
 - **Komut Yelpazesi:** KLU şu anda temel dosya ve gezinme komutlarını simüle eder. Gerçek bir Linux dağıtımında binlerce komut, paket yöneticileri (\`apt\`, \`pacman\`, \`dnf\`) ve çoğu modern dağıtımda sistem yönetim araçları (\`systemctl\`, \`journalctl\`) bulunur.
-- **Temel Mantık Aynıdır:** Temel mantık aynıdır (kök dizin \`/\`, ev dizini \`~\`, üst dizin \`..\`, komut seçenekleri ve bayraklar); ama KLU gerçek sistemin basitleştirilmiş bir hâlidir, örneğin dosya izinleri henüz uygulanmıyor.
+- **Temel Mantık Aynıdır:** Temel mantık aynıdır (kök dizin \`/\`, ev dizini \`~\`, üst dizin \`..\`, komut seçenekleri ve bayraklar); ancak KLU gerçek bir sistemin basitleştirilmiş bir eğitim simülasyonudur (temel dosya izinleri \`chmod\` ve betik çalıştırma Seviye 3'te simüle edilir).
 
 > ⚠️ **Önemli Hatırlatma:** Gerçek Linux'ta \`rm\` komutuyla silinen dosyalar kalıcı olarak silinir, grafik arayüzlerdeki gibi bir çöp kutusu yoktur.
 

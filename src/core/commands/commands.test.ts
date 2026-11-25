@@ -594,6 +594,13 @@ describe('clear / help / man / history', () => {
       expect(r.out).toContain('2024'); // default FIXED_NOW year
     });
 
+    it('supports -u for UTC', async () => {
+      const { run } = createTestShell();
+      const r = await run('date -u');
+      expect(r.exitCode).toBe(0);
+      expect(r.out).toContain('UTC');
+    });
+
     it('supports custom format string', async () => {
       const { run } = createTestShell();
       const r = await run('date +%Y-%m-%d');
@@ -714,6 +721,15 @@ describe('clear / help / man / history', () => {
       const rExec = await run('/tmp/betik.sh');
       expect(rExec.exitCode).toBe(0);
       expect(rExec.out.trim()).toBe('Merhaba Betik');
+    });
+
+    it('does not leak script lines into shell history', async () => {
+      const { run, shell } = createTestShell();
+      await run('echo "echo inside_script" > /tmp/betik.sh');
+      await run('chmod +x /tmp/betik.sh');
+      await run('/tmp/betik.sh');
+      expect(shell.history).toContain('/tmp/betik.sh');
+      expect(shell.history).not.toContain('echo inside_script');
     });
   });
 
