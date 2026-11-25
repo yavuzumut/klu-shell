@@ -86,11 +86,11 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
       {
         command: 'grep',
         description: 'Metin içinde kelime veya karakter arar (-i harf duyarsız, -n satır no, -r alt dizinler).',
-        example: 'grep -i "error" /var/log/syslog',
+        example: 'grep -i "error" log.txt',
       },
       {
         command: 'find',
-        description: 'Dizin hiyerarşisinde dosya veya klasör arar (-name ad, -type f/d).',
+        description: 'Klasörler içinde dosya veya klasör arar (-name ad, -type f/d).',
         example: 'find . -name "*.txt"',
       },
     ],
@@ -116,7 +116,7 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
       {
         command: 'cp',
         description: 'Dosya ve dizinleri kopyalar (-r dizin kopyalamak için zorunludur).',
-        example: 'cp -r Belgeler Belgeler_yedek',
+        example: 'cp -r Belgeler yedek',
       },
       {
         command: 'mv',
