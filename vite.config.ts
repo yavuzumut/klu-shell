@@ -11,7 +11,7 @@ const cspPlugin: Plugin = {
         tag: 'meta',
         attrs: {
           'http-equiv': 'Content-Security-Policy',
-          content: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'",
+          content: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'",
         },
         injectTo: 'head',
       },
