@@ -3,6 +3,7 @@ import { Header, type AppMode } from './components/Header';
 import { LessonDrawer } from './components/LessonDrawer';
 import { LessonPanel } from './components/LessonPanel';
 import { FileTree } from './components/FileTree';
+import { CongratsModal } from './components/CongratsModal';
 import { CheatSheetView } from './cheatsheet/CheatSheetView';
 import { ExploreView } from './explore/ExploreView';
 import { GitIntroView } from './git/GitIntroView';
@@ -19,6 +20,7 @@ import { TerminalView, type TerminalHandle } from './terminal/TerminalView';
 import { useTheme } from './themes/useTheme';
 
 const FIRST_LESSON_ID = ALL_LESSONS[0].id;
+const MAIN_CURRICULUM_LESSONS = LEVELS.filter((l) => l.id !== 'level-0').flatMap((l) => l.lessons);
 
 const ansi = {
   green: (s: string) => `\x1b[1;32m${s}\x1b[0m`,
@@ -279,6 +281,59 @@ export default function App() {
     }
   }, []);
 
+  const [congratsSeen, setCongratsSeen] = useState(() => {
+    try {
+      return localStorage.getItem('klu_congrats_seen') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [congratsOpen, setCongratsOpen] = useState(false);
+
+  const isMainCurriculumCompleted = useMemo(
+    () => MAIN_CURRICULUM_LESSONS.every((l) => isLessonDone(l.id)),
+    [isLessonDone],
+  );
+
+  useEffect(() => {
+    if (isMainCurriculumCompleted && !congratsSeen) {
+      setCongratsOpen(true);
+    }
+  }, [isMainCurriculumCompleted, congratsSeen]);
+
+  const handleCloseCongrats = useCallback(() => {
+    setCongratsOpen(false);
+    setCongratsSeen(true);
+    try {
+      localStorage.setItem('klu_congrats_seen', '1');
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleCongratsGoToSandbox = useCallback(() => {
+    handleCloseCongrats();
+    handleModeChange('sandbox');
+  }, [handleCloseCongrats, handleModeChange]);
+
+  const handleCongratsGoToGit = useCallback(() => {
+    handleCloseCongrats();
+    handleModeChange('git');
+  }, [handleCloseCongrats, handleModeChange]);
+
+  const handleResetAll = useCallback(() => {
+    actions.resetAll();
+    try {
+      localStorage.removeItem('klu_congrats_seen');
+    } catch {
+      // ignore
+    }
+    setCongratsSeen(false);
+    setCongratsOpen(false);
+    activeShell.history.length = 0;
+    startLessonSession('İlerleme sıfırlandı.');
+  }, [actions, activeShell.history, startLessonSession]);
+
   const showLevel0Banner = mode === 'lessons' && !hasCompletedAnyLevel0 && !bannerDismissed;
 
   return (
@@ -456,11 +511,14 @@ export default function App() {
         isLessonDone={isLessonDone}
         onSelectLesson={goToLesson}
         onClose={() => setDrawerOpen(false)}
-        onResetAll={() => {
-          actions.resetAll();
-          activeShell.history.length = 0;
-          startLessonSession('İlerleme sıfırlandı.');
-        }}
+        onResetAll={handleResetAll}
+      />
+
+      <CongratsModal
+        open={congratsOpen}
+        onClose={handleCloseCongrats}
+        onGoToSandbox={handleCongratsGoToSandbox}
+        onGoToGit={handleCongratsGoToGit}
       />
     </div>
   );

@@ -2359,3 +2359,183 @@ pre {
     display: none;
   }
 }
+
+/* ------------------------------------------------------------- congrats modal */
+.congrats-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: congratsFadeIn 0.2s ease-out;
+}
+
+@keyframes congratsFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.congrats-modal-card {
+  position: relative;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  max-width: 520px;
+  width: 100%;
+  padding: 32px 26px 26px;
+  text-align: center;
+  box-shadow: 0 16px 40px var(--shadow-color);
+  animation: congratsScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes congratsScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.congrats-modal-close-icon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.congrats-modal-close-icon:hover {
+  color: var(--text);
+  background: var(--bg-elev-2);
+}
+
+.congrats-modal-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.congrats-modal-logo-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  background-color: #10161d;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+}
+
+[data-theme='light'] .congrats-modal-logo-frame {
+  border: 1px solid rgba(16, 22, 29, 0.18);
+  box-shadow: 0 2px 6px rgba(16, 22, 29, 0.15);
+}
+
+.congrats-modal-logo-img {
+  height: 44px;
+  width: auto;
+  aspect-ratio: 700 / 282;
+  object-fit: contain;
+  display: block;
+}
+
+.congrats-modal-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 12px;
+  line-height: 1.35;
+}
+
+.congrats-modal-desc {
+  font-size: 0.94rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+.congrats-modal-quote {
+  background: var(--bg-elev-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+  margin: 0 0 22px;
+  text-align: left;
+}
+
+.congrats-quote-text-tr {
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin: 0 0 4px;
+  line-height: 1.45;
+}
+
+.congrats-quote-text-en {
+  font-style: italic;
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+.congrats-quote-author {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.congrats-quote-author strong {
+  color: var(--text);
+}
+
+.congrats-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.congrats-action-btn {
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .congrats-modal-card {
+    padding: 24px 18px 20px;
+  }
+  .congrats-modal-title {
+    font-size: 1.2rem;
+  }
+  .congrats-modal-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .congrats-modal-actions .congrats-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
