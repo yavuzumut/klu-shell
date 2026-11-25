@@ -49,7 +49,7 @@ export function CongratsModal({ open, onClose, onGoToSandbox, onGoToGit }: Congr
               src="/klu-logo-cropped.webp"
               alt="KLU"
               className="congrats-modal-logo-img"
-              height={44}
+              height={68}
             />
           </span>
         </div>
