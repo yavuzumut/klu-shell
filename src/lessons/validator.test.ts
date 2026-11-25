@@ -34,6 +34,8 @@ describe('lesson content', () => {
       expect(l.tasks.length).toBeLessThanOrEqual(3);
     }
     expect(LEVELS[0].lessons.length).toBeGreaterThan(0);
+    expect(LEVELS[1].lessons.length).toBeGreaterThan(0);
+    expect(LEVELS[2].lessons.length).toBeGreaterThan(0);
   });
 
   // Every task must be solvable by its own published solution.

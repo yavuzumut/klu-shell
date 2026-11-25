@@ -13,23 +13,24 @@ KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafı
   - Dosya okuma, yazma, kopyalama, taşıma, silme ve izin mantığı.
   - Olay tabanlı dinleyici mimarisi (`subscribe`) ile UI ve dosya ağacının anında güncellenmesi.
 - **Modüler Komut Yorumlayıcısı (Shell Engine):**
-  - Desteklenen 14 çekirdek komut: `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history`.
+  - Desteklenen 21 çekirdek komut: `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history`, `head`, `tail`, `wc`, `grep`, `sort`, `uniq`, `find`.
   - Unix boru hattı (pipe: `|`), yönlendirmeler (`>`, `>>`), tırnaklar (`""`, `''`), bayrak ayrıştırma (`-la`, `-rf`) ve glob açılımı (`*.txt`).
   - Terminalde `Tab` ile otomatik tamamlama, `↑`/`↓` ile komut geçmişi gezintisi.
-- **Ders Modu (Seviye 0 & Seviye 1: 12 İnteraktif Ders):**
+- **Ders Modu (Seviye 0, 1 & 2: 19 İnteraktif Ders):**
   - **Seviye 0 ("Başlamadan Önce", 5 ders):** Terminale giriş, KLU'nun çalışma mantığı, modlar ve gerçek Linux terminal alışkanlıkları.
   - **Seviye 1 ("Başlangıç", 7 ders):** Çalışma dizini (`pwd`), dosya listeleme (`ls`), dizinler arası gezinme (`cd`), dosya/klasör oluşturma (`touch`, `mkdir`), okuma (`cat`), kopyalama/taşıma (`cp`, `mv`) ve silme (`rm`).
+  - **Seviye 2 ("Orta", 7 ders):** Çıktı yönlendirme (`>`, `>>`), boru hattı (`|`), dosya başı ve sonu (`head`, `tail`), metin sayımı (`wc`), metin içi arama (`grep`), sıralama/tekilleştirme (`sort`, `uniq`) ve dosya sisteminde arama (`find`).
   - Adım adım Türkçe açıklamalar, örnekler ve anında doğrulanabilen interaktif görevler.
   - İpuçları (3 başarısız denemeden sonra çözüm gösterme imkânı).
   - İlerleme durumu `localStorage` üzerinde saklanır.
-  - Seviye 2 (Orta) ve Seviye 3 (İleri) seviyeleri planlanmıştır.
+  - Seviye 3 (İleri) planlanmıştır.
 - **Serbest Mod (Sandbox) & Canlı Dosya Ağacı:**
   - Tam ekran terminal ve yan panelde canlı güncellenen dosya sistemi ağacı.
   - Ağaçtaki bir klasöre tıklandığında `cd <yol>`, dosyaya tıklandığında `cat <yol>` komutunu güvenli kaçışlamayla (`quotePath`) terminale otomatik yazma.
   - Çalışma dizini (`cwd`) vurgulaması ve yeni oluşturulan öğeleri animasyonlu parlama efektiyle belirtme.
   - Ders ilerlemesini sıfırlamadan serbest mod dosya sistemini tek tıkla sıfırlayabilme.
 - **Hile Kağıdı (Cheat Sheet):**
-  - 7 kategoriye ayrılmış 14 çekirdek komut rehberi (gezinme, dosya işlemleri, okuma, silme, yardım vb.).
+  - 9 kategoriye ayrılmış 21 çekirdek komut rehberi (gezinme, dosya işlemleri, okuma, arama, sıralama, silme, yardım vb.).
   - Komutlara veya örneklere tıklayarak doğrudan Serbest Mod terminaline aktarma.
 - **Meraklısına (Modern Linux CLI Araçları):**
   - Gerçek Linux dünyasında kullanılan 15 popüler harici araç için tanıtım kartları (`yt-dlp`, `wttr.in`, `fastfetch`, `btop`, `ncdu`, `ripgrep`, `fd`, `bat`, `eza`, `fzf`, `tldr`, `tmux`, `cmatrix`, `cowsay-figlet-lolcat`, `sl`).
@@ -47,7 +48,7 @@ KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafı
 
 - **Çatı & Dil:** React 18 (`^18.3.1`), TypeScript (`~5.6.2`), Vite 7 (`^7.3.8`)
 - **Terminal UI:** `@xterm/xterm` (`^5.5.0`), `@xterm/addon-fit` (`^0.10.0`)
-- **Birim & Entegrasyon Test:** Vitest 5 (`^5.1.1` - 116 test)
+- **Birim & Entegrasyon Test:** Vitest 5 (`^5.1.1` - 132 test)
 - **Markdown İşleme:** Marked (`^14.1.0`)
 - **Stil:** Modern Saf CSS (5 tema, CSS değişkenleri, duyarlı mobil tuş çubuğu)
 

@@ -56,12 +56,57 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
     ],
   },
   {
-    title: 'Dosya Okuma',
+    title: 'Dosya Okuma ve İnceleme',
     items: [
       {
         command: 'cat',
         description: 'Dosya içeriğini ekrana yazdırır veya dosyaları birleştirir (-n satır numaralı).',
         example: 'cat -n merhaba.txt',
+      },
+      {
+        command: 'head',
+        description: 'Dosyanın ilk satırlarını gösterir (-n satır sayısı).',
+        example: 'head -n 5 /etc/passwd',
+      },
+      {
+        command: 'tail',
+        description: 'Dosyanın son satırlarını gösterir (-n satır sayısı, -n +N).',
+        example: 'tail -n 3 /var/log/syslog',
+      },
+      {
+        command: 'wc',
+        description: 'Satır, kelime ve bayt sayısını hesaplar (-l satır, -w kelime).',
+        example: 'wc -l Belgeler/alisveris.txt',
+      },
+    ],
+  },
+  {
+    title: 'Metin ve Dosya Arama',
+    items: [
+      {
+        command: 'grep',
+        description: 'Metin içinde desen arar (-i harf duyarsız, -n satır no, -r alt dizinler).',
+        example: 'grep -i "error" /var/log/syslog',
+      },
+      {
+        command: 'find',
+        description: 'Dizin hiyerarşisinde dosya veya klasör arar (-name ad, -type f/d).',
+        example: 'find . -name "*.txt"',
+      },
+    ],
+  },
+  {
+    title: 'Sıralama ve Düzenleme',
+    items: [
+      {
+        command: 'sort',
+        description: 'Satırları alfabetik veya sayısal sıralar (-r ters, -n sayısal, -u tekil).',
+        example: 'sort -n puanlar.txt',
+      },
+      {
+        command: 'uniq',
+        description: 'Ardışık tekrar eden satırları ayıklar (-c sayımlı, -d tekrarlananlar).',
+        example: 'sort liste.txt | uniq -c',
       },
     ],
   },

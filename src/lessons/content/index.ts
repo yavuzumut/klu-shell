@@ -1,15 +1,7 @@
 import type { Level } from '../types';
 import { level0 } from './level0';
 import { level1 } from './level1';
-
-export const level2: Level = {
-  id: 'level-2',
-  number: 2,
-  title: 'Orta',
-  description: 'Pipe (|), yönlendirme (>, >>), grep, find ve dosya izinleri (chmod).',
-  lessons: [],
-  comingSoon: true,
-};
+import { level2 } from './level2';
 
 export const level3: Level = {
   id: 'level-3',

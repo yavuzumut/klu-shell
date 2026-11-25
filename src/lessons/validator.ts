@@ -2,7 +2,27 @@ import type { CommandRecord } from '../core/shell/types';
 import type { CheckState, Lesson, Task, TaskCheck } from './types';
 
 /** Commands used to look around; they never count as a wrong attempt. */
-export const EXPLORATION_COMMANDS = new Set(['ls', 'pwd', 'cat', 'help', 'man', 'clear', 'history', 'echo']);
+export const EXPLORATION_COMMANDS = new Set([
+  'ls',
+  'pwd',
+  'cat',
+  'help',
+  'man',
+  'clear',
+  'history',
+  'echo',
+  // Read-only Level 2 commands
+  'head',
+  'tail',
+  'wc',
+  'grep',
+  'sort',
+  'uniq',
+  'find',
+]);
+
+// eslint-disable-next-line no-control-regex
+const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
 
 function hasFlag(args: string[], flag: string): boolean {
   return args.some((a) => (a.startsWith('-') && !a.startsWith('--') && a.slice(1).includes(flag)) || a === `--${flag}`);
@@ -33,7 +53,7 @@ export function evaluateCheck(check: TaskCheck, state: CheckState): boolean {
       });
     }
     case 'outputContains':
-      return state.last.stdout.includes(check.text);
+      return state.last.stdout.replace(ANSI_RE, '').includes(check.text);
     case 'all':
       return check.checks.every((c) => evaluateCheck(c, state));
     case 'any':

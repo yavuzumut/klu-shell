@@ -11,6 +11,9 @@ import { cd } from './cd';
 import { clear } from './clear';
 import { cp } from './cp';
 import { echo } from './echo';
+import { find } from './find';
+import { grep } from './grep';
+import { head } from './head';
 import { help } from './help';
 import { history } from './history';
 import { ls } from './ls';
@@ -19,7 +22,11 @@ import { mkdir } from './mkdir';
 import { mv } from './mv';
 import { pwd } from './pwd';
 import { rm } from './rm';
+import { sort } from './sort';
+import { tail } from './tail';
 import { touch } from './touch';
+import { uniq } from './uniq';
+import { wc } from './wc';
 
 export const ALL_COMMANDS: CommandDefinition[] = [
   pwd,
@@ -36,6 +43,14 @@ export const ALL_COMMANDS: CommandDefinition[] = [
   help,
   man,
   history,
+  // Level 2: text processing and searching
+  head,
+  tail,
+  wc,
+  grep,
+  sort,
+  uniq,
+  find,
 ];
 
 export function createRegistry(commands: CommandDefinition[] = ALL_COMMANDS): CommandRegistry {

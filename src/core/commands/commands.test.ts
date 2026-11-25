@@ -384,6 +384,131 @@ describe('clear / help / man / history', () => {
     expect(res2.out).toBe('content 2\n');
     expect(res2.err).toBe('');
   });
+
+  describe('head and tail', () => {
+    it('head reads first N lines from file and stdin', async () => {
+      const { run, fs } = createTestShell();
+      fs.writeFile('/tmp/lines.txt', '1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n');
+      expect((await run('head /tmp/lines.txt')).out).toBe('1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n');
+      expect((await run('head -n 3 /tmp/lines.txt')).out).toBe('1\n2\n3\n');
+      expect((await run('head -2 /tmp/lines.txt')).out).toBe('1\n2\n');
+      expect((await run('echo -e "a\\nb\\nc" | head -n 2')).out).toBe('a\nb\n');
+    });
+
+    it('tail reads last N lines and supports -n +N', async () => {
+      const { run, fs } = createTestShell();
+      fs.writeFile('/tmp/lines.txt', '1\n2\n3\n4\n5\n');
+      expect((await run('tail -n 2 /tmp/lines.txt')).out).toBe('4\n5\n');
+      expect((await run('tail -2 /tmp/lines.txt')).out).toBe('4\n5\n');
+      expect((await run('tail -n +3 /tmp/lines.txt')).out).toBe('3\n4\n5\n');
+      expect((await run('echo -e "x\\ny\\nz" | tail -n 1')).out).toBe('z\n');
+    });
+
+    it('head and tail show headers when multiple files are provided', async () => {
+      const { run, fs } = createTestShell();
+      fs.writeFile('/tmp/a.txt', 'a1\na2\n');
+      fs.writeFile('/tmp/b.txt', 'b1\nb2\n');
+      const rHead = await run('head -n 1 /tmp/a.txt /tmp/b.txt');
+      expect(rHead.out).toBe('==> /tmp/a.txt <==\na1\n\n==> /tmp/b.txt <==\nb1\n');
+      const rTail = await run('tail -n 1 /tmp/a.txt /tmp/b.txt');
+      expect(rTail.out).toBe('==> /tmp/a.txt <==\na2\n\n==> /tmp/b.txt <==\nb2\n');
+    });
+  });
+
+  describe('wc', () => {
+    it('counts lines, words, and bytes', async () => {
+      const { run, fs } = createTestShell();
+      fs.writeFile('/tmp/words.txt', 'bir iki uc\ndort bes\n');
+      const r = await run('wc /tmp/words.txt');
+      expect(r.exitCode).toBe(0);
+      expect(r.out).toContain('2'); // lines
+      expect(r.out).toContain('5'); // words
+      expect(r.out).toContain('/tmp/words.txt');
+
+      expect((await run('wc -l /tmp/words.txt')).out.trim()).toBe('2 /tmp/words.txt');
+      expect((await run('wc -w /tmp/words.txt')).out.trim()).toBe('5 /tmp/words.txt');
+      expect((await run('cat /tmp/words.txt | wc -l')).out.trim()).toBe('2');
+    });
+  });
+
+  describe('grep', () => {
+    it('searches pattern with options and exit codes', async () => {
+      const { run, fs } = createTestShell();
+      fs.writeFile('/tmp/log.txt', 'INFO: basladi\nWARN: dikkat\nERROR: hata olustu\n');
+      const r1 = await run('grep ERROR /tmp/log.txt');
+      expect(r1.exitCode).toBe(0);
+      expect(r1.out).toBe('ERROR: hata olustu\n');
+
+      const rNone = await run('grep FATAL /tmp/log.txt');
+      expect(rNone.exitCode).toBe(1);
+      expect(rNone.out).toBe('');
+
+      const rCase = await run('grep -i error /tmp/log.txt');
+      expect(rCase.exitCode).toBe(0);
+      expect(rCase.out).toBe('ERROR: hata olustu\n');
+
+      const rInv = await run('grep -v -c INFO /tmp/log.txt');
+      expect(rInv.out.trim()).toBe('2');
+
+      const rPipe = await run('cat /tmp/log.txt | grep -n WARN');
+      expect(rPipe.out).toBe('2:WARN: dikkat\n');
+    });
+
+    it('supports recursive search with -r', async () => {
+      const { run, fs } = createTestShell();
+      fs.mkdir('/tmp/d1');
+      fs.writeFile('/tmp/d1/f1.txt', 'aranan metin burada\n');
+      fs.writeFile('/tmp/d1/f2.txt', 'baska bir sey\n');
+      const r = await run('grep -r aranan /tmp/d1');
+      expect(r.exitCode).toBe(0);
+      expect(r.out).toContain('/tmp/d1/f1.txt:aranan metin burada');
+    });
+  });
+
+  describe('sort and uniq', () => {
+    it('sorts alphabetically and numerically', async () => {
+      const { run, fs } = createTestShell();
+      fs.writeFile('/tmp/nums.txt', '10\n2\n1\n20\n');
+      expect((await run('sort /tmp/nums.txt')).out).toBe('1\n10\n2\n20\n');
+      expect((await run('sort -n /tmp/nums.txt')).out).toBe('1\n2\n10\n20\n');
+      expect((await run('sort -rn /tmp/nums.txt')).out).toBe('20\n10\n2\n1\n');
+    });
+
+    it('uniq deduplicates consecutive lines and works with sort in pipeline', async () => {
+      const { run, fs } = createTestShell();
+      fs.writeFile('/tmp/rep.txt', 'elma\nelma\narmut\nelma\n');
+      expect((await run('uniq /tmp/rep.txt')).out).toBe('elma\narmut\nelma\n');
+      expect((await run('sort /tmp/rep.txt | uniq')).out).toBe('armut\nelma\n');
+      const rCount = await run('sort /tmp/rep.txt | uniq -c');
+      expect(rCount.out).toContain('1 armut');
+      expect(rCount.out).toContain('3 elma');
+    });
+  });
+
+  describe('find', () => {
+    it('finds files and directories by name and type', async () => {
+      const { run, fs } = createTestShell();
+      fs.mkdir('/tmp/search');
+      fs.writeFile('/tmp/search/a.txt', 'hello');
+      fs.writeFile('/tmp/search/b.md', 'markdown');
+      fs.mkdir('/tmp/search/sub');
+      fs.writeFile('/tmp/search/sub/c.txt', 'nested');
+
+      const rTxt = await run('find /tmp/search -name "*.txt"');
+      expect(rTxt.exitCode).toBe(0);
+      expect(rTxt.out).toContain('/tmp/search/a.txt');
+      expect(rTxt.out).toContain('/tmp/search/sub/c.txt');
+      expect(rTxt.out).not.toContain('/tmp/search/b.md');
+
+      const rType = await run('find /tmp/search -type d');
+      expect(rType.out).toContain('/tmp/search/sub');
+      expect(rType.out).not.toContain('/tmp/search/a.txt');
+
+      const rDepth = await run('find /tmp/search -maxdepth 1 -name "*.txt"');
+      expect(rDepth.out).toContain('/tmp/search/a.txt');
+      expect(rDepth.out).not.toContain('/tmp/search/sub/c.txt');
+    });
+  });
 });
 
 
