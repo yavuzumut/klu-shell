@@ -12,7 +12,7 @@ export const wordCount: Lesson = {
   content: `
 ### wc — Word Count (Kelime ve Satır Sayacı)
 
-\`wc\` komutu metin dosyalarının veya boru hattından gelen verinin boyutunu ve yapısını ölçer:
+**\`wc\`**, bir dosyanın ya da bir komutun çıktısının içinde kaç satır, kaç kelime ve kaç karakter olduğunu saniyeler içinde sayar. Kısacası terminalin kelime sayacıdır:
 
 \`\`\`bash
 $ wc siir.txt
