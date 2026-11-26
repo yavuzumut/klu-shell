@@ -1,4 +1,5 @@
-import type { GitCommit, GitStatusResult } from './types';
+import { buildHunks, diffLines } from './diff';
+import type { GitBranchInfo, GitCommit, GitFileDiff, GitStatusResult } from './types';
 
 const ANSI = {
   reset: '\x1b[0m',
@@ -26,6 +27,19 @@ export function formatGitDate(timestamp: number): string {
 export function formatStatus(status: GitStatusResult): string {
   const lines: string[] = [];
   lines.push(`On branch ${status.branch}`);
+
+  const merging = status.merging;
+  const hasUnmerged = (merging?.conflicts.length ?? 0) > 0;
+  if (merging) {
+    if (hasUnmerged) {
+      lines.push('You have unmerged paths.');
+      lines.push('  (fix conflicts and run "git commit")');
+      lines.push('  (use "git merge --abort" to abort the merge)');
+    } else {
+      lines.push('All conflicts fixed but you are still merging.');
+      lines.push('  (use "git commit" to conclude merge)');
+    }
+  }
 
   if (status.isInitial) {
     lines.push('\nNo commits yet\n');
@@ -69,6 +83,15 @@ export function formatStatus(status: GitStatusResult): string {
     }
   }
 
+  if (hasUnmerged) {
+    lines.push('');
+    lines.push('Unmerged paths:');
+    lines.push('  (use "git add <file>..." to mark resolution)');
+    for (const c of merging?.conflicts ?? []) {
+      lines.push(`\t${ANSI.red}${(c.kind + ':').padEnd(16)}${c.path}${ANSI.reset}`);
+    }
+  }
+
   if (hasUntracked) {
     lines.push('');
     lines.push('Untracked files:');
@@ -78,13 +101,15 @@ export function formatStatus(status: GitStatusResult): string {
     }
   }
 
-  if (!hasStaged && !hasUnstaged && !hasUntracked) {
-    if (status.isInitial) {
+  if (!hasStaged && !hasUnstaged && !hasUntracked && !hasUnmerged) {
+    if (merging) {
+      // The merge header above already explains how to conclude the merge.
+    } else if (status.isInitial) {
       lines.push('nothing to commit (create/copy files and use "git add" to track)');
     } else {
       lines.push('nothing to commit, working tree clean');
     }
-  } else if (!hasStaged) {
+  } else if (!hasStaged && !merging) {
     lines.push('');
     lines.push('no changes added to commit (use "git add" to track)');
   }
@@ -94,43 +119,85 @@ export function formatStatus(status: GitStatusResult): string {
 
 export function formatLog(
   commits: GitCommit[],
-  options: { oneline?: boolean; branch?: string } = {},
+  options: { oneline?: boolean; branch?: string; refs?: Record<string, string[]> } = {},
 ): string {
   const oneline = options.oneline ?? false;
   const branch = options.branch ?? 'main';
+  const refs = options.refs ?? {};
 
   if (commits.length === 0) {
     return '';
   }
 
+  const decorate = (c: GitCommit, idx: number): string => {
+    const names: string[] = [];
+    if (idx === 0) names.push(`${ANSI.bold}HEAD -> ${ANSI.green}${branch}`);
+    for (const name of refs[c.hash] ?? []) {
+      if (idx === 0 && name === branch) continue;
+      names.push(`${ANSI.green}${name}`);
+    }
+    if (names.length === 0) return '';
+    return ` ${ANSI.cyan}(${names.join(`${ANSI.cyan}, `)}${ANSI.cyan})${ANSI.reset}`;
+  };
+
   if (oneline) {
     return (
       commits
-        .map((c, idx) => {
-          const headRef =
-            idx === 0
-              ? ` ${ANSI.cyan}(${ANSI.bold}HEAD -> ${ANSI.green}${branch}${ANSI.cyan})${ANSI.reset}`
-              : '';
-          return `${ANSI.yellow}${c.shortHash}${ANSI.reset}${headRef} ${c.message}`;
-        })
+        .map((c, idx) => `${ANSI.yellow}${c.shortHash}${ANSI.reset}${decorate(c, idx)} ${c.message}`)
         .join('\n') + '\n'
     );
   }
 
+  const shortOf = (hash: string) => commits.find((c) => c.hash === hash)?.shortHash ?? hash.slice(0, 7);
+
   return (
     commits
       .map((c, idx) => {
-        const headRef =
-          idx === 0
-            ? ` ${ANSI.cyan}(${ANSI.bold}HEAD -> ${ANSI.green}${branch}${ANSI.cyan})${ANSI.reset}`
-            : '';
+        const mergeLine =
+          c.mergeParent && c.parent ? `Merge: ${shortOf(c.parent)} ${shortOf(c.mergeParent)}\n` : '';
         return (
-          `commit ${ANSI.yellow}${c.hash}${ANSI.reset}${headRef}\n` +
+          `commit ${ANSI.yellow}${c.hash}${ANSI.reset}${decorate(c, idx)}\n` +
+          mergeLine +
           `Author: ${c.author} <${c.author}@klu>\n` +
           `Date:   ${formatGitDate(c.timestamp)}\n\n` +
           `    ${c.message}\n`
         );
       })
       .join('\n')
+  );
+}
+
+/** Render file differences as a colored unified diff (`-` red, `+` green). */
+export function formatDiff(diffs: GitFileDiff[]): string {
+  const out: string[] = [];
+  for (const d of diffs) {
+    out.push(`${ANSI.bold}diff --git a/${d.path} b/${d.path}${ANSI.reset}`);
+    if (d.oldContent === null) out.push(`${ANSI.bold}new file mode 100644${ANSI.reset}`);
+    if (d.newContent === null) out.push(`${ANSI.bold}deleted file mode 100644${ANSI.reset}`);
+    out.push(`${ANSI.bold}--- ${d.oldContent === null ? '/dev/null' : `a/${d.path}`}${ANSI.reset}`);
+    out.push(`${ANSI.bold}+++ ${d.newContent === null ? '/dev/null' : `b/${d.path}`}${ANSI.reset}`);
+
+    const hunks = buildHunks(diffLines(d.oldContent ?? '', d.newContent ?? ''));
+    for (const h of hunks) {
+      const oldRange = h.oldLines === 1 ? `${h.oldStart}` : `${h.oldStart},${h.oldLines}`;
+      const newRange = h.newLines === 1 ? `${h.newStart}` : `${h.newStart},${h.newLines}`;
+      out.push(`${ANSI.cyan}@@ -${oldRange} +${newRange} @@${ANSI.reset}`);
+      for (const op of h.ops) {
+        if (op.type === 'remove') out.push(`${ANSI.red}-${op.line}${ANSI.reset}`);
+        else if (op.type === 'add') out.push(`${ANSI.green}+${op.line}${ANSI.reset}`);
+        else out.push(` ${op.line}`);
+      }
+    }
+  }
+  return out.length > 0 ? out.join('\n') + '\n' : '';
+}
+
+/** `git branch` listing: active branch marked with `*` and highlighted. */
+export function formatBranches(branches: GitBranchInfo[]): string {
+  if (branches.length === 0) return '';
+  return (
+    branches
+      .map((b) => (b.current ? `* ${ANSI.green}${b.name}${ANSI.reset}` : `  ${b.name}`))
+      .join('\n') + '\n'
   );
 }

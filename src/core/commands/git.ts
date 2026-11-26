@@ -1,4 +1,11 @@
-import { formatLog, formatStatus, GitRepo } from '../git';
+import {
+  formatBranches,
+  formatDiff,
+  formatLog,
+  formatStatus,
+  GitRepo,
+  type GitConflict,
+} from '../git';
 import type { CommandDefinition } from '../shell/types';
 
 const HELP_TEXT = `kullanım: git <komut> [<seçenekler>]
@@ -10,12 +17,40 @@ KLU Sanal Git (Git 1) komutları:
    commit     Değişiklikleri yeni bir commit olarak kaydeder
    log        Commit geçmişini listeler
 
+Git 2 — farklar ve geri alma:
+   diff       Değişen satırları gösterir (--staged: hazırlık alanı)
+   restore    Değişiklikleri geri alır (--staged: hazırlıktan çıkarır)
+
+Git 3 — dallar:
+   branch     Dalları listeler, oluşturur veya siler
+   switch     Başka bir dala geçer (-c: yeni dal oluşturup geçer)
+   merge      Bir dalı bulunulan dala birleştirir
+
 Ayrıntılı bilgi için: man git
 `;
 
+const errMsg = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
+function plural(n: number): string {
+  return `${n} file${n === 1 ? '' : 's'} changed`;
+}
+
+function conflictLine(c: GitConflict, branch: string): string {
+  switch (c.kind) {
+    case 'deleted by us':
+      return `CONFLICT (modify/delete): ${c.path} deleted in HEAD and modified in ${branch}.`;
+    case 'deleted by them':
+      return `CONFLICT (modify/delete): ${c.path} deleted in ${branch} and modified in HEAD.`;
+    case 'both added':
+      return `CONFLICT (add/add): Merge conflict in ${c.path}`;
+    default:
+      return `CONFLICT (content): Merge conflict in ${c.path}`;
+  }
+}
+
 export const git: CommandDefinition = {
   name: 'git',
-  summary: 'Sanal sürüm kontrol sistemi (init, status, add, commit, log)',
+  summary: 'Sanal sürüm kontrol sistemi (init, status, add, commit, log, diff, restore, branch, switch, merge)',
   usage: 'git <alt-komut> [seçenekler]',
   completion: 'files',
   manPage: `AD
@@ -38,9 +73,10 @@ ALT KOMUTLAR (Git 1)
         değiştirilmiş fakat hazırlık alanına alınmamış dosyaları ve
         takip edilmeyen (untracked) dosyaları renkli olarak listeler.
 
-    add <dosya... | . | -A>
+    add <dosya... | . | -A> [-f]
         Dosyaları hazırlık alanına (staging area / index) ekler.
         '.' bulunulan dizin ve altındaki dosyaları, '-A' tüm depoyu ekler.
+        .gitignore ile yok sayılan dosyalar eklenmez (-f ile zorlanabilir).
 
     commit -m "mesaj"
         Hazırlık alanındaki değişiklikleri benzersiz kısa bir hash (7 karakter),
@@ -50,13 +86,51 @@ ALT KOMUTLAR (Git 1)
         Commit geçmişini yeniden eskiye doğru listeler.
         --oneline parametresi her commit'i tek bir satırda özetler.
 
+ALT KOMUTLAR (Git 2)
+    .gitignore
+        Depo kökündeki .gitignore dosyasındaki kalıplar (*.log, node_modules/,
+        gizli.txt ...) takip edilmeyen dosyalar listesinden ve 'git add .'
+        işleminden hariç tutulur.
+
+    diff [--staged | --cached] [dosya...]
+        Argümansız: çalışma alanı ile hazırlık alanı arasındaki farkları,
+        --staged ile: hazırlık alanı ile son commit arasındaki farkları gösterir.
+        Silinen satırlar kırmızı (-), eklenen satırlar yeşil (+) renklidir.
+
+    restore [--staged] <dosya...>
+        Argümansız: çalışma alanındaki kaydedilmemiş değişiklikleri geri alır.
+        --staged ile: dosyayı hazırlık alanından çıkarır (içeriğe dokunmaz).
+
+ALT KOMUTLAR (Git 3)
+    branch [-d | -D] [dal]
+        Argümansız: dalları listeler, aktif dalı '*' ile işaretler.
+        'git branch <dal>' yeni dal oluşturur, '-d' birleştirilmiş dalı,
+        '-D' ise birleştirilmemiş olsa bile dalı siler.
+
+    switch [-c] <dal>
+        Belirtilen dala geçer ve çalışma alanını o dalın son commit'ine
+        göre günceller. Kaydedilmemiş değişiklikler kaybolacaksa geçişi durdurur.
+        -c yeni bir dal oluşturup doğrudan o dala geçer.
+
+    merge <dal> | --abort
+        Dalı bulunulan dala birleştirir: mümkünse fast-forward yapar,
+        değilse merge commit oluşturur. Aynı dosya iki dalda farklı
+        değiştirilmişse çakışma (conflict) bildirir; çakışmayı düzeltip
+        'git add' + 'git commit' ile bitirebilir ya da --abort ile iptal edebilirsin.
+
 ÖRNEKLER
     git init
     git status
     git add .
     git commit -m "İlk commit"
     git log
-    git log --oneline`,
+    git log --oneline
+    git diff
+    git diff --staged
+    git restore --staged notlar.txt
+    git branch ozellik
+    git switch -c deneme
+    git merge ozellik`,
 
   run(args, ctx) {
     if (args.length === 0) {
@@ -91,6 +165,8 @@ ALT KOMUTLAR (Git 1)
       return 128;
     }
 
+    const subargs = args.slice(1);
+
     // git status
     if (sub === 'status') {
       const status = repo.getStatus();
@@ -100,7 +176,7 @@ ALT KOMUTLAR (Git 1)
 
     // git add <patterns...>
     if (sub === 'add') {
-      const patterns = args.slice(1);
+      const patterns = subargs;
       if (patterns.length === 0) {
         ctx.stderr("Nothing specified, nothing added.\nMaybe you wanted to say 'git add .'?\n");
         return 0;
@@ -109,14 +185,13 @@ ALT KOMUTLAR (Git 1)
         repo.add(patterns, ctx.cwd);
         return 0;
       } catch (err) {
-        ctx.stderr(`${err instanceof Error ? err.message : String(err)}\n`);
+        ctx.stderr(`${errMsg(err)}\n`);
         return 1;
       }
     }
 
     // git commit -m "msg"
     if (sub === 'commit') {
-      const subargs = args.slice(1);
       let message: string | null = null;
 
       for (let i = 0; i < subargs.length; i++) {
@@ -137,6 +212,12 @@ ALT KOMUTLAR (Git 1)
         }
       }
 
+      // While concluding a merge, the prepared merge message is the default.
+      const mergeState = repo.getMergeState();
+      if (message === null && mergeState) {
+        message = mergeState.message;
+      }
+
       if (message === null) {
         ctx.stderr("error: switch 'm' requires a value\n");
         return 1;
@@ -145,6 +226,15 @@ ALT KOMUTLAR (Git 1)
       if (!message.trim()) {
         ctx.stderr('Aborting commit due to empty commit message.\n');
         return 1;
+      }
+
+      if (mergeState && mergeState.conflicts.length > 0) {
+        try {
+          repo.commit(message, ctx.fs.user);
+        } catch (err) {
+          ctx.stderr(`${errMsg(err)}\n`);
+        }
+        return 128;
       }
 
       try {
@@ -164,7 +254,7 @@ ALT KOMUTLAR (Git 1)
         const rootTag = isRoot ? ' (root-commit)' : '';
         ctx.stdout(
           `[${branch}${rootTag} ${commit.shortHash}] ${commit.message}\n` +
-            ` ${changedCount} file${changedCount === 1 ? '' : 's'} changed\n`,
+            ` ${plural(changedCount)}\n`,
         );
         return 0;
       } catch {
@@ -176,7 +266,6 @@ ALT KOMUTLAR (Git 1)
 
     // git log [--oneline]
     if (sub === 'log') {
-      const subargs = args.slice(1);
       const oneline = subargs.includes('--oneline');
       const commits = repo.getLog();
 
@@ -186,12 +275,195 @@ ALT KOMUTLAR (Git 1)
         return 128;
       }
 
+      const refs: Record<string, string[]> = {};
+      for (const b of repo.listBranches()) {
+        (refs[b.hash] ??= []).push(b.name);
+      }
+
       const formatted = formatLog(commits, {
         oneline,
         branch: repo.getCurrentBranch() ?? 'main',
+        refs,
       });
       ctx.stdout(formatted);
       return 0;
+    }
+
+    // git diff [--staged|--cached] [paths...]
+    if (sub === 'diff') {
+      let staged = false;
+      const paths: string[] = [];
+      for (const a of subargs) {
+        if (a === '--staged' || a === '--cached') staged = true;
+        else if (a === '--') continue;
+        else if (a.startsWith('-')) {
+          ctx.stderr(`error: invalid option: ${a}\n`);
+          return 129;
+        } else paths.push(a);
+      }
+      try {
+        const specs = paths.length > 0 ? repo.resolvePathspecs(paths, ctx.cwd) : [''];
+        const diffs = staged ? repo.diffStaged(specs) : repo.diffWorking(specs);
+        ctx.stdout(formatDiff(diffs));
+        return 0;
+      } catch (err) {
+        ctx.stderr(`${errMsg(err)}\n`);
+        return 128;
+      }
+    }
+
+    // git restore [--staged] [--worktree] <paths...>
+    if (sub === 'restore') {
+      let staged = false;
+      let worktree = false;
+      const paths: string[] = [];
+      for (const a of subargs) {
+        if (a === '--staged' || a === '-S') staged = true;
+        else if (a === '--worktree' || a === '-W') worktree = true;
+        else if (a === '-SW' || a === '-WS') staged = worktree = true;
+        else if (a === '--') continue;
+        else if (a.startsWith('-')) {
+          ctx.stderr(`error: unknown option '${a.replace(/^-+/, '')}'\n`);
+          return 129;
+        } else paths.push(a);
+      }
+      if (paths.length === 0) {
+        ctx.stderr('fatal: you must specify path(s) to restore\n');
+        return 128;
+      }
+      try {
+        repo.restore(paths, ctx.cwd, { staged, worktree: worktree || !staged });
+        return 0;
+      } catch (err) {
+        ctx.stderr(`${errMsg(err)}\n`);
+        return 1;
+      }
+    }
+
+    // git branch [-d|-D <name...>] [<name>]
+    if (sub === 'branch') {
+      const flags = subargs.filter((a) => a.startsWith('-'));
+      const names = subargs.filter((a) => !a.startsWith('-'));
+      const del = flags.some((f) => f === '-d' || f === '--delete');
+      const forceDel = flags.includes('-D');
+      const unknown = flags.find((f) => !['-d', '-D', '--delete', '--list', '-l'].includes(f));
+      if (unknown) {
+        ctx.stderr(`error: unknown option '${unknown.replace(/^-+/, '')}'\n`);
+        return 129;
+      }
+
+      if (del || forceDel) {
+        if (names.length === 0) {
+          ctx.stderr('fatal: branch name required\n');
+          return 128;
+        }
+        let code = 0;
+        for (const name of names) {
+          try {
+            const { hash } = repo.deleteBranch(name, forceDel);
+            ctx.stdout(`Deleted branch ${name} (was ${hash.slice(0, 7)}).\n`);
+          } catch (err) {
+            ctx.stderr(`${errMsg(err)}\n`);
+            code = 1;
+          }
+        }
+        return code;
+      }
+
+      if (names.length === 0 || flags.includes('--list') || flags.includes('-l')) {
+        ctx.stdout(formatBranches(repo.listBranches()));
+        return 0;
+      }
+
+      if (names.length > 1) {
+        ctx.stderr('fatal: too many arguments\n');
+        return 128;
+      }
+      try {
+        repo.createBranch(names[0]);
+        return 0;
+      } catch (err) {
+        ctx.stderr(`${errMsg(err)}\n`);
+        return 128;
+      }
+    }
+
+    // git switch [-c] <branch>
+    if (sub === 'switch') {
+      let create = false;
+      const names: string[] = [];
+      for (const a of subargs) {
+        if (a === '-c' || a === '--create') create = true;
+        else if (a.startsWith('-')) {
+          ctx.stderr(`error: unknown switch '${a.replace(/^-+/, '')}'\n`);
+          return 129;
+        } else names.push(a);
+      }
+      if (names.length === 0) {
+        ctx.stderr(
+          create
+            ? "error: switch 'c' requires a value\n"
+            : 'fatal: missing branch or commit argument\n',
+        );
+        return 128;
+      }
+      const name = names[0];
+      try {
+        const { alreadyOn } = repo.switchBranch(name, { create });
+        if (alreadyOn) ctx.stdout(`Already on '${name}'\n`);
+        else if (create) ctx.stdout(`Switched to a new branch '${name}'\n`);
+        else ctx.stdout(`Switched to branch '${name}'\n`);
+        return 0;
+      } catch (err) {
+        ctx.stderr(`${errMsg(err)}\n`);
+        return 1;
+      }
+    }
+
+    // git merge <branch> | --abort
+    if (sub === 'merge') {
+      if (subargs.includes('--abort')) {
+        try {
+          repo.abortMerge();
+          return 0;
+        } catch (err) {
+          ctx.stderr(`${errMsg(err)}\n`);
+          return 128;
+        }
+      }
+      const name = subargs.find((a) => !a.startsWith('-'));
+      if (!name) {
+        ctx.stderr('fatal: No remote for the current branch.\nkullanım: git merge <dal>\n');
+        return 128;
+      }
+      try {
+        const result = repo.merge(name, ctx.fs.user);
+        switch (result.type) {
+          case 'up-to-date':
+            ctx.stdout('Already up to date.\n');
+            return 0;
+          case 'fast-forward':
+            ctx.stdout(
+              `Updating ${result.from}..${result.to}\nFast-forward\n ${plural(result.changedFiles.length)}\n`,
+            );
+            return 0;
+          case 'merge':
+            ctx.stdout(
+              `Merge made by the 'ort' strategy.\n ${plural(result.changedFiles.length)}\n`,
+            );
+            return 0;
+          case 'conflict': {
+            const lines = result.autoMerged.map((p) => `Auto-merging ${p}`);
+            for (const c of result.conflicts) lines.push(conflictLine(c, name));
+            lines.push('Automatic merge failed; fix conflicts and then commit the result.');
+            ctx.stdout(lines.join('\n') + '\n');
+            return 1;
+          }
+        }
+      } catch (err) {
+        ctx.stderr(`${errMsg(err)}\n`);
+        return 1;
+      }
     }
 
     // Invalid subcommand
