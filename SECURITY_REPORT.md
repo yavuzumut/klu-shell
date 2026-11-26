@@ -19,7 +19,7 @@ Bu mimari bağlam nedeniyle, klasik web uygulamalarında görülen SQL Enjeksiyo
 | 1 | Kabuk Glob Motorunda ReDoS Riski | Orta | **[ÇÖZÜLDÜ]** | `src/core/shell/glob.ts:8` |
 | 2 | VirtualFS `children` Prototype Pollution | Düşük | **[ÇÖZÜLDÜ]** | `src/core/fs/VirtualFS.ts` |
 | 3 | customAccent Hex Doğrulaması & CSS Enjeksiyonu | Düşük | **[ÇÖZÜLDÜ]** | `src/themes/themeManager.ts:18` |
-| 4 | dangerouslySetInnerHTML & marked (XSS Değerlendirmesi) | Bilgi | **[TEORİK - ÖNLEM]** | `src/components/LessonPanel.tsx` |
+| 4 | dangerouslySetInnerHTML & marked (XSS Değerlendirmesi) | Bilgi | **[ÇÖZÜLDÜ]** | `src/components/LessonPanel.tsx` |
 | 5 | Üretim Derlemesinde CSP Eksikliği | Düşük | **[ÇÖZÜLDÜ]** | `vite.config.ts` (`cspPlugin`) |
 | 6 | .gitignore İçinde .env / Yerel Dosya Eksikliği | Bilgi | **[ÇÖZÜLDÜ]** | `.gitignore` |
 | 7 | Dosya Ağacından Tıklanan Dosyalarda Kabuk Kaçışlaması | Düşük | **[ÇÖZÜLDÜ]** | `src/App.tsx:33-38` (`quotePath`) |
@@ -63,8 +63,8 @@ Bu mimari bağlam nedeniyle, klasik web uygulamalarında görülen SQL Enjeksiyo
 - **Durum:** **[TEORİK - GELECEK İÇİN ÖNLEM]**
 - **Dosya:Satır:** `src/components/LessonPanel.tsx:44, 82, 93`
 - **Açıklama:** `LessonPanel.tsx` içerisinde ders içeriği, görev açıklamaları ve ipuçları `marked.parse()` ile HTML'e dönüştürülüp `dangerouslySetInnerHTML` ile DOM'a aktarılmaktadır.
-- **Mevcut Durum Güvenlik Teyidi:** Tüm ders metinleri (`src/lessons/content/level0/*.ts` ve `level1/*.ts`) derleme zamanında (build time) paketlenen statik dosyalardan gelmektedir; URL parametresinden veya kullanıcı girdisinden beslenmez. Bu nedenle mevcut sürümde dışarıdan tetiklenebilir aktif bir XSS vektörü bulunmamaktadır.
-- **Gelecek İçin Not:** İleride kullanıcıların kendi derslerini JSON/Markdown olarak içeri aktarmasına veya URL üzerinden dinamik ders yüklenmesine izin verilirse, `marked` çıktısı DOM'a basılmadan önce mutlaka `DOMPurify.sanitize()` süzgecinden geçirilmelidir.
+- **Mevcut Durum Güvenlik Teyidi:** İçerik DOM’a aktarılmadan önce `DOMPurify.sanitize()` ile temizlenir. Güvenli dış bağlantıların `target` ve `rel` öznitelikleri korunur.
+- **Gelecek İçin Not:** DOMPurify bu akışta etkin biçimde uygulanmaktadır.
 
 ---
 
@@ -74,7 +74,7 @@ Bu mimari bağlam nedeniyle, klasik web uygulamalarında görülen SQL Enjeksiyo
 - **Dosya:Satır:** `vite.config.ts` (`cspPlugin`)
 - **Açıklama:** KLU tamamen çevrimdışı ve sıfır-ağ mimarisinde çalışan bir uygulama olduğundan, dış ağlara istek yapılmasını tarayıcı düzeyinde kısıtlayan bir CSP meta etiketi gerekiyordu.
 - **Uygulanan Çözüm:** Geliştirme ortamındaki HMR (Hot Module Replacement) bağlantılarını aksatmamak için `apply: 'build'` kuralına sahip `cspPlugin` eklentisi yazıldı. `npm run build` çalıştırıldığında `dist/index.html` dosyasının `<head>` bölümüne otomatik olarak şu katı CSP meta etiketi enjekte edilir:
-  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'`
+  `public/_headers`: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`. `vite.config.ts` üretim meta etiketi aynı direktifleri kullanır, ancak meta CSP’de desteklenmeyen `frame-ancestors` bulunmaz.
 
 ---
 

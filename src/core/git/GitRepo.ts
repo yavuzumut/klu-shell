@@ -23,6 +23,14 @@ export function urlToRemotePath(url: string): string {
   if (trimmed.startsWith('/var/klu-remotes/')) {
     return trimmed;
   }
+  let host = '';
+  try {
+    host = new URL(trimmed).host;
+  } catch {
+    // SCP-style Git URLs and virtual paths are parsed below.
+    const scp = trimmed.match(/^(?:[^@]+@)?([^:]+):/);
+    host = scp?.[1] ?? '';
+  }
   const noGit = trimmed.replace(/\.git\/?$/, '');
   const segments = noGit
     .split(/[/:]+/)
@@ -31,7 +39,9 @@ export function urlToRemotePath(url: string): string {
   if (segments.length >= 2) {
     const owner = segments[segments.length - 2];
     const repo = segments[segments.length - 1];
-    slug = `${owner}-${repo}`;
+    // Keep the established GitHub virtual paths stable; other hosts are namespaced.
+    const hostPrefix = host && host.toLowerCase() !== 'github.com' ? `${host}-` : '';
+    slug = `${hostPrefix}${owner}-${repo}`;
   } else if (segments.length === 1) {
     slug = segments[0];
   } else {
@@ -188,7 +198,18 @@ export class GitRepo {
     const commitsPath = joinPath(this.gitDir, 'commits.json');
     if (!this.fs.exists(commitsPath)) return [];
     try {
-      return JSON.parse(this.fs.readFile(commitsPath)) as GitCommit[];
+      const parsed: unknown = JSON.parse(this.fs.readFile(commitsPath));
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((item): item is GitCommit => {
+        if (!item || typeof item !== 'object') return false;
+        const c = item as Record<string, unknown>;
+        return typeof c.hash === 'string' && typeof c.shortHash === 'string' &&
+          typeof c.message === 'string' && typeof c.author === 'string' &&
+          typeof c.timestamp === 'number' && (c.parent === null || typeof c.parent === 'string') &&
+          !!c.tree && typeof c.tree === 'object' && !Array.isArray(c.tree) &&
+          Object.values(c.tree as Record<string, unknown>).every((value) => typeof value === 'string') &&
+          (c.mergeParent === undefined || c.mergeParent === null || typeof c.mergeParent === 'string');
+      });
     } catch {
       return [];
     }
@@ -210,7 +231,7 @@ export class GitRepo {
     if (!this.fs.exists(indexPath)) return result;
     try {
       const parsed = JSON.parse(this.fs.readFile(indexPath));
-      if (parsed && typeof parsed === 'object') {
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         for (const [k, v] of Object.entries(parsed)) {
           if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
           if (typeof v === 'string') {
@@ -287,7 +308,7 @@ export class GitRepo {
         if (parsed.remotes && typeof parsed.remotes === 'object') {
           for (const [k, v] of Object.entries(parsed.remotes)) {
             if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype' && v && typeof v === 'object' && 'url' in v) {
-              remotes[k] = { url: String((v as { url: unknown }).url) };
+              if (typeof (v as { url: unknown }).url === 'string') remotes[k] = { url: (v as { url: string }).url };
             }
           }
         }
@@ -376,7 +397,15 @@ export class GitRepo {
   getMergeState(): GitMergeState | null {
     if (!this.fs.isFile(this.mergeStatePath)) return null;
     try {
-      return JSON.parse(this.fs.readFile(this.mergeStatePath)) as GitMergeState;
+      const parsed: unknown = JSON.parse(this.fs.readFile(this.mergeStatePath));
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+      const state = parsed as Record<string, unknown>;
+      if (typeof state.mergeHead !== 'string' || typeof state.branch !== 'string' ||
+          typeof state.message !== 'string' || !Array.isArray(state.conflicts)) return null;
+      if (!state.conflicts.every((c) => !!c && typeof c === 'object' &&
+          typeof (c as Record<string, unknown>).path === 'string' &&
+          typeof (c as Record<string, unknown>).kind === 'string')) return null;
+      return parsed as GitMergeState;
     } catch {
       return null;
     }

@@ -3,7 +3,7 @@ import { getInitialThemeId, THEME_STORAGE_KEY } from '../themes/themeManager';
 import { loadProgress, STORAGE_KEY } from '../state/useProgress';
 import { createTestShell } from './test/helpers';
 import { VirtualFS, FsError } from './fs/VirtualFS';
-import { GitRepo } from './git/GitRepo';
+import { GitRepo, urlToRemotePath } from './git/GitRepo';
 import { globToRegExp } from './shell/glob';
 import { diffLines } from './git/diff';
 import { GitIgnore } from './git/gitignore';
@@ -141,9 +141,38 @@ describe('Security & Resilience Audit Tests', () => {
       fs.writeFile('/constructor', 'hello constructor');
       expect(fs.readFile('/constructor')).toBe('hello constructor');
     });
+
+    it('rejects filesystem growth beyond total node and byte limits', () => {
+      const nodes = new VirtualFS();
+      expect(() => {
+        for (let i = 0; i < 2100; i++) nodes.writeFile(`/f${i}`, '');
+      }).toThrowError(FsError);
+      try { for (let i = 0; i < 2100; i++) nodes.writeFile(`/g${i}`, ''); } catch (err: any) {
+        expect(err.code).toBe('ENOSPC');
+      }
+
+      const bytes = new VirtualFS();
+      bytes.writeFile('/a', 'x'.repeat(5 * 1024 * 1024));
+      bytes.writeFile('/b', 'x'.repeat(5 * 1024 * 1024));
+      bytes.writeFile('/c', 'x'.repeat(5 * 1024 * 1024));
+      bytes.writeFile('/d', 'x'.repeat(5 * 1024 * 1024));
+      expect(() => bytes.writeFile('/e', 'x')).toThrowError(FsError);
+    });
   });
 
   describe('5. GitRepo Prototype Resistance', () => {
+    it('keeps same-named remotes on different hosts separate', () => {
+      expect(urlToRemotePath('https://gitlab.com/org/project.git')).not.toBe(
+        urlToRemotePath('https://github.com/org/project.git'),
+      );
+    });
+    it('returns an empty commit list for malformed commits.json data', () => {
+      const fs = new VirtualFS();
+      const repo = GitRepo.init(fs, '/repo').repo;
+      fs.writeFile('/repo/.git/commits.json', '{"broken":true}');
+      expect(() => repo.getCommits()).not.toThrow();
+      expect(repo.getCommits()).toEqual([]);
+    });
     it('handles files named __proto__ or toString in git index safely', () => {
       const fs = new VirtualFS();
       fs.mkdir('/repo');
@@ -234,13 +263,19 @@ describe('Security & Resilience Audit Tests', () => {
       const dirty = '<a href="javascript:alert(1)">Click</a>';
       const clean = sanitizeHtml(dirty);
       expect(clean).not.toContain('javascript:');
-      expect(clean).toContain('href="#"');
+      expect(clean).not.toContain('href="javascript:');
     });
 
     it('adds target="_blank" and rel="noopener noreferrer" to external links in marked', () => {
       const parsed = marked.parse('[Visit Google](https://google.com)', { async: false }) as string;
       expect(parsed).toContain('target="_blank"');
       expect(parsed).toContain('rel="noopener noreferrer"');
+    });
+
+    it('preserves safe external link target and rel attributes through sanitization', () => {
+      const clean = sanitizeHtml('<a href="https://example.com" target="_blank" rel="noopener noreferrer">link</a>');
+      expect(clean).toContain('target="_blank"');
+      expect(clean).toContain('rel="noopener noreferrer"');
     });
   });
 });

@@ -6,9 +6,11 @@
  * translate them into familiar Linux error messages.
  */
 
-export type FsErrorCode = 'ENOENT' | 'EEXIST' | 'ENOTDIR' | 'EISDIR' | 'ENOTEMPTY' | 'EINVAL' | 'EFBIG';
+export type FsErrorCode = 'ENOENT' | 'EEXIST' | 'ENOTDIR' | 'EISDIR' | 'ENOTEMPTY' | 'EINVAL' | 'EFBIG' | 'ENOSPC';
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+export const MAX_TOTAL_NODES = 2000;
+export const MAX_TOTAL_SIZE = 20 * 1024 * 1024;
 
 const ERROR_MESSAGES: Record<FsErrorCode, string> = {
   ENOENT: 'No such file or directory',
@@ -18,6 +20,7 @@ const ERROR_MESSAGES: Record<FsErrorCode, string> = {
   ENOTEMPTY: 'Directory not empty',
   EINVAL: 'Invalid argument',
   EFBIG: 'File too large',
+  ENOSPC: 'No space left on device',
 };
 
 export class FsError extends Error {
@@ -126,6 +129,26 @@ export class VirtualFS {
     this.changeListeners.forEach((l) => l(event));
   }
 
+  private totals(node: FsNode = this.root): { nodes: number; size: number } {
+    if (node.type === 'file') return { nodes: 1, size: new TextEncoder().encode(node.content).length };
+    let nodes = 1;
+    let size = 0;
+    for (const child of Object.values(node.children)) {
+      const next = this.totals(child);
+      nodes += next.nodes;
+      size += next.size;
+    }
+    return { nodes, size };
+  }
+
+  private ensureCapacity(abs: string, replacement: FsNode, existing?: FsNode | null): void {
+    const current = this.totals();
+    const old = existing ? this.totals(existing) : { nodes: 0, size: 0 };
+    const next = this.totals(replacement);
+    if (current.nodes - old.nodes + next.nodes > MAX_TOTAL_NODES) throw new FsError('ENOSPC', abs);
+    if (current.size - old.size + next.size > MAX_TOTAL_SIZE) throw new FsError('ENOSPC', abs);
+  }
+
   // ---------------------------------------------------------------- paths
 
   /**
@@ -221,12 +244,14 @@ export class VirtualFS {
     }
     if (existing) {
       if (existing.type === 'dir') throw new FsError('EISDIR', abs);
+      this.ensureCapacity(abs, this.makeFile(existing.name, options.append ? existing.content + content : content), existing);
       existing.content = options.append ? existing.content + content : content;
       existing.mtime = this.now();
       this.notify({ action: 'modify', path: abs });
       return;
     }
     const { parent, name } = this.parentOf(abs);
+    this.ensureCapacity(abs, this.makeFile(name, content));
     parent.children[name] = this.makeFile(name, content);
     parent.mtime = this.now();
     this.notify({ action: 'create', path: abs });
@@ -254,6 +279,7 @@ export class VirtualFS {
         path += '/' + part;
         const child: FsNode | undefined = current.children[part];
         if (!child) {
+          this.ensureCapacity(path, this.makeDir(part));
           const dir = this.makeDir(part);
           current.children[part] = dir;
           current.mtime = this.now();
@@ -272,6 +298,7 @@ export class VirtualFS {
     }
     if (this.exists(abs)) throw new FsError('EEXIST', abs);
     const { parent, name } = this.parentOf(abs);
+    this.ensureCapacity(abs, this.makeDir(name));
     parent.children[name] = this.makeDir(name);
     parent.mtime = this.now();
     this.notify({ action: 'create', path: abs });
@@ -310,9 +337,13 @@ export class VirtualFS {
     touchTree(clone, this.now());
     if (existing?.type === 'dir' && clone.type === 'dir') {
       // Merge into the existing directory, like `cp -r a b` when b/a exists.
+      const merged = cloneNode(existing);
+      if (merged.type === 'dir') Object.assign(merged.children, clone.children);
+      this.ensureCapacity(dest, merged, existing);
       Object.assign(existing.children, clone.children);
       existing.mtime = this.now();
     } else {
+      this.ensureCapacity(dest, clone, existing);
       parent.children[name] = clone;
     }
     parent.mtime = this.now();

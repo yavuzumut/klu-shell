@@ -23,7 +23,7 @@ export default defineConfig({
   plugins: [react(), cspPlugin],
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom',
     include: ['src/**/*.test.ts'],
   },
 });

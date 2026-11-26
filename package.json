@@ -3,6 +3,7 @@
   "description": "Tarayıcıda çalışan, sıfırdan ileri seviyeye Linux terminali simülatörü",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
@@ -17,14 +18,17 @@
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
+    "dompurify": "^3.5.0",
     "marked": "^14.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.0.5",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.2",
+    "jsdom": "^31.0.1",
     "typescript": "~5.6.2",
     "vite": "^7.3.8",
     "vitest": "^5.1.1"

@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { useMemo } from 'react';
 import type { Lesson, Level } from '../lessons/types';
 
@@ -19,12 +20,7 @@ marked.use({
 });
 
 export function sanitizeHtml(html: string): string {
-  let clean = html.replace(/<\s*(script|iframe|object|embed|form|input|base|link|meta)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
-  clean = clean.replace(/<\s*(script|iframe|object|embed|form|input|base|link|meta)[^>]*\/?>/gi, '');
-  clean = clean.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-  clean = clean.replace(/\b(href|src)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*')/gi, '$1="#"');
-  clean = clean.replace(/\b(href|src)\s*=\s*(?:"\s*data:[^"]*"|'\s*data:[^']*')/gi, '$1="#"');
-  return clean;
+  return DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel'] });
 }
 
 const md = (text: string) => sanitizeHtml(marked.parse(text.trim(), { async: false }) as string);

@@ -572,7 +572,7 @@ KLU projesi katı tip denetimi ve otomatik birim testleriyle korunmaktadır.
 
 ### Komutlar
 ```bash
-# Birim ve entegrasyon testlerini çalıştırır (177 test, 9 test dosyası)
+# Birim ve entegrasyon testlerini çalıştırır (257 test, 13 test dosyası)
 npm test
 
 # İzleme (watch) modunda testleri sürekli çalıştırmak için:
@@ -661,15 +661,15 @@ KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içi
 
 ### 1. Markdown İşleme ve XSS (`src/components/LessonPanel.tsx`)
 - Ders metinleri (`lesson.content`), görev açıklamaları (`task.description`), ipuçları (`hint`) ve çözümler (`task.solution`), `marked.parse` ve `marked.parseInline` fonksiyonlarıyla HTML'e dönüştürülmekte ve `dangerouslySetInnerHTML` ile DOM'a aktarılmaktadır.
-- Projede herhangi bir HTML sanitizer (temizleyici - örn. `DOMPurify`) kullanılmamaktadır.
+- `marked` çıktısı `DOMPurify.sanitize()` ile temizlenir; güvenli dış bağlantılarda `target` ve `rel` öznitelikleri korunur.
 - Mevcut mimaride tüm dersler `src/lessons/content/` dizinindeki statik TypeScript dosyalarından derleme zamanında (build-time) yüklendiği için içerikler güvenilir kabul edilir.
-- **Kritik Kural:** Gelecekte kullanıcı girdisinden, harici dosyalardan veya URL parametrelerinden dinamik ders yükleme özelliği eklenirse, XSS (Cross-Site Scripting) açıklarını önlemek amacıyla `marked` çıktısı DOM'a basılmadan önce mutlaka `DOMPurify` veya benzeri bir kütüphane ile temizlenmelidir.
+- Ders içeriği, görev açıklamaları ve ipuçlarının tamamı DOM’a aktarılmadan önce temizlenir.
 
 ### 2. İçerik Güvenliği Politikası (Content-Security-Policy - `vite.config.ts`)
 - CSP meta etiketi `index.html` dosyasına statik olarak eklenmemiştir.
 - Geliştirme ortamını (`npm run dev`) ve Vite'ın yerel HMR (Hot Module Replacement) sunucusunu kısıtlamamak için `vite.config.ts` içinde `apply: 'build'` kuralı tanımlanmış özel bir eklenti (`cspPlugin`) kullanılmıştır.
 - Bu sayede CSP meta etiketi yalnızca üretim derlemesi (`npm run build` sonucu üretilen `dist/index.html`) başlığına (`<head>`) eklenir:
-  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'`
+  `public/_headers`: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`. `vite.config.ts` meta CSP’si aynı direktifleri kullanır; `frame-ancestors` meta etikette desteklenmediği için yalnızca başlıkta tanımlıdır.
 - Geliştirme sunucusunda (`vite dev`) bu CSP meta etiketi bulunmaz.
 
 ### 3. Prototip Kirlenmesi Koruması (Prototype Pollution - `src/core/fs/VirtualFS.ts`)
@@ -712,12 +712,11 @@ KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içi
 6. **Hile Kağıdı (Cheat Sheet):** 13 kategoride 33 komutun hızlı başvuru tablosu ve Serbest Mod terminaline aktarım desteği.
 7. **Meraklısına (Explore):** 15 modern CLI aracı, 5 kategori filtresi (`media`, `system`, `files`, `productivity`, `fun`), dağıtım sekmeleri (Debian, Fedora, Arch), ipuçları ve tek tıkla kopyalama.
 8. **Tema Motoru:** 5 renk teması, terminal renklerinin canlı eşzamanlanması, hex doğrulayıcılı özel vurgu rengi seçici.
-9. **Kalite & Test Güvencesi:** 177 birim testi (9 test dosyasında), sıfır TypeScript hatası, `dist/index.html` içinde üretim CSP'si, 0 `npm audit` açığı.
+9. **Kalite & Test Güvencesi:** 257 testi (13 test dosyasında), sıfır TypeScript hatası, `dist/index.html` içinde üretim CSP'si, 0 `npm audit` açığı.
 
 ### Henüz Yapılmamış / Gelecek Adımlar (Yapılacaklar)
 1. **`src/git/` Modülü (Etkileşimli Git Terminali):**
-   - *Mevcut Durum:* Şu anda yalnızca statik bilgilendirme ve yol haritası arayüzü (`GitIntroView.tsx`, `intro.ts`) bulunmaktadır.
-   - *Eksik Kısım:* Sanal `.git/` klasör JSON veri modeli, terminal Git komut yorumlayıcısı (`git init`, `status`, `add`, `commit`, `log`, `branch`, `diff` vb.) ve etkileşimli terminal Git deneyimi henüz kodlanmamıştır.
+   - *Mevcut Durum:* `GitRepo` motoru ve terminal Git komutları Git 1–4 kapsamını yürütür. Git sekmesinde etkileşimli dersler ve görsel depo durumu bulunur. Uzak depolar gerçek ağa çıkmadan `/var/klu-remotes` altında VirtualFS ile simüle edilir.
 2. **Terminal ANSI Filtreleme:**
    - `ls` komutu ve satır düzenleyicide dosya isimlerindeki ham ANSI kaçış karakterlerinin temizlenmesi tamamlanacaktır.
 

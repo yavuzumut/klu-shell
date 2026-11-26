@@ -2,7 +2,9 @@
 
 > **Tarayıcıda çalışan, sıfırdan ileri seviyeye Linux terminali öğreten interaktif web uygulaması.**
 
-KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafında (tarayıcıda) çalışan sanal bir Linux dosya sistemi ve komut kabuğu (shell) simülatörüdür. Kullanıcılar xterm.js tabanlı gerçekçi bir terminal üzerinde temel Linux komutlarını interaktif görevlerle öğrenebilir, Serbest Mod'da diledikleri gibi pratik yapabilir ve canlı dosya ağacını izleyebilirler.
+Canlı uygulama: [https://klu-shell.pages.dev](https://klu-shell.pages.dev)
+
+KLU gerçek bir Bash kabuğu değildir; eğitim amaçlı tarayıcı simülatörüdür. `git clone`, `git push` ve `git pull` gerçek GitHub ağına bağlanmaz; VirtualFS içindeki `/var/klu-remotes` yerel uzak depo simülasyonunu kullanır. KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafında (tarayıcıda) çalışan sanal bir Linux dosya sistemi ve komut kabuğu simülatörüdür. Kullanıcılar xterm.js tabanlı gerçekçi bir terminal üzerinde temel Linux komutlarını interaktif görevlerle öğrenebilir, Serbest Mod'da diledikleri gibi pratik yapabilir ve canlı dosya ağacını izleyebilirler.
 
 ---
 
@@ -48,7 +50,7 @@ KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafı
 
 - **Çatı & Dil:** React 18 (`^18.3.1`), TypeScript (`~5.6.2`), Vite 7 (`^7.3.8`)
 - **Terminal UI:** `@xterm/xterm` (`^5.5.0`), `@xterm/addon-fit` (`^0.10.0`)
-- **Birim & Entegrasyon Test:** Vitest 5 (`^5.1.1` - 177 test)
+- **Birim & Entegrasyon Test:** Vitest 5 (`^5.1.1` - 257 test)
 - **Markdown İşleme:** Marked (`^14.1.0`)
 - **Stil:** Modern Saf CSS (5 tema, CSS değişkenleri, duyarlı mobil tuş çubuğu)
 
@@ -68,9 +70,9 @@ nvm use --lts
 ### 2. Projeyi Klonlama ve Bağımlılıkları Yükleme
 
 ```bash
-git clone https://github.com/kullanici/termi.git
-cd termi
-npm install
+git clone https://github.com/yavuzumut/klu-shell.git
+cd klu-shell
+npm ci
 ```
 
 ### 3. Geliştirme Sunucusunu Çalıştırma
@@ -82,7 +84,7 @@ Terminal çıktısında belirtilen adresi (varsayılan: `http://localhost:5173`)
 
 ### 4. Testleri Çalıştırma
 
-Vitest ile yazılmış 177 birim testini çalıştırmak için:
+Vitest ile yazılmış 257 testi çalıştırmak için:
 
 ```bash
 npm test
@@ -276,7 +278,7 @@ Sayfa otomatik olarak kategori filtrelerini, dağıtım sekmelerini ve "📋 Kop
 
 ## 🧪 Test Stratejisi & Mimarisi
 
-KLU, 9 ayrı test dosyasında 116 birim testi ile korunmaktadır. Test dosyaları test ettikleri modüllerin hemen yanında (`src/`) yer alır:
+KLU, 13 test dosyasında toplam 257 test ile korunmaktadır. Test dosyaları test ettikleri modüllerin hemen yanında (`src/`) yer alır:
 
 - `src/core/commands/commands.test.ts`: 14 çekirdek komutun bayrakları, argümanları ve POSIX hata çıktıları (39 test).
 - `src/core/fs/VirtualFS.test.ts`: Dizin ve dosya işlemleri, hata kodları, derin klonlama ve prototip kirlenmesi koruması (19 test).
