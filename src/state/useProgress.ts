@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export const STORAGE_KEY = 'klu.progress.v1';
 export const GIT_STORAGE_KEY = 'klu.git.progress.v1';
@@ -113,8 +113,13 @@ export function useProgress(firstLessonId: string, storageKey: string = STORAGE_
 
   const resetAll = useCallback(() => setProgress(initialProgress(firstLessonId)), [firstLessonId]);
 
+  const actions = useMemo(
+    () => ({ setCurrentLesson, completeTask, addAttempt, revealSolution, restartLesson, setHistory, resetAll }),
+    [setCurrentLesson, completeTask, addAttempt, revealSolution, restartLesson, setHistory, resetAll],
+  );
+
   return {
     progress,
-    actions: { setCurrentLesson, completeTask, addAttempt, revealSolution, restartLesson, setHistory, resetAll },
+    actions,
   };
 }

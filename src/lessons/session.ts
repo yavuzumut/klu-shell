@@ -17,9 +17,11 @@ export function lessonStartCwd(lesson: Lesson, fs: VirtualFS): string {
 export async function runLessonSetupCommands(
   shell: { execute(cmd: string, options?: { recordHistory?: boolean }): Promise<unknown> },
   lesson: Lesson,
+  isCancelled?: () => boolean,
 ): Promise<void> {
   if (!lesson.setup?.setupCommands?.length) return;
   for (const cmd of lesson.setup.setupCommands) {
+    if (isCancelled?.()) return;
     await shell.execute(cmd, { recordHistory: false });
   }
 }

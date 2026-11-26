@@ -116,12 +116,16 @@ export default function App() {
     [progress.completed],
   );
 
+  const sessionIdRef = useRef(0);
+
   /** Reset the virtual file system to the lesson's starting state. */
   const startLessonSession = useCallback(
     async (message?: string) => {
+      const sessionId = ++sessionIdRef.current;
       const fs = createLessonFS(lesson);
       lessonShell.reset(fs, lessonStartCwd(lesson, fs), lesson.setup?.processes);
-      await runLessonSetupCommands(lessonShell, lesson);
+      await runLessonSetupCommands(lessonShell, lesson, () => sessionIdRef.current !== sessionId);
+      if (sessionIdRef.current !== sessionId) return;
       setCurrentCwd(lessonShell.cwd);
       recordsRef.current = [];
       const banner =
@@ -152,8 +156,10 @@ export default function App() {
     if (mode === 'lessons') {
       startLessonSession();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lesson.id]);
+    return () => {
+      sessionIdRef.current++;
+    };
+  }, [lesson.id, mode, startLessonSession]);
 
   const onExecuted = useCallback(
     (record: CommandRecord): string | void => {
@@ -379,7 +385,10 @@ export default function App() {
       {mode === 'git' ? (
         gitView === 'workspace' ? (
           <GitWorkspace
-            onBackToIntro={() => setGitView('intro')}
+            onBackToIntro={() => {
+              setSelectedGitLessonId(undefined);
+              setGitView('intro');
+            }}
             terminalTheme={themeControls.terminalTheme}
             initialLessonId={selectedGitLessonId}
           />

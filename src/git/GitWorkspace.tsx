@@ -32,16 +32,19 @@ interface GitWorkspaceProps {
 
 export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: GitWorkspaceProps) {
   const { progress, actions } = useProgress(FIRST_GIT_LESSON_ID, GIT_STORAGE_KEY);
+  const lastAppliedInitialId = useRef<string | undefined>(undefined);
+  const sessionIdRef = useRef(0);
 
-  // If initialLessonId is provided and differs from current, switch to it
+  // If initialLessonId is provided and genuinely changed, switch to it without overriding user navigation
   useEffect(() => {
-    if (initialLessonId && initialLessonId !== progress.currentLessonId) {
+    if (initialLessonId && initialLessonId !== lastAppliedInitialId.current) {
+      lastAppliedInitialId.current = initialLessonId;
       const exists = findGitLesson(initialLessonId);
       if (exists) {
         actions.setCurrentLesson(initialLessonId);
       }
     }
-  }, [initialLessonId, actions, progress.currentLessonId]);
+  }, [initialLessonId, actions]);
 
   const found = findGitLesson(progress.currentLessonId) ?? findGitLesson(FIRST_GIT_LESSON_ID)!;
   const { level, lesson, index: lessonIndex } = found;
@@ -85,9 +88,12 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
 
   const startLessonSession = useCallback(
     async (message?: string) => {
+      const sessionId = ++sessionIdRef.current;
       const fs = createLessonFS(lesson);
       gitShell.reset(fs, lessonStartCwd(lesson, fs), lesson.setup?.processes);
-      await runLessonSetupCommands(gitShell, lesson);
+      await runLessonSetupCommands(gitShell, lesson, () => sessionIdRef.current !== sessionId);
+      if (sessionIdRef.current !== sessionId) return;
+
       setCurrentCwd(gitShell.cwd);
       recordsRef.current = [];
       const banner =
@@ -102,8 +108,10 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
 
   useEffect(() => {
     startLessonSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lesson.id]);
+    return () => {
+      sessionIdRef.current++;
+    };
+  }, [lesson.id, startLessonSession]);
 
   const onExecuted = useCallback(
     (record: CommandRecord): string | void => {
@@ -228,7 +236,26 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
                   onClick={() => goToLesson(lvl.lessons[0].id)}
                   title={`${lvl.title} (${lvl.lessons.length} ders)`}
                 >
-                  {lvlDone ? '✓ ' : ''}Git {lvl.number}
+                  {lvlDone && <span className="git-pill-check">✓</span>}
+                  <span>Git {lvl.number}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="git-lesson-segments" aria-label={`${level.title} dersleri`}>
+            {level.lessons.map((l, i) => {
+              const isCurrent = l.id === lesson.id;
+              const isDone = isLessonDone(l.id);
+              return (
+                <button
+                  key={l.id}
+                  type="button"
+                  className={`git-lesson-segment ${isCurrent ? 'active' : ''} ${isDone ? 'done' : ''}`}
+                  onClick={() => goToLesson(l.id)}
+                  title={`Ders ${i + 1}: ${l.title}${isDone ? ' (Tamamlandı)' : ''}`}
+                >
+                  {isDone && !isCurrent ? '✓' : i + 1}
                 </button>
               );
             })}

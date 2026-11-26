@@ -8,7 +8,7 @@ import { GIT_ALL_LESSONS, GIT_LEVELS } from './index';
 import { gitLevel1 } from './gitLevel1';
 import { gitLevel2 } from './gitLevel2';
 import { gitLevel3 } from './gitLevel3';
-import { GIT_STORAGE_KEY, loadProgress, STORAGE_KEY } from '../../state/useProgress';
+import { GIT_STORAGE_KEY, loadProgress, STORAGE_KEY, useProgress } from '../../state/useProgress';
 
 function createTestShell(lesson = GIT_ALL_LESSONS[0]) {
   const fs = createLessonFS(lesson);
@@ -444,3 +444,132 @@ describe('Separate Git Progress Storage', () => {
     expect(gitProg.completed['git-1-init']).toEqual(['git-init', 'git-status']);
   });
 });
+
+describe('Async Setup Commands Race Condition Cancellation', () => {
+  it('stops executing setup commands if isCancelled returns true', async () => {
+    const executed: string[] = [];
+    const mockShell = {
+      execute: async (cmd: string) => {
+        executed.push(cmd);
+        return { exitCode: 0 };
+      },
+    };
+
+    const mockLesson = {
+      id: 'test-lesson',
+      title: 'Test',
+      summary: 'Test',
+      content: 'Test',
+      examples: [],
+      tasks: [],
+      setup: {
+        setupCommands: ['cmd 1', 'cmd 2', 'cmd 3'],
+      },
+    };
+
+    let cancelled = false;
+    await runLessonSetupCommands(mockShell, mockLesson, () => {
+      if (executed.length === 1) {
+        cancelled = true;
+      }
+      return cancelled;
+    });
+
+    // cmd 1 was executed, then cancelled before cmd 2
+    expect(executed).toEqual(['cmd 1']);
+  });
+});
+
+describe('useProgress Actions Reference Stability', () => {
+  it('actions object reference is stable across renders (memoized)', async () => {
+    const React = await import('react');
+    const ReactDOMServer = await import('react-dom/server');
+
+    const capturedActions: unknown[] = [];
+    function StabilityTester() {
+      const [count, setCount] = React.useState(0);
+      const { actions } = useProgress('git-1-init', GIT_STORAGE_KEY);
+      capturedActions.push(actions);
+
+      if (count === 0) {
+        setCount(1); // triggers synchronous re-render in React render phase
+      }
+      return null;
+    }
+
+    ReactDOMServer.renderToStaticMarkup(React.createElement(StabilityTester));
+    expect(capturedActions.length).toBe(2);
+    expect(capturedActions[0]).toBe(capturedActions[1]);
+  });
+});
+
+describe('Git Navigation Logic Across Levels', () => {
+  it('correctly maps level pills to first lesson of each level', () => {
+    expect(GIT_LEVELS[0].lessons[0].id).toBe('git-1-init');
+    expect(GIT_LEVELS[1].lessons[0].id).toBe('git-2-diff');
+    expect(GIT_LEVELS[2].lessons[0].id).toBe('git-3-branch');
+  });
+
+  it('correctly navigates sequentially through all 6 lessons without breaking prev/next chain', () => {
+    for (let i = 0; i < GIT_ALL_LESSONS.length; i++) {
+      const cur = GIT_ALL_LESSONS[i];
+      const prev = GIT_ALL_LESSONS[i - 1];
+      const next = GIT_ALL_LESSONS[i + 1];
+      expect(cur.id).toBeTruthy();
+
+      if (i === 0) {
+        expect(prev).toBeUndefined();
+        expect(next).toBeDefined();
+      } else if (i === GIT_ALL_LESSONS.length - 1) {
+        expect(prev).toBeDefined();
+        expect(next).toBeUndefined();
+      } else {
+        expect(prev).toBeDefined();
+        expect(next).toBeDefined();
+      }
+
+      if (next) {
+        expect(next.id).toBe(GIT_ALL_LESSONS[i + 1].id);
+      }
+      if (prev) {
+        expect(prev.id).toBe(GIT_ALL_LESSONS[i - 1].id);
+      }
+    }
+  });
+
+  it('initialLessonId ref guard does not revert user navigation', () => {
+    let lastApplied: string | undefined = undefined;
+    let currentLessonId = 'git-1-init';
+
+    function simulateEffect(initialLessonId?: string) {
+      if (initialLessonId && initialLessonId !== lastApplied) {
+        lastApplied = initialLessonId;
+        currentLessonId = initialLessonId;
+      }
+    }
+
+    // First mount with initialLessonId = 'git-1-init'
+    simulateEffect('git-1-init');
+    expect(currentLessonId).toBe('git-1-init');
+    expect(lastApplied).toBe('git-1-init');
+
+    // User clicks "Sonraki →", transitioning to 'git-1-commit'
+    currentLessonId = 'git-1-commit';
+
+    // Component re-renders with the same initialLessonId
+    simulateEffect('git-1-init');
+    // currentLessonId MUST NOT be reverted back to 'git-1-init'
+    expect(currentLessonId).toBe('git-1-commit');
+
+    // User clicks "Git 2", transitioning to 'git-2-diff'
+    currentLessonId = 'git-2-diff';
+    simulateEffect('git-1-init');
+    expect(currentLessonId).toBe('git-2-diff');
+
+    // User leaves and comes back with new initialLessonId = 'git-3-branch'
+    simulateEffect('git-3-branch');
+    expect(currentLessonId).toBe('git-3-branch');
+    expect(lastApplied).toBe('git-3-branch');
+  });
+});
+

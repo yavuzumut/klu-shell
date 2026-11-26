@@ -2265,16 +2265,20 @@ pre {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 14px;
+  padding: 8px 16px;
   background: var(--bg-elev);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
 }
 
 .git-ws-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
   flex-wrap: wrap;
 }
 
@@ -2289,6 +2293,9 @@ pre {
 }
 
 .git-level-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 4px 11px;
   border-radius: 16px;
   border: 1px solid var(--border);
@@ -2298,6 +2305,7 @@ pre {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  user-select: none;
 }
 
 .git-level-pill:hover {
@@ -2306,40 +2314,103 @@ pre {
 }
 
 .git-level-pill.active {
-  background: var(--accent-dim);
+  background: var(--accent);
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
-.git-level-pill.done {
+.git-level-pill.done:not(.active) {
   border-color: var(--green, #22c55e);
+  color: var(--text);
+  background: var(--panel-hover);
+}
+
+.git-pill-check {
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.git-level-pill.active .git-pill-check {
+  color: var(--accent-contrast);
+}
+
+.git-level-pill:not(.active) .git-pill-check {
+  color: var(--green, #22c55e);
+}
+
+.git-lesson-segments {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+
+.git-lesson-segment {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--panel-hover);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.git-lesson-segment:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.git-lesson-segment.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 700;
+}
+
+.git-lesson-segment.done:not(.active) {
+  border-color: var(--green, #22c55e);
+  color: var(--green, #22c55e);
 }
 
 .git-ws-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .git-ws-progress {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .git-ws-progress-text {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-muted);
   white-space: nowrap;
 }
 
 .git-ws-progress-bar {
-  width: 90px;
+  width: 72px;
   height: 6px;
   background: var(--border);
   border-radius: 4px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .git-ws-progress-fill {
