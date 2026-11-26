@@ -1,306 +1,85 @@
-# KLU 🚀
+# KLU
 
-> **Tarayıcıda çalışan, sıfırdan ileri seviyeye Linux terminali öğreten interaktif web uygulaması.**
+<p align="center">
+  <img src="public/klu-logo-cropped.webp" alt="KLU logosu" width="220" />
+</p>
 
-Canlı uygulama: [https://klu-shell.pages.dev](https://klu-shell.pages.dev)
+<p align="center">
+  <strong>Tarayıcıda Linux terminali ve Git öğren.</strong><br />
+  Kurulum gerektirmeyen, Türkçe ve etkileşimli bir eğitim simülatörü.
+</p>
 
-KLU gerçek bir Bash kabuğu değildir; eğitim amaçlı tarayıcı simülatörüdür. `git clone`, `git push` ve `git pull` gerçek GitHub ağına bağlanmaz; VirtualFS içindeki `/var/klu-remotes` yerel uzak depo simülasyonunu kullanır. KLU; backend veya sunucu bağımlılığı olmaksızın, tamamen istemci tarafında (tarayıcıda) çalışan sanal bir Linux dosya sistemi ve komut kabuğu simülatörüdür. Kullanıcılar xterm.js tabanlı gerçekçi bir terminal üzerinde temel Linux komutlarını interaktif görevlerle öğrenebilir, Serbest Mod'da diledikleri gibi pratik yapabilir ve canlı dosya ağacını izleyebilirler.
+<p align="center">
+  <a href="https://klu-shell.pages.dev/">Canlı uygulama</a> ·
+  <a href="https://github.com/yavuzumut/klu-shell">GitHub deposu</a> ·
+  <a href="ARCHITECTURE.md">Mimari</a> ·
+  <a href="SECURITY_REPORT.md">Güvenlik raporu</a>
+</p>
 
----
+<p align="center">
+  <img src="public/klu-mascot-512.png" alt="KLU maskotu" width="160" />
+</p>
 
-## 🌟 Özellikler
+## KLU nedir?
 
-- **İstemci Taraflı Sanal Dosya Sistemi (In-Memory VirtualFS):**
-  - Gerçekçi Linux dosya hiyerarşisi (`/home/kullanici`, `/etc`, `/var`, `/tmp`, vb.).
-  - Dosya okuma, yazma, kopyalama, taşıma, silme ve izin mantığı.
-  - Olay tabanlı dinleyici mimarisi (`subscribe`) ile UI ve dosya ağacının anında güncellenmesi.
-- **Modüler Komut Yorumlayıcısı (Shell Engine):**
-  - Desteklenen 33 çekirdek komut: `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history`, `head`, `tail`, `wc`, `grep`, `sort`, `uniq`, `find`, `chmod`, `whoami`, `uname`, `date`, `env`, `export`, `which`, `ps`, `kill`, `stat`, `realpath`, `basename`.
-  - Mantıksal operatörler (`&&`, `||`), Unix boru hattı (pipe: `|`), yönlendirmeler (`>`, `>>`), tırnaklar (`""`, `''`), bayrak ayrıştırma (`-la`, `-rf`) ve glob açılımı (`*.txt`).
-  - Terminalde `Tab` ile otomatik tamamlama, `↑`/`↓` ile komut geçmişi gezintisi.
-- **Ders Modu (Seviye 0, 1, 2 & 3: 28 İnteraktif Ders):**
-  - **Seviye 0 ("Başlamadan Önce", 5 ders):** Terminale giriş, KLU'nun çalışma mantığı, modlar ve gerçek Linux terminal alışkanlıkları.
-  - **Seviye 1 ("Başlangıç", 7 ders):** Çalışma dizini (`pwd`), dosya listeleme (`ls`), dizinler arası gezinme (`cd`), dosya/klasör oluşturma (`touch`, `mkdir`), okuma (`cat`), kopyalama/taşıma (`cp`, `mv`) ve silme (`rm`).
-  - **Seviye 2 ("Orta", 7 ders):** Çıktı yönlendirme (`>`, `>>`), boru hattı (`|`), dosya başı ve sonu (`head`, `tail`), metin sayımı (`wc`), metin içi arama (`grep`), sıralama/tekilleştirme (`sort`, `uniq`) ve dosya sisteminde arama (`find`).
-  - **Seviye 3 ("İleri", 9 ders):** Sistem ve kullanıcı bilgisi (`whoami`, `uname`, `date`), ortam değişkenleri (`env`, `export`, `$VAR`), komut arama yolu (`which`, `$PATH`), dosya izinleri (`chmod 755/644`, `chmod +x`), çalıştırılabilir betikler (`./`), süreç yönetimi (`ps`, `ps aux`, `kill`), mantıksal operatörler (`&&`, `||`) ve yol/dosya inceleme araçları (`stat`, `realpath`, `basename`).
-  - Adım adım Türkçe açıklamalar, örnekler ve anında doğrulanabilen interaktif görevler.
-  - İpuçları (3 başarısız denemeden sonra çözüm gösterme imkânı).
-  - İlerleme durumu `localStorage` üzerinde saklanır.
-- **Serbest Mod (Sandbox) & Canlı Dosya Ağacı:**
-  - Tam ekran terminal ve yan panelde canlı güncellenen dosya sistemi ağacı.
-  - Ağaçtaki bir klasöre tıklandığında `cd <yol>`, dosyaya tıklandığında `cat <yol>` komutunu güvenli kaçışlamayla (`quotePath`) terminale otomatik yazma.
-  - Çalışma dizini (`cwd`) vurgulaması ve yeni oluşturulan öğeleri animasyonlu parlama efektiyle belirtme.
-  - Ders ilerlemesini sıfırlamadan serbest mod dosya sistemini tek tıkla sıfırlayabilme.
-- **Hile Kağıdı (Cheat Sheet):**
-  - 13 kategoriye ayrılmış 33 çekirdek komut rehberi (gezinme, dosya işlemleri, okuma, arama, sıralama, izinler, sistem bilgisi, ortam değişkenleri, süreçler, silme, yardım vb.).
-  - Komutlara veya örneklere tıklayarak doğrudan Serbest Mod terminaline aktarma.
-- **Meraklısına (Modern Linux CLI Araçları):**
-  - Gerçek Linux dünyasında kullanılan 15 popüler harici araç için tanıtım kartları (`yt-dlp`, `wttr.in`, `fastfetch`, `btop`, `ncdu`, `ripgrep`, `fd`, `bat`, `eza`, `fzf`, `tldr`, `tmux`, `cmatrix`, `cowsay-figlet-lolcat`, `sl`).
-  - 5 kategori filtresi (Medya, Sistem, Dosyalar, Verimlilik, Eğlence).
-  - Dağıtıma özel (Debian/Ubuntu, Fedora, Arch) kurulum komutları, ipuçları (`tips`), ASCII tren sanatı (`sl`), `fastfetch` sistem çıktısı ve tek tıkla kopyalama desteği.
-- **Git Görsel Rehberi:**
-  - Git temelleri, Linus Torvalds ve Linux bağı, 3 Alan Modeli (Çalışma Alanı -> Staging -> Yerel Depo) ve 4 aşamalı yol haritası.
-- **Kişiselleştirilebilir Temalar:**
-  - 5 yerleşik tema (Koyu, Açık, Dracula, Solarized Dark, Retro CRT Yeşil).
-  - xterm.js terminali ile anında canlı renk eşzamanlaması ve regex doğrulamalı özel hex vurgu rengi seçici.
+KLU, Linux terminali ve Git kavramlarını tarayıcı içinde uygulayarak öğrenmeye yönelik bir simülatördür. Dersleri izleyebilir, komutları güvenli bir sanal dosya sisteminde deneyebilir ve ilerlemeni tarayıcıda saklayabilirsin.
 
----
+> **Simülasyon sınırları:** KLU gerçek Bash veya gerçek bir Linux sistemi değildir. `git clone`, `git push` ve `git pull` GitHub’a ya da başka bir Git sunucusuna bağlanmaz; uzak depo işlemleri VirtualFS içindeki `/var/klu-remotes` alanında simüle edilir. Meraklısına bölümündeki araç kartları tanıtım içeriğidir; bu araçları KLU terminalinde çalıştırmaz.
 
-## 🛠️ Teknoloji Yığını
+**English summary:** KLU is a browser-based learning simulator for Linux terminal and Git concepts. It uses an in-memory virtual filesystem and simulated local remotes; it is not a real Bash shell and does not connect to GitHub for Git operations.
 
-- **Çatı & Dil:** React 18 (`^18.3.1`), TypeScript (`~5.6.2`), Vite 7 (`^7.3.8`)
-- **Terminal UI:** `@xterm/xterm` (`^5.5.0`), `@xterm/addon-fit` (`^0.10.0`)
-- **Birim & Entegrasyon Test:** Vitest 5 (`^5.1.1` - 259 test)
-- **Markdown İşleme:** Marked (`^14.1.0`)
-- **Stil:** Modern Saf CSS (5 tema, CSS değişkenleri, duyarlı mobil tuş çubuğu)
+## Özellikler
 
----
+### Linux terminal öğrenimi
 
-## 🚀 Başlangıç & Kurulum
+- **VirtualFS:** Dosya ve dizinleri tarayıcı belleğinde tutan, Linux benzeri bir sanal dosya sistemi.
+- **Shell:** Komutları, boru hatlarını, yönlendirmeleri ve temel kabuk operatörlerini simüle eden yorumlayıcı.
+- **Seviye 0–3 dersleri:** Temel terminal alışkanlıklarından dosya işlemleri, arama ve süreç konularına uzanan Türkçe dersler ve görevler.
+- **Serbest Mod:** Ders akışından bağımsız olarak sanal terminalde pratik alanı; canlı dosya ağacıyla birlikte çalışır.
+- **Hile Kağıdı:** Komutları ve örnekleri hızlıca inceleyip terminale aktarabileceğin başvuru alanı.
+- **Meraklısına:** Gerçek dünyadaki popüler Linux araçlarını ve kurulum örneklerini tanıtan rehber. Bu araçlar simülatör içinde çalıştırılmaz.
+- **Temalar:** Koyu, açık ve farklı renk düzenleri; terminal görünümü temayla birlikte güncellenir.
 
-### 1. Gereksinimler
-Node.js >= 22.12.0 gereklidir. `nvm` kullanıyorsanız:
+### Git öğrenimi
 
-```bash
-# nvm ile LTS sürümünü kurun ve etkinleştirin
-nvm install --lts
-nvm use --lts
-```
+- **Git 1–4 motoru:** Yerel depo başlatma, staging ve commit, diff/restore, branch/merge ve uzak depo akışları.
+- **Etkileşimli Git dersleri:** Git kavramlarını motorun sanal depolarında adım adım uygular.
+- **Yerel uzak depo simülasyonu:** Clone/push/pull, VirtualFS içindeki `/var/klu-remotes` alanını kullanır; gerçek internet bağlantısı veya GitHub hesabı gerektirmez.
 
-### 2. Projeyi Klonlama ve Bağımlılıkları Yükleme
+## Başlangıç
+
+Gereksinim: Node.js `>=22.12.0`.
 
 ```bash
 git clone https://github.com/yavuzumut/klu-shell.git
 cd klu-shell
 npm ci
-```
-
-### 3. Geliştirme Sunucusunu Çalıştırma
-
-```bash
 npm run dev
 ```
-Terminal çıktısında belirtilen adresi (varsayılan: `http://localhost:5173`) tarayıcınızda açın.
 
-### 4. Testleri Çalıştırma
+Vite geliştirme sunucusunun verdiği yerel adresi tarayıcıda aç.
 
-Vitest ile yazılmış 259 testi çalıştırmak için:
+## Geliştirme ve doğrulama
 
 ```bash
+npx tsc --noEmit
 npm test
-```
-
-İzleme (watch) modunda testleri sürekli çalıştırmak için:
-```bash
-npm run test:watch
-```
-
-### 5. Üretim İçin Derleme (Build)
-
-```bash
 npm run build
 ```
-Derleme çıktısı `dist/` klasörüne kaydedilir (üretim CSP meta etiketi otomatik enjekte edilir). Sonucu önizlemek için:
-```bash
-npm run preview
-```
 
----
+Test sayıları değişebileceğinden README’de sabitlenmiyor; `npm test` güncel toplamı terminalde gösterir. Build çıktısı `dist/` dizinine yazılır. Yerel üretim önizlemesi için `npm run preview` kullan.
 
-## 📖 Geliştirici Rehberi
+## Katkı ve içerik geliştirme
 
-### 1. Yeni Ders Ekleme
+- Linux dersleri `src/lessons/content/level0`–`level3` altında tutulur. İlgili seviye dizinindeki `index.ts` dosyasına yeni dersi kaydet ve doğrulama kapsamını `src/lessons/validator.test.ts` ile kontrol et.
+- Git dersleri `src/git/lessons/` altında bulunur; motor ve doğrulama akışları `src/core/git/` ile birlikte çalışır.
+- Shell komutları `src/core/commands/`, kabuk yorumlayıcısı `src/core/shell/`, VirtualFS `src/core/fs/` altındadır.
+- Ayrıntılı katman ve veri akışı için [ARCHITECTURE.md](ARCHITECTURE.md) belgesine; mevcut güvenlik değerlendirmesi için depo kökündeki [SECURITY_REPORT.md](SECURITY_REPORT.md) dosyasına bak.
 
-Dersler Seviye 0 ve Seviye 1 olarak `src/lessons/content/` klasörü altında modüler TypeScript dosyalarında tanımlanır:
+## Teknoloji
 
-1. İlgili seviye klasöründe (örn. `src/lessons/content/level1/`) yeni bir ders dosyası oluşturun (örn. `08-yeni-ders.ts`):
+React, TypeScript, Vite, xterm.js, Marked, DOMPurify ve Vitest. Sürümler ve komutlar için `package.json` kaynak kabul edilir.
 
-```typescript
-import type { Lesson } from '../../types';
+## Lisans
 
-export const myNewLesson: Lesson = {
-  id: 'yeni-ders-id',
-  title: 'Yeni Ders Başlığı',
-  summary: 'Dersin tek satırlık kısa özeti',
-  content: `
-### Açıklama
-Bu derste yeni bir kavram öğreniyoruz.
-
-\`\`\`bash
-komut --bayrak hedef
-\`\`\`
-`,
-  examples: ['komut ornek'],
-  // İsteğe bağlı: derse özel dosya sistemi tohumu ve başlangıç dizini
-  setup: {
-    dirs: ['/home/kullanici/proje'],
-    files: {
-      '/home/kullanici/proje/not.txt': 'Merhaba KLU',
-    },
-    cwd: '/home/kullanici',
-  },
-  tasks: [
-    {
-      id: 'gorev-1',
-      description: '`proje` dizinine git.',
-      hints: [
-        '`cd` komutunu kullan.',
-        '`cd proje` yazabilirsin.',
-      ],
-      solution: 'cd proje',
-      // Bildirimsel görev doğrulama kuralı
-      check: { type: 'cwdIs', path: '~/proje' },
-    },
-  ],
-};
-```
-
-2. Bu dersi `src/lessons/content/level1/index.ts` içindeki `level1.lessons` dizisine ekleyin.
-
----
-
-### 2. Yeni Terminal Komutu Ekleme
-
-Tüm komutlar `src/core/commands/` klasöründe modüler olarak yer alır.
-
-1. `src/core/commands/` altında `mycommand.ts` dosyası oluşturun:
-
-```typescript
-import type { CommandDefinition, CommandContext } from '../shell/types';
-
-export const mycommand: CommandDefinition = {
-  name: 'mycommand',
-  summary: 'Komutun tek satırlık Türkçe özeti',
-  usage: 'mycommand [SEÇENEKLER] [HEDEF]...',
-  completion: 'files', // 'files' | 'dirs' | 'commands' | 'none'
-  manPage: `AD
-    mycommand - detaylı kılavuz sayfası
-
-KULLANIM
-    mycommand [SEÇENEKLER] [HEDEF]...
-
-AÇIKLAMA
-    Komutun ne yaptığını açıklayan detaylı metin.`,
-  run(args: string[], ctx: CommandContext): number {
-    // ctx.fs: Sanal dosya sistemi (VirtualFS)
-    // ctx.cwd: Mevcut çalışma dizini
-    // ctx.stdout(text): Standart çıktı akışı
-    // ctx.stderr(text): Standart hata akışı
-    // ctx.stdin: Varsa boru hattından gelen veri (pipe)
-
-    if (args.includes('--help')) {
-      ctx.stdout(mycommand.summary + '\n');
-      return 0;
-    }
-
-    ctx.stdout(`İşlem yapıldı: ${args.join(' ')}\n`);
-    return 0; // 0: başarılı, >0: POSIX hata kodu
-  },
-};
-```
-
-2. `src/core/commands/index.ts` dosyasına yeni komutu import edin ve `ALL_COMMANDS` dizisine ekleyin:
-
-```typescript
-import { mycommand } from './mycommand';
-
-export const ALL_COMMANDS: CommandDefinition[] = [
-  // ... diğer komutlar
-  mycommand,
-];
-```
-
-3. Yeni komut için `src/core/commands/commands.test.ts` içine birim testlerini ekleyin.
-
----
-
-### 3. Hile Kağıdına (Cheat Sheet) Komut Ekleme
-
-Hile kağıdı verileri `src/cheatsheet/data.ts` dosyasında tutulur.
-
-Yeni bir komut veya kategori eklemek için:
-
-```typescript
-export const CHEAT_SHEET_DATA: CheatCategory[] = [
-  {
-    title: 'Gezinme ve Yol Bilgisi',
-    items: [
-      {
-        command: 'pwd',
-        description: 'Bulunduğun çalışma dizinini ekrana yazar.',
-        example: 'pwd',
-      },
-      // Yeni komut satırı:
-      {
-        command: 'yeni-komut',
-        description: 'Komutun ne işe yaradığını belirten kısa Türkçe açıklama.',
-        example: 'yeni-komut -parametre hedef',
-      },
-    ],
-  },
-];
-```
-
----
-
-### 4. Meraklısına (Explore) Yeni Araç Kartı Ekleme
-
-Gerçek Linux araçlarının tanıtım kartları `src/explore/data.ts` dosyasında yapılandırılmıştır.
-
-Yeni bir araç kartı eklemek için `EXPLORE_TOOLS` dizisine bir nesne ekleyin:
-
-```typescript
-export const EXPLORE_TOOLS: ExploreTool[] = [
-  {
-    id: 'arac-id',
-    name: 'arac-adi',
-    category: 'productivity', // 'media' | 'system' | 'files' | 'productivity' | 'fun'
-    replaces: 'eski-arac', // opsiyonel
-    description: 'Aracın ne işe yaradığına dair 1-2 cümlelik Türkçe açıklama.',
-    exampleCommand: 'arac-adi --secenek dosya',
-    exampleOutput: `[çıktı] Örnek terminal çıktısı metni`,
-    install: {
-      debian: 'sudo apt install arac-adi',
-      fedora: 'sudo dnf install arac-adi',
-      arch: 'sudo pacman -S arac-adi',
-      note: 'Opsiyonel kuruluma özel not',
-    },
-    tips: ['Kullanım ipucu 1', 'Kullanım ipucu 2'], // opsiyonel
-    warning: 'Opsiyonel yasal veya güvenlik uyarı metni', // opsiyonel
-    sourceUrl: 'https://github.com/...', // opsiyonel
-  },
-];
-```
-
-Sayfa otomatik olarak kategori filtrelerini, dağıtım sekmelerini ve "📋 Kopyala" butonlarını oluşturacaktır.
-
----
-
-## 🧪 Test Stratejisi & Mimarisi
-
-KLU, `npm test` çıktısına göre 13 test dosyasında toplam 259 test ile korunmaktadır. Test dosyaları ve gerçek test sayıları:
-
-- `src/core/commands/commands.test.ts`: Komutlar ve kabukla entegrasyon (83 test).
-- `src/core/fs/VirtualFS.test.ts`: Sanal dosya sistemi işlemleri (21 test).
-- `src/core/fs/treeListener.test.ts`: Dosya sistemi değişiklik dinleyicileri (3 test).
-- `src/core/shell/parser.test.ts`: Kabuk ayrıştırma ve operatörler (14 test).
-- `src/core/shell/completion.test.ts`: Komut ve yol otomatik tamamlama (5 test).
-- `src/core/git/git.test.ts`: Git 1–4 komut ve depo akışları (35 test).
-- `src/core/security.test.ts`: Güvenlik, dayanıklılık, sanitizer ve kota regresyonları (22 test).
-- `src/git/lessons/gitLessons.test.ts`: Etkileşimli Git dersleri (19 test).
-- `src/lessons/validator.test.ts`: Ders görev doğrulaması (33 test).
-- `src/explore/data.test.ts`: Araç kartı verileri (5 test).
-- `src/themes/themes.test.ts`: Tema tanımları ve renk doğrulama (9 test).
-- `src/state/progress.test.ts`: İlerleme ve geçmiş saklama (7 test).
-- `src/state/congrats.test.ts`: Tebrik/ilerleme durumu (3 test).
-
-Testleri çalıştırmak için:
-```bash
-npm test
-```
-
----
-
-## 📄 Lisans
-
-MIT Lisansı.
+MIT. Ayrıntılar için [LICENSE](LICENSE) dosyasına bak.
