@@ -5,7 +5,7 @@ import { Shell } from '../core/shell/Shell';
 import type { CommandRecord } from '../core/shell/types';
 import { ALL_LESSONS, LEVELS } from './content';
 import type { Lesson } from './types';
-import { evaluateCheck, evaluateCommand, isWrongAttempt } from './validator';
+import { evaluateCheck, evaluateCommand, isReadOnlyGitCommand, isWrongAttempt } from './validator';
 
 function sessionFor(lesson: Lesson) {
   const { cwd, processes, ...seed } = lesson.setup ?? {};
@@ -131,4 +131,21 @@ describe('validator', () => {
     expect(isWrongAttempt(task, await shell.execute('touch x'))).toBe(true);
     expect(isWrongAttempt({ ...task, neutralCommands: ['touch'] }, await shell.execute('touch y'))).toBe(false);
   });
+
+  it('identifies read-only git inspection commands including remote', () => {
+    expect(isReadOnlyGitCommand(['git', 'status'])).toBe(true);
+    expect(isReadOnlyGitCommand(['git', 'log'])).toBe(true);
+    expect(isReadOnlyGitCommand(['git', 'diff'])).toBe(true);
+    expect(isReadOnlyGitCommand(['git', 'branch'])).toBe(true);
+    expect(isReadOnlyGitCommand(['git', 'branch', '-l'])).toBe(true);
+    expect(isReadOnlyGitCommand(['git', 'remote'])).toBe(true);
+    expect(isReadOnlyGitCommand(['git', 'remote', '-v'])).toBe(true);
+    expect(isReadOnlyGitCommand(['git', 'remote', '--verbose'])).toBe(true);
+
+    expect(isReadOnlyGitCommand(['git', 'remote', 'add', 'origin', 'url'])).toBe(false);
+    expect(isReadOnlyGitCommand(['git', 'remote', 'remove', 'origin'])).toBe(false);
+    expect(isReadOnlyGitCommand(['git', 'commit', '-m', 'test'])).toBe(false);
+    expect(isReadOnlyGitCommand(['git', 'push'])).toBe(false);
+  });
 });
+

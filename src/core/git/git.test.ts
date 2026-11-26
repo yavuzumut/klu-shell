@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { createTestShell } from '../test/helpers';
+import { createRegistry } from '../commands';
+import type { VirtualFS } from '../fs/VirtualFS';
+import { Shell } from '../shell/Shell';
+import { createTestShell, stripAnsi } from '../test/helpers';
 import { GitIgnore } from './gitignore';
+
+function shellOnFS(fs: VirtualFS, cwd = '/home/kullanici') {
+  const shell = new Shell({ fs, registry: createRegistry(), cwd });
+  const run = async (line: string) => {
+    const r = await shell.execute(line);
+    return { ...r, out: stripAnsi(r.stdout), err: stripAnsi(r.stderr) };
+  };
+  return { shell, run };
+}
 
 describe('virtual git engine (phase 1)', () => {
   it('fails with fatal error when not in a git repository', async () => {
@@ -468,15 +480,15 @@ describe('virtual git engine (phase 2: .gitignore, diff, restore)', () => {
   });
 });
 
-describe('virtual git engine (phase 3: branch, switch, merge)', () => {
-  async function repoWithCommit() {
-    const shell = await setupRepo();
-    await shell.run('echo "temel" > ortak.txt');
-    await shell.run('git add .');
-    await shell.run('git commit -m "ilk"');
-    return shell;
-  }
+async function repoWithCommit() {
+  const shell = await setupRepo();
+  await shell.run('echo "temel" > ortak.txt');
+  await shell.run('git add .');
+  await shell.run('git commit -m "ilk"');
+  return shell;
+}
 
+describe('virtual git engine (phase 3: branch, switch, merge)', () => {
   it('lists, creates and validates branches', async () => {
     const { run, fs } = await setupRepo();
 
@@ -753,5 +765,163 @@ describe('virtual git engine (phase 3: branch, switch, merge)', () => {
     const man = await run('man git');
     expect(man.out).toContain('ALT KOMUTLAR (Git 2)');
     expect(man.out).toContain('ALT KOMUTLAR (Git 3)');
+    expect(man.out).toContain('ALT KOMUTLAR (Git 4)');
+  });
+});
+
+describe('virtual git engine (phase 4: remotes, push, pull, clone)', () => {
+  it('initializes a bare repository with git init --bare', async () => {
+    const { run, fs } = createTestShell();
+    const r = await run('git init --bare /var/klu-remotes/deneme-repo');
+    expect(r.exitCode).toBe(0);
+    expect(r.out).toContain('Initialized empty Git repository in /var/klu-remotes/deneme-repo/');
+    expect(fs.exists('/var/klu-remotes/deneme-repo/HEAD')).toBe(true);
+    expect(fs.exists('/var/klu-remotes/deneme-repo/commits.json')).toBe(true);
+    expect(fs.exists('/var/klu-remotes/deneme-repo/.git')).toBe(false);
+  });
+
+  it('manages remotes with git remote add, -v, and remove', async () => {
+    const { run } = await repoWithCommit();
+    // Initially empty
+    const r0 = await run('git remote');
+    expect(r0.out).toBe('');
+
+    // Add origin
+    const r1 = await run('git remote add origin https://github.com/klu/notlar.git');
+    expect(r1.exitCode).toBe(0);
+
+    // List names
+    const r2 = await run('git remote');
+    expect(r2.out.trim()).toBe('origin');
+
+    // List verbose
+    const r3 = await run('git remote -v');
+    expect(r3.out).toContain('origin\thttps://github.com/klu/notlar.git (fetch)');
+    expect(r3.out).toContain('origin\thttps://github.com/klu/notlar.git (push)');
+
+    // Duplicate add error
+    const r4 = await run('git remote add origin https://github.com/klu/baska.git');
+    expect(r4.exitCode).toBe(128);
+    expect(r4.err).toContain('remote origin already exists');
+
+    // Remove remote
+    const r5 = await run('git remote remove origin');
+    expect(r5.exitCode).toBe(0);
+    expect((await run('git remote')).out).toBe('');
+
+    // Remove non-existent
+    const r6 = await run('git remote remove origin');
+    expect(r6.exitCode).toBe(128);
+    expect(r6.err).toContain("No such remote: 'origin'");
+  });
+
+  it('pushes commits to bare remote with -u and fast-forwards', async () => {
+    const { run, fs } = await repoWithCommit();
+    await run('git init --bare /var/klu-remotes/klu-notlar');
+    await run('git remote add origin https://github.com/klu/notlar.git');
+
+    // Push with -u
+    const r1 = await run('git push -u origin main');
+    expect(r1.exitCode).toBe(0);
+    expect(r1.out).toContain('* [new branch]      main -> main');
+    expect(r1.out).toContain("Branch 'main' set up to track remote branch 'main' from 'origin'");
+
+    // Verify remote repo received commits
+    const remoteCommits = JSON.parse(fs.readFile('/var/klu-remotes/klu-notlar/commits.json'));
+    expect(remoteCommits.length).toBeGreaterThan(0);
+
+    // Add new commit and push again without -u or arguments
+    await run('echo "yeni satir" >> ortak.txt');
+    await run('git add ortak.txt');
+    await run('git commit -m "ikinci commit"');
+
+    const r2 = await run('git push');
+    expect(r2.exitCode).toBe(0);
+    expect(r2.out).toContain('main -> main');
+
+    // Push when already up to date
+    const r3 = await run('git push');
+    expect(r3.exitCode).toBe(0);
+    expect(r3.out).toContain('Everything up-to-date');
+  });
+
+  it('rejects non-fast-forward push when remote has diverged work', async () => {
+    const { run, fs } = await repoWithCommit();
+    await run('git init --bare /var/klu-remotes/klu-ekip');
+    await run('git remote add origin https://github.com/klu/ekip.git');
+    await run('git push -u origin main');
+
+    // Simulate another user pushing to remote
+    const { run: runUser2 } = shellOnFS(fs);
+    await runUser2('git clone https://github.com/klu/ekip.git /home/kullanici/ekip2');
+    await runUser2('cd /home/kullanici/ekip2');
+    await runUser2('echo "baska commit" > baska.txt');
+    await runUser2('git add baska.txt');
+    await runUser2('git commit -m "diger kullanici commit"');
+    await runUser2('git push');
+
+    // Local user creates a divergent commit
+    await run('echo "yerel degisiklik" > yerel.txt');
+    await run('git add yerel.txt');
+    await run('git commit -m "yerel commit"');
+
+    // Push should be rejected
+    const rReject = await run('git push');
+    expect(rReject.exitCode).toBe(1);
+    expect(rReject.err).toContain('[rejected]');
+    expect(rReject.err).toContain('Updates were rejected because the remote contains work');
+  });
+
+  it('pulls remote changes and fast-forwards local working directory', async () => {
+    const { run, fs } = await repoWithCommit();
+    await run('git init --bare /var/klu-remotes/klu-ortak');
+    await run('git remote add origin https://github.com/klu/ortak.git');
+    await run('git push -u origin main');
+
+    // User 2 clones and adds a file
+    const { run: runUser2 } = shellOnFS(fs);
+    await runUser2('git clone https://github.com/klu/ortak.git /home/kullanici/user2-repo');
+    await runUser2('cd /home/kullanici/user2-repo');
+    await runUser2('echo "sunucudan gelen dosya" > dosya2.txt');
+    await runUser2('git add dosya2.txt');
+    await runUser2('git commit -m "user2 yeni dosya"');
+    await runUser2('git push');
+
+    // Local repo pulls
+    expect(fs.exists('/home/kullanici/repo/dosya2.txt')).toBe(false);
+    const rPull = await run('git pull');
+    expect(rPull.exitCode).toBe(0);
+    expect(rPull.out).toContain('Fast-forward');
+    expect(fs.exists('/home/kullanici/repo/dosya2.txt')).toBe(true);
+    expect(fs.readFile('/home/kullanici/repo/dosya2.txt')).toBe('sunucudan gelen dosya\n');
+
+    // Pulling again says already up to date
+    const rPull2 = await run('git pull');
+    expect(rPull2.exitCode).toBe(0);
+    expect(rPull2.out).toContain('Already up to date');
+  });
+
+  it('clones a remote repository into a target directory', async () => {
+    const { run, fs } = await repoWithCommit();
+    await run('git init --bare /var/klu-remotes/klu-proje');
+    await run('git remote add origin https://github.com/klu/proje.git');
+    await run('git push -u origin main');
+
+    const { run: runClient } = shellOnFS(fs);
+    const rClone = await runClient('git clone https://github.com/klu/proje.git');
+    expect(rClone.exitCode).toBe(0);
+    expect(rClone.out).toContain("Cloning into 'proje'...");
+
+    expect(fs.exists('/home/kullanici/proje/.git')).toBe(true);
+    expect(fs.exists('/home/kullanici/proje/ortak.txt')).toBe(true);
+
+    // Verify origin and upstream tracking were automatically configured
+    await runClient('cd /home/kullanici/proje');
+    const rRemote = await runClient('git remote -v');
+    expect(rRemote.out).toContain('origin\thttps://github.com/klu/proje.git (fetch)');
+
+    const rStatus = await runClient('git status');
+    expect(rStatus.out).toContain('On branch main');
+    expect(rStatus.out).toContain('nothing to commit, working tree clean');
   });
 });

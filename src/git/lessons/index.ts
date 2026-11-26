@@ -2,10 +2,11 @@ import type { Level, Lesson } from '../../lessons/types';
 import { gitLevel1 } from './gitLevel1';
 import { gitLevel2 } from './gitLevel2';
 import { gitLevel3 } from './gitLevel3';
+import { gitLevel4 } from './gitLevel4';
 
-export { gitLevel1, gitLevel2, gitLevel3 };
+export { gitLevel1, gitLevel2, gitLevel3, gitLevel4 };
 
-export const GIT_LEVELS: Level[] = [gitLevel1, gitLevel2, gitLevel3];
+export const GIT_LEVELS: Level[] = [gitLevel1, gitLevel2, gitLevel3, gitLevel4];
 
 export const GIT_ALL_LESSONS: Lesson[] = GIT_LEVELS.flatMap((l) => l.lessons);
 

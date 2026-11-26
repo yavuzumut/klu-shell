@@ -9,8 +9,36 @@ import type {
   GitIndex,
   GitMergeResult,
   GitMergeState,
+  GitPullResult,
+  GitPushResult,
+  GitRemoteInfo,
+  GitRepoConfig,
   GitStatusResult,
 } from './types';
+
+/** Map remote URL or local path to a deterministic virtual remote path under /var/klu-remotes. */
+export function urlToRemotePath(url: string): string {
+  const trimmed = url.trim();
+  if (trimmed.startsWith('/var/klu-remotes/')) {
+    return trimmed;
+  }
+  const noGit = trimmed.replace(/\.git\/?$/, '');
+  const segments = noGit
+    .split(/[/:]+/)
+    .filter((s) => s !== 'https' && s !== 'http' && s !== 'git' && s !== 'ssh');
+  let slug = '';
+  if (segments.length >= 2) {
+    const owner = segments[segments.length - 2];
+    const repo = segments[segments.length - 1];
+    slug = `${owner}-${repo}`;
+  } else if (segments.length === 1) {
+    slug = segments[0];
+  } else {
+    slug = 'klu-repo';
+  }
+  const safe = slug.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/^-+|-+$/g, '');
+  return `/var/klu-remotes/${safe || 'klu-repo'}`;
+}
 
 function generateHash(seed: string): string {
   let h1 = 0x811c9dc5;
@@ -36,26 +64,35 @@ function matchesSpec(relPath: string, spec: string): boolean {
 }
 
 export class GitRepo {
+  public readonly isBare: boolean;
+
   constructor(
     public readonly fs: VirtualFS,
     public readonly repoRoot: string,
-  ) {}
+    isBare = false,
+  ) {
+    this.isBare = isBare;
+  }
 
   get gitDir(): string {
-    return joinPath(this.repoRoot, '.git');
+    return this.isBare ? this.repoRoot : joinPath(this.repoRoot, '.git');
   }
 
   // ---------------------------------------------------------------- discovery
 
   /**
-   * Search upwards from `cwd` towards root `/` to find a `.git` repository directory.
+   * Search upwards from `cwd` towards root `/` to find a repository.
    */
   static find(fs: VirtualFS, cwd: string): GitRepo | null {
     let curr = fs.resolve(cwd);
+    // Check if current directory itself is a bare repo
+    if (fs.exists(joinPath(curr, 'HEAD')) && fs.exists(joinPath(curr, 'commits.json')) && !fs.exists(joinPath(curr, '.git'))) {
+      return new GitRepo(fs, curr, true);
+    }
     while (true) {
       const gitPath = joinPath(curr, '.git');
       if (fs.exists(gitPath) && fs.isDir(gitPath)) {
-        return new GitRepo(fs, curr);
+        return new GitRepo(fs, curr, false);
       }
       if (curr === '/' || curr === '') {
         break;
@@ -68,27 +105,49 @@ export class GitRepo {
   }
 
   /**
+   * Open a repository directly at a known path (bare or normal).
+   */
+  static open(fs: VirtualFS, path: string): GitRepo | null {
+    const abs = fs.resolve(path);
+    if (!fs.exists(abs) || !fs.isDir(abs)) return null;
+    const dotGit = joinPath(abs, '.git');
+    if (fs.exists(dotGit) && fs.isDir(dotGit)) {
+      return new GitRepo(fs, abs, false);
+    }
+    if (fs.exists(joinPath(abs, 'HEAD')) && fs.exists(joinPath(abs, 'commits.json'))) {
+      return new GitRepo(fs, abs, true);
+    }
+    return null;
+  }
+
+  /**
    * Initialize a repository at `targetDir`.
    */
   static init(
     fs: VirtualFS,
     targetDir: string,
     defaultBranch = 'main',
+    options: { bare?: boolean } = {},
   ): { repo: GitRepo; isReinit: boolean } {
     const absTarget = fs.resolve(targetDir);
-    const gitDir = joinPath(absTarget, '.git');
+    const isBare = !!options.bare;
+    const gitDir = isBare ? absTarget : joinPath(absTarget, '.git');
 
     if (fs.exists(gitDir) && fs.isDir(gitDir)) {
-      return { repo: new GitRepo(fs, absTarget), isReinit: true };
+      if (fs.exists(joinPath(gitDir, 'commits.json'))) {
+        return { repo: new GitRepo(fs, absTarget, isBare), isReinit: true };
+      }
     }
 
     fs.mkdir(gitDir, { parents: true });
     fs.mkdir(joinPath(gitDir, 'refs/heads'), { parents: true });
+    fs.mkdir(joinPath(gitDir, 'refs/remotes'), { parents: true });
     fs.writeFile(joinPath(gitDir, 'HEAD'), `ref: refs/heads/${defaultBranch}\n`);
     fs.writeFile(joinPath(gitDir, 'index.json'), '{}');
     fs.writeFile(joinPath(gitDir, 'commits.json'), '[]');
+    fs.writeFile(joinPath(gitDir, 'config.json'), JSON.stringify({ remotes: {}, branches: {} }, null, 2));
 
-    return { repo: new GitRepo(fs, absTarget), isReinit: false };
+    return { repo: new GitRepo(fs, absTarget, isBare), isReinit: false };
   }
 
   // ---------------------------------------------------------------- references
@@ -158,11 +217,19 @@ export class GitRepo {
     this.fs.writeFile(joinPath(this.gitDir, 'index.json'), JSON.stringify(index, null, 2));
   }
 
-  private saveCommits(commits: GitCommit[]): void {
+  saveCommits(commits: GitCommit[]): void {
     this.fs.writeFile(joinPath(this.gitDir, 'commits.json'), JSON.stringify(commits, null, 2));
   }
 
-  private setBranchHead(branch: string, commitHash: string): void {
+  addCommits(newCommits: GitCommit[]): void {
+    const existing = this.getCommits();
+    const map = new Map<string, GitCommit>();
+    for (const c of existing) map.set(c.hash, c);
+    for (const c of newCommits) map.set(c.hash, c);
+    this.saveCommits(Array.from(map.values()));
+  }
+
+  setBranchHead(branch: string, commitHash: string): void {
     const branchPath = joinPath(this.gitDir, `refs/heads/${branch}`);
     const parent = dirname(branchPath);
     if (!this.fs.exists(parent)) {
@@ -172,8 +239,97 @@ export class GitRepo {
   }
 
   /** Point HEAD at `refs/heads/<branch>`. */
-  private setHeadRef(branch: string): void {
+  setHeadRef(branch: string): void {
     this.fs.writeFile(joinPath(this.gitDir, 'HEAD'), `ref: refs/heads/${branch}\n`);
+  }
+
+  // ------------------------------------------------------------- remote tracking
+
+  getRemoteTrackingBranchHash(remote: string, branch: string): string | null {
+    const refPath = joinPath(this.gitDir, `refs/remotes/${remote}/${branch}`);
+    if (!this.fs.isFile(refPath)) return null;
+    const hash = this.fs.readFile(refPath).trim();
+    return hash || null;
+  }
+
+  setRemoteTrackingBranchHead(remote: string, branch: string, commitHash: string): void {
+    const refPath = joinPath(this.gitDir, `refs/remotes/${remote}/${branch}`);
+    const parent = dirname(refPath);
+    if (!this.fs.exists(parent)) {
+      this.fs.mkdir(parent, { parents: true });
+    }
+    this.fs.writeFile(refPath, commitHash + '\n');
+  }
+
+  // ------------------------------------------------------------- config & remotes
+
+  getConfig(): GitRepoConfig {
+    const configPath = joinPath(this.gitDir, 'config.json');
+    if (!this.fs.exists(configPath)) {
+      return { remotes: {}, branches: {} };
+    }
+    try {
+      const parsed = JSON.parse(this.fs.readFile(configPath));
+      return {
+        remotes: parsed.remotes || {},
+        branches: parsed.branches || {},
+      };
+    } catch {
+      return { remotes: {}, branches: {} };
+    }
+  }
+
+  saveConfig(config: GitRepoConfig): void {
+    this.fs.writeFile(joinPath(this.gitDir, 'config.json'), JSON.stringify(config, null, 2));
+  }
+
+  getRemotes(): GitRemoteInfo[] {
+    const conf = this.getConfig();
+    return Object.entries(conf.remotes).map(([name, r]) => ({ name, url: r.url }));
+  }
+
+  addRemote(name: string, url: string): void {
+    const trimmedName = name.trim();
+    const trimmedUrl = url.trim();
+    if (!trimmedName || !trimmedUrl) {
+      throw new Error('fatal: remote name and URL are required');
+    }
+    const conf = this.getConfig();
+    if (conf.remotes[trimmedName]) {
+      throw new Error(`fatal: remote ${trimmedName} already exists.`);
+    }
+    conf.remotes[trimmedName] = { url: trimmedUrl };
+    this.saveConfig(conf);
+  }
+
+  removeRemote(name: string): void {
+    const trimmedName = name.trim();
+    const conf = this.getConfig();
+    if (!conf.remotes[trimmedName]) {
+      throw new Error(`fatal: No such remote: '${trimmedName}'`);
+    }
+    delete conf.remotes[trimmedName];
+    for (const [branch, bConf] of Object.entries(conf.branches)) {
+      if (bConf.remote === trimmedName) {
+        delete conf.branches[branch];
+      }
+    }
+    this.saveConfig(conf);
+    const remoteRefDir = joinPath(this.gitDir, 'refs/remotes', trimmedName);
+    if (this.fs.exists(remoteRefDir)) {
+      this.fs.remove(remoteRefDir);
+    }
+  }
+
+  setUpstream(branch: string, remote: string, mergeRef = `refs/heads/${branch}`): void {
+    const conf = this.getConfig();
+    conf.branches[branch] = { remote, merge: mergeRef };
+    this.saveConfig(conf);
+  }
+
+  getUpstream(branch: string): { remote: string; merge: string } | null {
+    const conf = this.getConfig();
+    return conf.branches[branch] || null;
   }
 
   // ------------------------------------------------------------ merge state
@@ -935,21 +1091,22 @@ export class GitRepo {
 
   // ------------------------------------------------------------------- merge
 
-  /** `git merge <branch>`: fast-forward, three-way merge commit, or conflict. */
-  merge(branchName: string, author?: string): GitMergeResult {
+  /** Core merge logic by commit hash. */
+  mergeCommitHash(
+    theirsHash: string,
+    displayName: string,
+    author?: string,
+    customMessage?: string,
+  ): GitMergeResult {
     if (this.getMergeState()) {
       throw new Error(
         'fatal: You have not concluded your merge (MERGE_HEAD exists).\n' +
           'Please, commit your changes before you merge.',
       );
     }
-    const theirsHash = this.getBranchCommitHash(branchName);
-    if (!theirsHash) {
-      throw new Error(`merge: ${branchName} - not something we can merge`);
-    }
     const theirs = this.getCommit(theirsHash);
     if (!theirs) {
-      throw new Error(`merge: ${branchName} - not something we can merge`);
+      throw new Error(`merge: ${displayName} - not something we can merge`);
     }
 
     const oursHash = this.getHeadCommitHash();
@@ -1017,7 +1174,7 @@ export class GitRepo {
     const err = this.overwriteError(this.findOverwriteConflicts(oursTree, targetTree), 'merge');
     if (err) throw err;
 
-    const message = `Merge branch '${branchName}'`;
+    const message = customMessage ?? `Merge branch '${displayName}'`;
 
     if (conflicts.length === 0) {
       const changedFiles = this.applyTree(oursTree, merged);
@@ -1030,13 +1187,22 @@ export class GitRepo {
       const o = oursTree[c.path];
       const t = theirs.tree[c.path];
       if (o !== undefined && t !== undefined) {
-        this.writeWorkingFile(c.path, buildConflictContent(o, t, 'HEAD', branchName));
+        this.writeWorkingFile(c.path, buildConflictContent(o, t, 'HEAD', displayName));
       } else {
         this.writeWorkingFile(c.path, (o ?? t) as string);
       }
     }
-    this.saveMergeState({ mergeHead: theirs.hash, branch: branchName, message, conflicts });
+    this.saveMergeState({ mergeHead: theirs.hash, branch: displayName, message, conflicts });
     return { type: 'conflict', conflicts, autoMerged };
+  }
+
+  /** `git merge <branch>`: fast-forward, three-way merge commit, or conflict. */
+  merge(branchName: string, author?: string): GitMergeResult {
+    const theirsHash = this.getBranchCommitHash(branchName);
+    if (!theirsHash) {
+      throw new Error(`merge: ${branchName} - not something we can merge`);
+    }
+    return this.mergeCommitHash(theirsHash, branchName, author);
   }
 
   /** `git merge --abort`: drop the in-progress merge and restore HEAD. */
@@ -1062,5 +1228,230 @@ export class GitRepo {
     }
     this.saveIndex({ ...headTree });
     this.saveMergeState(null);
+  }
+
+  // ---------------------------------------------------------------- remote ops
+
+  push(
+    remoteName?: string,
+    branchName?: string,
+    options: { setUpstream?: boolean } = {},
+  ): GitPushResult {
+    const currentBranch = this.getCurrentBranch() ?? 'main';
+    const localHash = (branchName ? this.getBranchCommitHash(branchName) : null) ?? this.getHeadCommitHash();
+
+    if (!localHash) {
+      throw new Error(
+        `error: src refspec ${branchName ?? currentBranch} does not match any\n` +
+          `error: failed to push some refs to remote`,
+      );
+    }
+
+    let targetRemote = remoteName;
+    let targetBranch = branchName;
+
+    if (!targetRemote) {
+      const upstream = this.getUpstream(currentBranch);
+      if (!upstream) {
+        throw new Error(
+          `fatal: The current branch ${currentBranch} has no upstream branch.\n` +
+            `To push the current branch and set the remote as upstream, use\n\n` +
+            `    git push --set-upstream origin ${currentBranch}\n`,
+        );
+      }
+      targetRemote = upstream.remote;
+      targetBranch = targetBranch ?? upstream.merge.replace(/^refs\/heads\//, '');
+    }
+
+    if (!targetBranch) {
+      targetBranch = currentBranch;
+    }
+
+    const conf = this.getConfig();
+    const rConfig = conf.remotes[targetRemote];
+    if (!rConfig) {
+      throw new Error(
+        `fatal: '${targetRemote}' does not appear to be a git repository\n` +
+          `fatal: Could not read from remote repository.`,
+      );
+    }
+
+    const remotePath = urlToRemotePath(rConfig.url);
+    const remoteRepo = GitRepo.open(this.fs, remotePath);
+    if (!remoteRepo) {
+      throw new Error(
+        `fatal: repository '${rConfig.url}' does not exist\n` +
+          `fatal: Could not read from remote repository.`,
+      );
+    }
+
+    const remoteHash = remoteRepo.getBranchCommitHash(targetBranch);
+    const isNewBranch = !remoteHash;
+
+    if (remoteHash && remoteHash !== localHash) {
+      if (!this.isAncestor(remoteHash, localHash)) {
+        throw new Error(
+          `To ${rConfig.url}\n` +
+            ` ! [rejected]        ${targetBranch} -> ${targetBranch} (fetch first)\n` +
+            `error: failed to push some refs to '${rConfig.url}'\n` +
+            `hint: Updates were rejected because the remote contains work that you do\n` +
+            `hint: not have locally. This is usually caused by another repository pushing\n` +
+            `hint: to the same ref. You may want to first integrate the remote changes\n` +
+            `hint: (e.g., 'git pull ...') before pushing again.\n` +
+            `hint: See the 'Note about fast-forwards' in 'git push --help' for details.`,
+        );
+      }
+    }
+
+    // Transfer commits
+    remoteRepo.addCommits(this.getCommits());
+    remoteRepo.setBranchHead(targetBranch, localHash);
+
+    // If remote is bare and unborn HEAD, point to branch
+    if (remoteRepo.isBare) {
+      const headBranch = remoteRepo.getCurrentBranch();
+      if (!headBranch) {
+        remoteRepo.setHeadRef(targetBranch);
+      }
+    }
+
+    // Update local remote-tracking branch
+    this.setRemoteTrackingBranchHead(targetRemote, targetBranch, localHash);
+
+    // Save upstream tracking
+    if (options.setUpstream) {
+      this.setUpstream(targetBranch, targetRemote, `refs/heads/${targetBranch}`);
+    }
+
+    return {
+      remote: targetRemote,
+      branch: targetBranch,
+      url: rConfig.url,
+      isNewBranch,
+      oldHash: remoteHash,
+      newHash: localHash,
+      setUpstream: !!options.setUpstream,
+    };
+  }
+
+  pull(remoteName?: string, branchName?: string, author?: string): GitPullResult {
+    const currentBranch = this.getCurrentBranch() ?? 'main';
+    let targetRemote = remoteName;
+    let targetBranch = branchName;
+
+    if (!targetRemote) {
+      const upstream = this.getUpstream(currentBranch);
+      if (!upstream) {
+        throw new Error(
+          `There is no tracking information for the current branch.\n` +
+            `Please specify which branch you want to merge with.\n` +
+            `See git-pull(1) for details.\n\n` +
+            `    git pull <remote> <branch>\n\n` +
+            `If you wish to set tracking information for this branch you can do so with:\n\n` +
+            `    git branch --set-upstream-to=<remote>/<branch> ${currentBranch}\n`,
+        );
+      }
+      targetRemote = upstream.remote;
+      targetBranch = targetBranch ?? upstream.merge.replace(/^refs\/heads\//, '');
+    }
+
+    if (!targetBranch) {
+      targetBranch = currentBranch;
+    }
+
+    const conf = this.getConfig();
+    const rConfig = conf.remotes[targetRemote];
+    if (!rConfig) {
+      throw new Error(
+        `fatal: '${targetRemote}' does not appear to be a git repository\n` +
+          `fatal: Could not read from remote repository.`,
+      );
+    }
+
+    const remotePath = urlToRemotePath(rConfig.url);
+    const remoteRepo = GitRepo.open(this.fs, remotePath);
+    if (!remoteRepo) {
+      throw new Error(
+        `fatal: repository '${rConfig.url}' does not exist\n` +
+          `fatal: Could not read from remote repository.`,
+      );
+    }
+
+    const remoteHash = remoteRepo.getBranchCommitHash(targetBranch);
+    if (!remoteHash) {
+      throw new Error(`fatal: couldn't find remote ref ${targetBranch}`);
+    }
+
+    // Transfer remote commits to local
+    this.addCommits(remoteRepo.getCommits());
+    this.setRemoteTrackingBranchHead(targetRemote, targetBranch, remoteHash);
+
+    // Merge remote branch into current branch
+    return this.mergeCommitHash(
+      remoteHash,
+      `${targetRemote}/${targetBranch}`,
+      author ?? this.fs.user,
+      `Merge branch '${targetBranch}' of ${rConfig.url}`,
+    );
+  }
+
+  static clone(
+    fs: VirtualFS,
+    url: string,
+    targetDir?: string,
+    cwd = '/',
+  ): { repo: GitRepo; branch: string; targetDir: string; commitCount: number } {
+    let resolvedDir = targetDir;
+    if (!resolvedDir) {
+      const noGit = url.trim().replace(/\.git\/?$/, '');
+      const parts = noGit.split(/[/:]+/).filter(Boolean);
+      resolvedDir = parts[parts.length - 1] || 'repo';
+    }
+
+    const absTarget = fs.resolve(resolvedDir, cwd);
+
+    if (fs.exists(absTarget)) {
+      if (!fs.isDir(absTarget) || fs.readdir(absTarget).length > 0) {
+        throw new Error(
+          `fatal: destination path '${resolvedDir}' already exists and is not an empty directory.`,
+        );
+      }
+    }
+
+    const remotePath = urlToRemotePath(url);
+    const remoteRepo = GitRepo.open(fs, remotePath);
+    if (!remoteRepo) {
+      throw new Error(`fatal: repository '${url}' does not exist`);
+    }
+
+    const remoteBranch = remoteRepo.getCurrentBranch() ?? 'main';
+    const remoteHash = remoteRepo.getBranchCommitHash(remoteBranch);
+
+    const { repo } = GitRepo.init(fs, absTarget, remoteBranch);
+    const remoteCommits = remoteRepo.getCommits();
+    repo.addCommits(remoteCommits);
+
+    // Configure origin remote and branch tracking
+    repo.addRemote('origin', url);
+    repo.setUpstream(remoteBranch, 'origin', `refs/heads/${remoteBranch}`);
+
+    if (remoteHash) {
+      repo.setBranchHead(remoteBranch, remoteHash);
+      repo.setRemoteTrackingBranchHead('origin', remoteBranch, remoteHash);
+      repo.setHeadRef(remoteBranch);
+
+      const commit = repo.getCommit(remoteHash);
+      if (commit) {
+        repo.applyTree({}, commit.tree);
+        repo.saveIndex({ ...commit.tree });
+      }
+    }
+
+    return {
+      repo,
+      branch: remoteBranch,
+      targetDir: absTarget,
+      commitCount: remoteCommits.length,
+    };
   }
 }

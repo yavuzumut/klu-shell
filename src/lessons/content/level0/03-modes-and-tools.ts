@@ -10,7 +10,7 @@ KLU, öğrenmeyi kolaylaştırmak için farklı çalışma alanları ve yardımc
 ### Üst Gezinme Sekmeleri
 - **📖 Dersler:** Adım adım görevlerle ilerlediğin rehberli mod.
 - **💻 Serbest Mod (Sandbox):** Görev sınırlaması olmadan terminali özgürce kullanabileceğin mod.
-- **🌿 Git:** Sürüm kontrol sistemini tanıtan bölüm (uygulamalı dersler yakında).
+- **🌿 Git:** Sürüm kontrol sistemini tanıtan bölüm (uygulamalı Git dersleri).
 - **📑 Hile Kağıdı (Cheat Sheet):** Desteklenen tüm komutların kısa Türkçe açıklamaları ve örnekleri. Bir komuta tıkladığında doğrudan Serbest Mod terminaline yazılır.
 - **🚀 Meraklısına:** \`yt-dlp\` gibi gerçek Linux araçları hakkında tanıtım kartları ve kopyalanabilir komutlar.
 

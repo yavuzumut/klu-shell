@@ -73,3 +73,39 @@ export interface GitStatusResult {
   /** Present while a conflicted merge is in progress. */
   merging?: { branch: string; conflicts: GitConflict[] };
 }
+
+export interface GitRemoteConfig {
+  url: string;
+}
+
+export interface GitBranchConfig {
+  remote: string;
+  merge: string;
+}
+
+export interface GitRepoConfig {
+  remotes: Record<string, GitRemoteConfig>;
+  branches: Record<string, GitBranchConfig>;
+}
+
+export interface GitRemoteInfo {
+  name: string;
+  url: string;
+}
+
+export interface GitPushResult {
+  remote: string;
+  branch: string;
+  url: string;
+  isNewBranch: boolean;
+  oldHash: string | null;
+  newHash: string;
+  setUpstream: boolean;
+}
+
+export type GitPullResult =
+  | { type: 'up-to-date' }
+  | { type: 'fast-forward'; from: string; to: string; changedFiles: string[] }
+  | { type: 'merge'; commit: GitCommit; changedFiles: string[] }
+  | { type: 'conflict'; conflicts: GitConflict[]; autoMerged: string[] };
+

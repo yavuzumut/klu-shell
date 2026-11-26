@@ -126,7 +126,7 @@ export const GIT_INTRO_DATA: GitIntroData = {
   },
   curriculum: {
     title: 'KLU\'da Neler Öğreneceksin?',
-    subtitle: 'Git 1–3 uygulamalı dersleri hazır! Git 4 çok yakında:',
+    subtitle: 'Git 1–4 uygulamalı dersleri hazır! İstediğin konudan başlayabilirsin:',
     topics: [
       {
         id: 'git-1',
@@ -161,7 +161,8 @@ export const GIT_INTRO_DATA: GitIntroData = {
         title: 'Uzak Depolar ve İş Birliği',
         commands: ['remote', 'push', 'pull', 'clone'],
         description: 'Yerel deponu GitHub gibi uzak bir sunucuya bağlama, değişiklikleri gönderme (push), güncellemeleri çekme (pull) ve projeleri klonlama.',
-        status: 'Yakında',
+        status: 'Hazır',
+        firstLessonId: 'git-4-push',
       },
     ],
   },

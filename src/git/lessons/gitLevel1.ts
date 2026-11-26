@@ -63,15 +63,15 @@ Bir projeye başlarken yaptığın her değişikliğin kaydını tutmak istersin
       title: 'Hazırlık ve İlk Kayıt',
       summary: 'git add ile değişiklikleri sahneye al, git commit ile kaydet ve geçmişi gör.',
       content: `
-Git'te dosyaları doğrudan kaydetmeyiz. İki aşamalı bir güvenlik çemberimiz vardır:
+Git'te değişiklikleri iki adımda kaydedersin: önce **neleri** kaydedeceğini seçersin, sonra **kaydet** dersin.
 
 \`\`\`
-Çalışma Alanı  ──( git add )──>  Hazırlık Alanı (Staging)  ──( git commit )──>  Depo (.git)
+Çalışma Alanı ──( git add )──> Hazırlık Alanı (Staging) ──( git commit )──> Depo (.git)
 \`\`\`
 
-1. **Hazırlık Alanı (\`staging area\`):** Bir fotoğraf çekimi düşün. Fotoğrafta yer almasını istediğin kişileri sahneye çağırırsın (\`git add notlar.txt\` veya tümü için \`git add .\`).
-2. **Commit (\`git commit -m "mesaj"\`):** Deklanşöre basarsın! Sahnedeki değişiklikler kalıcı bir sürüm fotoğrafı olarak kaydedilir. Her commit'in benzersiz 7 karakterlik bir kimliği (hash) olur.
-3. **Geçmişi İnceleme (\`git log --oneline\`):** Albümdeki fotoğrafları tek satırlık özetler halinde listeler.
+1. **\`git add\` (Dosya seçme):** Bir sonraki kayda hangi dosyaların gireceğini belirlersin. Örneğin klasörde 5 dosya değiştirdin ama şimdilik sadece \`notlar.txt\`'yi kaydetmek istiyorsun: \`git add notlar.txt\` yazarsın. Değişen her şeyi seçmek için \`git add .\` yeter.
+2. **\`git commit -m "mesaj"\` (Kaydetme):** Seçtiğin dosyaları kısa bir açıklamayla geçmişe kalıcı olarak işlersin. Oyunda **Save** almak gibi düşün — ileride bir şeyi bozarsan tam bu ana geri dönebilirsin.
+3. **\`git log --oneline\` (Geçmişi görme):** Şimdiye kadar aldığın kayıtları (commit'leri) en yeniden eskiye doğru kısa bir liste halinde gösterir.
 `,
       examples: ['git status', 'git add notlar.txt', 'git commit -m "İlk commit"', 'git log --oneline'],
       setup: {

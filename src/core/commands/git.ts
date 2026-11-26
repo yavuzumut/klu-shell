@@ -26,6 +26,12 @@ Git 3 — dallar:
    switch     Başka bir dala geçer (-c: yeni dal oluşturup geçer)
    merge      Bir dalı bulunulan dala birleştirir
 
+Git 4 — uzak depolar:
+   clone      Uzak depoyu klonlar
+   remote     Uzak depo bağlantılarını yönetir (-v, add, remove)
+   push       Commit'leri uzak depoya gönderir (-u: upstream ayarla)
+   pull       Uzak depodaki değişiklikleri çeker ve birleştirir
+
 Ayrıntılı bilgi için: man git
 `;
 
@@ -50,7 +56,8 @@ function conflictLine(c: GitConflict, branch: string): string {
 
 export const git: CommandDefinition = {
   name: 'git',
-  summary: 'Sanal sürüm kontrol sistemi (init, status, add, commit, log, diff, restore, branch, switch, merge)',
+  summary:
+    'Sanal sürüm kontrol sistemi (init, status, add, commit, log, diff, restore, branch, switch, merge, clone, remote, push, pull)',
   usage: 'git <alt-komut> [seçenekler]',
   completion: 'files',
   manPage: `AD
@@ -64,8 +71,9 @@ AÇIKLAMA
     ve projeleri güvenle yönetmeye yarayan bir sürüm kontrol sistemidir.
 
 ALT KOMUTLAR (Git 1)
-    init [dizin]
+    init [--bare] [dizin]
         Yeni bir Git deposu başlatır (.git klasörü oluşturur).
+        --bare seçeneği ile doğrudan nesne tabanlı uzak depo oluşturulur.
         Varsayılan dal adı: main.
 
     status
@@ -118,19 +126,36 @@ ALT KOMUTLAR (Git 3)
         değiştirilmişse çakışma (conflict) bildirir; çakışmayı düzeltip
         'git add' + 'git commit' ile bitirebilir ya da --abort ile iptal edebilirsin.
 
+ALT KOMUTLAR (Git 4)
+    clone <url> [klasor]
+        Uzak depoyu hedef klasöre klonlar, dosyaları açar ve 'origin' bağlantısını kurar.
+
+    remote [-v | --verbose]
+    remote add <ad> <url>
+    remote remove <ad>
+        Uzak depo bağlantılarını yönetir. '-v' ile URL'leri listeler.
+
+    push [-u | --set-upstream] [uzak] [dal]
+        Commit'leri uzak depoya aktarır. '-u' ile upstream ayarı kaydedilir.
+
+    pull [uzak] [dal]
+        Uzak depodaki değişiklikleri çeker ve mevcut dala birleştirir.
+
 ÖRNEKLER
     git init
     git status
     git add .
     git commit -m "İlk commit"
-    git log
     git log --oneline
     git diff
-    git diff --staged
-    git restore --staged notlar.txt
     git branch ozellik
     git switch -c deneme
-    git merge ozellik`,
+    git merge ozellik
+    git clone https://github.com/klu/notlar.git
+    git remote add origin https://github.com/klu/notlar.git
+    git remote -v
+    git push -u origin main
+    git pull`,
 
   run(args, ctx) {
     if (args.length === 0) {
@@ -145,17 +170,43 @@ ALT KOMUTLAR (Git 3)
       return 0;
     }
 
-    // git init [targetDir]
+    // git init [--bare] [targetDir]
     if (sub === 'init') {
-      const targetDir = args[1] ? ctx.resolve(args[1]) : ctx.cwd;
-      const { isReinit } = GitRepo.init(ctx.fs, targetDir);
-      const gitPath = ctx.fs.resolve('.git', targetDir);
+      let isBare = false;
+      const targetArgs: string[] = [];
+      for (const a of args.slice(1)) {
+        if (a === '--bare') isBare = true;
+        else targetArgs.push(a);
+      }
+      const targetDir = targetArgs[0] ? ctx.resolve(targetArgs[0]) : ctx.cwd;
+      const { isReinit } = GitRepo.init(ctx.fs, targetDir, 'main', { bare: isBare });
+      const gitPath = isBare ? ctx.resolve(targetDir) : ctx.fs.resolve('.git', targetDir);
       if (isReinit) {
         ctx.stdout(`Reinitialized existing Git repository in ${gitPath}/\n`);
       } else {
         ctx.stdout(`Initialized empty Git repository in ${gitPath}/\n`);
       }
       return 0;
+    }
+
+    // git clone <url> [targetDir]
+    if (sub === 'clone') {
+      const cloneArgs = args.slice(1).filter((a) => !a.startsWith('-'));
+      if (cloneArgs.length === 0) {
+        ctx.stderr('fatal: You must specify a repository to clone.\nusage: git clone <url> [directory]\n');
+        return 128;
+      }
+      const url = cloneArgs[0];
+      const target = cloneArgs[1];
+      try {
+        GitRepo.clone(ctx.fs, url, target, ctx.cwd);
+        const folderName = target || url.trim().replace(/\.git\/?$/, '').split(/[/:]+/).pop() || 'repo';
+        ctx.stdout(`Cloning into '${folderName}'...\ndone.\n`);
+        return 0;
+      } catch (err) {
+        ctx.stderr(`${errMsg(err)}\n`);
+        return 128;
+      }
     }
 
     // All other commands require an existing repository
@@ -455,6 +506,146 @@ ALT KOMUTLAR (Git 3)
           case 'conflict': {
             const lines = result.autoMerged.map((p) => `Auto-merging ${p}`);
             for (const c of result.conflicts) lines.push(conflictLine(c, name));
+            lines.push('Automatic merge failed; fix conflicts and then commit the result.');
+            ctx.stdout(lines.join('\n') + '\n');
+            return 1;
+          }
+        }
+      } catch (err) {
+        ctx.stderr(`${errMsg(err)}\n`);
+        return 1;
+      }
+    }
+
+    // git remote [-v | --verbose] | git remote add <name> <url> | git remote remove <name>
+    if (sub === 'remote') {
+      if (subargs.length === 0 || subargs[0] === '-v' || subargs[0] === '--verbose') {
+        const isVerbose = subargs.includes('-v') || subargs.includes('--verbose');
+        const remotes = repo.getRemotes();
+        if (remotes.length === 0) {
+          return 0;
+        }
+        if (!isVerbose) {
+          ctx.stdout(remotes.map((r) => r.name).join('\n') + '\n');
+          return 0;
+        }
+        const lines: string[] = [];
+        for (const r of remotes) {
+          lines.push(`${r.name}\t${r.url} (fetch)`);
+          lines.push(`${r.name}\t${r.url} (push)`);
+        }
+        ctx.stdout(lines.join('\n') + '\n');
+        return 0;
+      }
+
+      const action = subargs[0];
+      if (action === 'add') {
+        const name = subargs[1];
+        const url = subargs[2];
+        if (!name || !url) {
+          ctx.stderr('usage: git remote add <name> <url>\n');
+          return 128;
+        }
+        try {
+          repo.addRemote(name, url);
+          return 0;
+        } catch (err) {
+          ctx.stderr(`${errMsg(err)}\n`);
+          return 128;
+        }
+      }
+
+      if (action === 'remove' || action === 'rm') {
+        const name = subargs[1];
+        if (!name) {
+          ctx.stderr('usage: git remote remove <name>\n');
+          return 128;
+        }
+        try {
+          repo.removeRemote(name);
+          return 0;
+        } catch (err) {
+          ctx.stderr(`${errMsg(err)}\n`);
+          return 128;
+        }
+      }
+
+      ctx.stderr(
+        `error: Unknown subcommand: ${action}\nusage: git remote [-v] | git remote add <name> <url> | git remote remove <name>\n`,
+      );
+      return 1;
+    }
+
+    // git push [-u | --set-upstream] [remote] [branch]
+    if (sub === 'push') {
+      let setUpstream = false;
+      const positional: string[] = [];
+      for (const a of subargs) {
+        if (a === '-u' || a === '--set-upstream') {
+          setUpstream = true;
+        } else if (a.startsWith('-')) {
+          ctx.stderr(`error: unknown option '${a.replace(/^-+/, '')}'\n`);
+          return 129;
+        } else {
+          positional.push(a);
+        }
+      }
+
+      const remoteName = positional[0];
+      const branchName = positional[1];
+
+      try {
+        const result = repo.push(remoteName, branchName, { setUpstream });
+        const oldShort = result.oldHash ? result.oldHash.slice(0, 7) : null;
+        const newShort = result.newHash.slice(0, 7);
+
+        let out = `To ${result.url}\n`;
+        if (result.isNewBranch) {
+          out += ` * [new branch]      ${result.branch} -> ${result.branch}\n`;
+        } else if (oldShort && oldShort !== newShort) {
+          out += `   ${oldShort}..${newShort}  ${result.branch} -> ${result.branch}\n`;
+        } else {
+          out += `Everything up-to-date\n`;
+        }
+
+        if (result.setUpstream) {
+          out += `Branch '${result.branch}' set up to track remote branch '${result.branch}' from '${result.remote}'.\n`;
+        }
+
+        ctx.stdout(out);
+        return 0;
+      } catch (err) {
+        ctx.stderr(`${errMsg(err)}\n`);
+        const msg = errMsg(err);
+        return msg.startsWith('fatal:') || msg.startsWith('error: src refspec') ? 128 : 1;
+      }
+    }
+
+    // git pull [remote] [branch]
+    if (sub === 'pull') {
+      const positional = subargs.filter((a) => !a.startsWith('-'));
+      const remoteName = positional[0];
+      const branchName = positional[1];
+
+      try {
+        const result = repo.pull(remoteName, branchName, ctx.fs.user);
+        switch (result.type) {
+          case 'up-to-date':
+            ctx.stdout('Already up to date.\n');
+            return 0;
+          case 'fast-forward':
+            ctx.stdout(
+              `Updating ${result.from}..${result.to}\nFast-forward\n ${plural(result.changedFiles.length)}\n`,
+            );
+            return 0;
+          case 'merge':
+            ctx.stdout(
+              `Merge made by the 'ort' strategy.\n ${plural(result.changedFiles.length)}\n`,
+            );
+            return 0;
+          case 'conflict': {
+            const lines = result.autoMerged.map((p) => `Auto-merging ${p}`);
+            for (const c of result.conflicts) lines.push(conflictLine(c, branchName ?? 'FETCH_HEAD'));
             lines.push('Automatic merge failed; fix conflicts and then commit the result.');
             ctx.stdout(lines.join('\n') + '\n');
             return 1;

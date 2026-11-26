@@ -92,7 +92,7 @@ export function expectedCommands(check: TaskCheck): string[] {
   }
 }
 
-/** Check if a command is a read-only git inspection command (status, log, diff, or branch without create/delete arguments). */
+/** Check if a command is a read-only git inspection command (status, log, diff, branch without create/delete arguments, or remote list/verbose). */
 export function isReadOnlyGitCommand(cmd: string[]): boolean {
   if (cmd[0] !== 'git') return false;
   const sub = cmd[1];
@@ -100,6 +100,10 @@ export function isReadOnlyGitCommand(cmd: string[]): boolean {
   if (sub === 'branch') {
     const subargs = cmd.slice(2);
     return subargs.length === 0 || subargs.every((a) => a === '--list' || a === '-l');
+  }
+  if (sub === 'remote') {
+    const subargs = cmd.slice(2);
+    return subargs.length === 0 || subargs.every((a) => a === '-v' || a === '--verbose');
   }
   return false;
 }

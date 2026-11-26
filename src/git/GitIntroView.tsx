@@ -14,7 +14,7 @@ export function GitIntroView({ onStartLesson }: GitIntroViewProps) {
         <h1>{data.header.title}</h1>
         <p className="git-subtitle">{data.header.subtitle}</p>
         <div className="git-notice">
-          ℹ️ <strong>Bilgilendirme:</strong> Git 1, Git 2 ve Git 3 uygulamalı dersleri hazır! Aşağıdaki kartlardan dilediğin konuya tıklayıp terminalde doğrudan pratik yapmaya başlayabilirsin. Git 4 (uzak depolar: push/pull/clone) ise yakında eklenecektir.
+          ℹ️ <strong>Bilgilendirme:</strong> Git 1, Git 2, Git 3 ve Git 4 uygulamalı dersleri hazır! Aşağıdaki kartlardan dilediğin konuya tıklayıp terminalde doğrudan pratik yapmaya başlayabilirsin.
         </div>
       </header>
 

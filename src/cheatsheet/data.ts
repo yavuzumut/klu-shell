@@ -240,4 +240,79 @@ export const CHEAT_SHEET_DATA: CheatCategory[] = [
       },
     ],
   },
+  {
+    title: 'Git (Sürüm Kontrolü)',
+    items: [
+      {
+        command: 'git init',
+        description: 'Bulunulan dizinde yeni bir Git deposu başlatır.',
+        example: 'git init',
+      },
+      {
+        command: 'git status',
+        description: 'Değişikliklerin ve hazırlık alanının durumunu gösterir.',
+        example: 'git status',
+      },
+      {
+        command: 'git add',
+        description: 'Dosyaları bir sonraki kayıt için hazırlık alanına alır.',
+        example: 'git add .',
+      },
+      {
+        command: 'git commit',
+        description: 'Seçili değişiklikleri mesajla depoya kaydeder.',
+        example: 'git commit -m "ilk"',
+      },
+      {
+        command: 'git log',
+        description: 'Commit geçmişini en yeniden eskiye doğru listeler.',
+        example: 'git log --oneline',
+      },
+      {
+        command: 'git diff',
+        description: 'Dosyalardaki satır bazlı farkları gösterir.',
+        example: 'git diff',
+      },
+      {
+        command: 'git restore',
+        description: 'Kaydedilmemiş değişiklikleri geri alır.',
+        example: 'git restore .',
+      },
+      {
+        command: 'git branch',
+        description: 'Dalları listeler veya yeni bir dal oluşturur.',
+        example: 'git branch',
+      },
+      {
+        command: 'git switch',
+        description: 'Başka bir dala geçer (-c ile yeni dal açıp geçer).',
+        example: 'git switch main',
+      },
+      {
+        command: 'git merge',
+        description: 'Belirtilen dalı mevcut dala birleştirir.',
+        example: 'git merge ozellik',
+      },
+      {
+        command: 'git remote',
+        description: 'Uzak sunucu bağlantılarını yönetir ve listeler.',
+        example: 'git remote -v',
+      },
+      {
+        command: 'git push',
+        description: 'Yerel commit\'leri uzak depoya gönderir.',
+        example: 'git push -u origin main',
+      },
+      {
+        command: 'git pull',
+        description: 'Uzak depodaki yeni değişiklikleri çekip birleştirir.',
+        example: 'git pull',
+      },
+      {
+        command: 'git clone',
+        description: 'Uzak bir depoyu bilgisayara kopyalar.',
+        example: 'git clone <url>',
+      },
+    ],
+  },
 ];

@@ -8,6 +8,7 @@ import { GIT_ALL_LESSONS, GIT_LEVELS } from './index';
 import { gitLevel1 } from './gitLevel1';
 import { gitLevel2 } from './gitLevel2';
 import { gitLevel3 } from './gitLevel3';
+import { gitLevel4 } from './gitLevel4';
 import { GIT_STORAGE_KEY, loadProgress, STORAGE_KEY, useProgress } from '../../state/useProgress';
 
 function createTestShell(lesson = GIT_ALL_LESSONS[0]) {
@@ -21,12 +22,13 @@ function createTestShell(lesson = GIT_ALL_LESSONS[0]) {
 }
 
 describe('Git Curriculum Structure', () => {
-  it('contains exactly 3 levels and 6 interactive lessons', () => {
-    expect(GIT_LEVELS).toHaveLength(3);
-    expect(GIT_ALL_LESSONS).toHaveLength(6);
+  it('contains exactly 4 levels and 8 interactive lessons', () => {
+    expect(GIT_LEVELS).toHaveLength(4);
+    expect(GIT_ALL_LESSONS).toHaveLength(8);
     expect(gitLevel1.lessons).toHaveLength(2);
     expect(gitLevel2.lessons).toHaveLength(2);
     expect(gitLevel3.lessons).toHaveLength(2);
+    expect(gitLevel4.lessons).toHaveLength(2);
   });
 
   it('all lessons have valid ids, titles, examples, and non-empty tasks', () => {
@@ -82,6 +84,12 @@ describe('Read-only Git Inspection Commands Exemption', () => {
 
     const branchRec = await shell.execute('git branch');
     expect(isWrongAttempt(addChangeTask, branchRec)).toBe(false);
+
+    const remoteRec = await shell.execute('git remote');
+    expect(isWrongAttempt(addChangeTask, remoteRec)).toBe(false);
+
+    const remoteVRec = await shell.execute('git remote -v');
+    expect(isWrongAttempt(addChangeTask, remoteVRec)).toBe(false);
   });
 
   it('treats mutating git commands or non-inspection git branch as wrong attempt', async () => {
@@ -392,6 +400,117 @@ describe('Lesson Execution & Task Evaluation Flows', () => {
 
     expect(completed).toHaveLength(3);
   });
+
+  it('Git 4 - Lesson 7: Uzak Depoya Bağlan ve Gönder', async () => {
+    const lesson = gitLevel4.lessons[0];
+    const { shell } = createTestShell(lesson);
+    await runLessonSetupCommands(shell, lesson);
+    const records: CommandRecord[] = [];
+    const completed: string[] = [];
+
+    // Task 1: git remote add origin https://github.com/klu/notlar.git
+    const rec1 = await shell.execute('git remote add origin https://github.com/klu/notlar.git');
+    records.push(rec1);
+    const eval1 = evaluateCommand(lesson, completed, {
+      fs: shell.fs,
+      cwd: shell.cwd,
+      last: rec1,
+      records,
+      shell,
+    });
+    expect(eval1.completedTaskId).toBe('git-remote-add');
+    completed.push(eval1.completedTaskId!);
+
+    // Task 2: git remote -v
+    const rec2 = await shell.execute('git remote -v');
+    records.push(rec2);
+    const eval2 = evaluateCommand(lesson, completed, {
+      fs: shell.fs,
+      cwd: shell.cwd,
+      last: rec2,
+      records,
+      shell,
+    });
+    expect(eval2.completedTaskId).toBe('git-remote-verify');
+    completed.push(eval2.completedTaskId!);
+
+    // Task 3: git push -u origin main
+    const rec3 = await shell.execute('git push -u origin main');
+    records.push(rec3);
+    const eval3 = evaluateCommand(lesson, completed, {
+      fs: shell.fs,
+      cwd: shell.cwd,
+      last: rec3,
+      records,
+      shell,
+    });
+    expect(eval3.completedTaskId).toBe('git-push-main');
+    completed.push(eval3.completedTaskId!);
+
+    expect(completed).toHaveLength(3);
+  });
+
+  it('Git 4 - Lesson 8: Projeyi Klonla ve Güncelle', async () => {
+    const lesson = gitLevel4.lessons[1];
+    const { shell } = createTestShell(lesson);
+    await runLessonSetupCommands(shell, lesson);
+    const records: CommandRecord[] = [];
+    const completed: string[] = [];
+
+    // Task 1: git clone https://github.com/klu/notlar.git
+    const rec1 = await shell.execute('git clone https://github.com/klu/notlar.git');
+    records.push(rec1);
+    const eval1 = evaluateCommand(lesson, completed, {
+      fs: shell.fs,
+      cwd: shell.cwd,
+      last: rec1,
+      records,
+      shell,
+    });
+    expect(eval1.completedTaskId).toBe('git-clone-notlar');
+    completed.push(eval1.completedTaskId!);
+
+    // Task 2: cd ekip-projesi
+    const rec2 = await shell.execute('cd ekip-projesi');
+    records.push(rec2);
+    const eval2 = evaluateCommand(lesson, completed, {
+      fs: shell.fs,
+      cwd: shell.cwd,
+      last: rec2,
+      records,
+      shell,
+    });
+    expect(eval2.completedTaskId).toBe('cd-ekip-projesi');
+    completed.push(eval2.completedTaskId!);
+
+    // Task 3: git pull
+    const rec3 = await shell.execute('git pull');
+    records.push(rec3);
+    const eval3 = evaluateCommand(lesson, completed, {
+      fs: shell.fs,
+      cwd: shell.cwd,
+      last: rec3,
+      records,
+      shell,
+    });
+    expect(eval3.completedTaskId).toBe('git-pull-updates');
+    completed.push(eval3.completedTaskId!);
+
+    // Task 4: git log --oneline
+    const rec4 = await shell.execute('git log --oneline');
+    records.push(rec4);
+    const eval4 = evaluateCommand(lesson, completed, {
+      fs: shell.fs,
+      cwd: shell.cwd,
+      last: rec4,
+      records,
+      shell,
+    });
+    expect(eval4.completedTaskId).toBe('git-log-oneline');
+    completed.push(eval4.completedTaskId!);
+
+    expect(completed).toHaveLength(4);
+  });
 });
 
 describe('Separate Git Progress Storage', () => {
@@ -508,9 +627,10 @@ describe('Git Navigation Logic Across Levels', () => {
     expect(GIT_LEVELS[0].lessons[0].id).toBe('git-1-init');
     expect(GIT_LEVELS[1].lessons[0].id).toBe('git-2-diff');
     expect(GIT_LEVELS[2].lessons[0].id).toBe('git-3-branch');
+    expect(GIT_LEVELS[3].lessons[0].id).toBe('git-4-push');
   });
 
-  it('correctly navigates sequentially through all 6 lessons without breaking prev/next chain', () => {
+  it('correctly navigates sequentially through all 8 lessons without breaking prev/next chain', () => {
     for (let i = 0; i < GIT_ALL_LESSONS.length; i++) {
       const cur = GIT_ALL_LESSONS[i];
       const prev = GIT_ALL_LESSONS[i - 1];
