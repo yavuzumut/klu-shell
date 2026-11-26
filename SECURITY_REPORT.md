@@ -137,3 +137,67 @@ Bu mimari bağlam nedeniyle, klasik web uygulamalarında görülen SQL Enjeksiyo
 
 ### 13. Geliştirme (Dev) ve Üretim (Build) CSP Ayrımı
 - **Açıklama:** CSP meta etiketi `index.html` dosyasına statik yazılmamıştır. `vite.config.ts` içindeki `cspPlugin` yalnızca `npm run build` derlemesinde (`apply: 'build'`) devreye girer. Geliştirme sunucusunda (`npm run dev`) Vite HMR soketlerinin ve yerel kaynakların engellenmemesi için CSP uygulanmaz. Bu durum geliştirici deneyimi açısından bilinçli bir mimari tercihtir.
+
+---
+
+### 14. `themeManager.ts` Prototype Pollution ile Başlangıç Çökmesi (Boot Crash)
+- **Önem:** Kritik
+- **Durum:** **[ÇÖZÜLDÜ]**
+- **Dosya:Satır:** `src/themes/themeManager.ts:17`
+- **Açıklama:** `getInitialThemeId` fonksiyonunda `saved in THEMES` kontrolü `localStorage.getItem('klu_theme')` değeri `'toString'` veya `'constructor'` olduğunda `true` dönmekte ve uygulama açılışta tanımsız renk nesnesi yüzünden çökmekteydi.
+- **Uygulanan Çözüm:** `Object.hasOwn(THEMES, saved)` kontrolü getirilerek prototip kirlenmesi ve çökme riski tamamen giderildi.
+
+---
+
+### 15. `useProgress.ts` Bozuk LocalStorage Verisinde React Çökmesi
+- **Önem:** Kritik
+- **Durum:** **[ÇÖZÜLDÜ]**
+- **Dosya:Satır:** `src/state/useProgress.ts:50-90`
+- **Açıklama:** `loadProgress` fonksiyonunda `completed` nesnesinin değerlerinin dizi olup olmadığı kontrol edilmiyordu. `{"completed":{"intro":"corrupted"}}` gibi durumlarda `done.includes()` çağrısı `TypeError` fırlatarak React arayüzünü çökertiyordu.
+- **Uygulanan Çözüm:** `completed`, `attempts`, `revealed` ve `history` için derin tip doğrulama ve prototip anahtar filtrelemesi eklendi.
+
+---
+
+### 16. `diff.ts` LCS Matrisi ile Client-Side DoS (Tarayıcı Sekmesi Kilitleme)
+- **Önem:** Orta
+- **Durum:** **[ÇÖZÜLDÜ]**
+- **Dosya:Satır:** `src/core/git/diff.ts:30-45`
+- **Açıklama:** `diffLines(oldText, newText)` `O(n*m)` LCS tablosu oluşturduğu için binlerce satırlık dosyalarda tarayıcı sekmesini dondurabiliyordu.
+- **Uygulanan Çözüm:** `MAX_DIFF_CELLS = 2_500_000` eşiği konuldu; bu eşik aşıldığında sekme kilitlenmeden güvenli tam blok değiştirme fallback'ine geçilmektedir.
+
+---
+
+### 17. `Shell.env` & `export` Prototype Koruma
+- **Önem:** Orta
+- **Durum:** **[ÇÖZÜLDÜ]**
+- **Dosya:Satır:** `src/core/shell/Shell.ts`, `src/core/commands/export.ts`, `src/core/shell/parser.ts`
+- **Açıklama:** `export __proto__=x` komutu ve `$constructor` değişken genişletmesi prototip zincirine erişebilmekteydi.
+- **Uygulanan Çözüm:** `Shell.env` `Object.create(null)` yapısına geçirildi; `export` komutunda `__proto__`, `constructor`, `prototype` tanımlayıcıları engellendi; `parser.ts` içinde `Object.hasOwn` kullanıldı.
+
+---
+
+### 18. `VirtualFS` Dosya Boyutu Sınırı (`EFBIG`)
+- **Önem:** Orta
+- **Durum:** **[ÇÖZÜLDÜ]**
+- **Dosya:Satır:** `src/core/fs/VirtualFS.ts:9, 215-225`
+- **Açıklama:** `writeFile` fonksiyonunda dosya boyutu sınırı bulunmadığı için tarayıcı belleği sınırsızca şişirilebiliyordu.
+- **Uygulanan Çözüm:** `MAX_FILE_SIZE = 5 * 1024 * 1024` (5 MB) sınırı konuldu; aşım durumunda POSIX standartlarına uygun `EFBIG` hatası fırlatılması sağlandı.
+
+---
+
+### 19. `glob.ts`, `find.ts` ve `gitignore.ts` ReDoS & Hatalı Regex Koruması
+- **Önem:** Orta
+- **Durum:** **[ÇÖZÜLDÜ]**
+- **Dosya:Satır:** `src/core/shell/glob.ts`, `src/core/commands/find.ts`, `src/core/git/gitignore.ts`
+- **Açıklama:** `[z-a]` gibi geçersiz regex kalıpları kabuk sürecini yakalanmamış `SyntaxError` ile çökertiyor; `**/**/**` kalıpları ise ReDoS riski taşıyordu.
+- **Uygulanan Çözüm:** Regex derlemeleri `try/catch` ile korumaya alındı, geçersiz karakter sınıflarında güvenli literal eşleşmeye dönüldü, `gitignore` içinde ardışık `**` ifadeleri sadeleştirildi.
+
+---
+
+### 20. `LessonPanel.tsx` Markdown Link Güvenliği ve HTML Temizliği
+- **Önem:** Düşük
+- **Durum:** **[ÇÖZÜLDÜ]**
+- **Dosya:Satır:** `src/components/LessonPanel.tsx:10-35`
+- **Açıklama:** `marked` çıktısındaki dış bağlantılarda `target="_blank"` ve `rel="noopener noreferrer"` bulunmuyordu ve tehlikeli `javascript:` bağlantıları filtrelenmiyordu.
+- **Uygulanan Çözüm:** Özel `marked` link renderer'ı ve `sanitizeHtml` süzgeci entegre edildi.
+

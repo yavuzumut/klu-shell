@@ -61,8 +61,14 @@ AÇIKLAMA
         case '-iname': {
           const pattern = needArg();
           if (pattern === null) return 1;
-          const re = globToRegExp(pattern);
-          const matcher = pred === '-iname' ? new RegExp(re.source, 'i') : re;
+          let matcher: RegExp;
+          try {
+            const re = globToRegExp(pattern);
+            matcher = pred === '-iname' ? new RegExp(re.source, 'i') : re;
+          } catch {
+            ctx.stderr(`find: invalid pattern '${pattern}'\n`);
+            return 1;
+          }
           tests.push((name) => matcher.test(name));
           break;
         }

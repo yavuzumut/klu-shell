@@ -27,12 +27,26 @@ export function splitLines(content: string): string[] {
   return trimmed.split('\n');
 }
 
+export const MAX_DIFF_CELLS = 2_500_000;
+
 /** Compute a line-by-line edit script turning `oldText` into `newText`. */
 export function diffLines(oldText: string, newText: string): DiffOp[] {
   const a = splitLines(oldText);
   const b = splitLines(newText);
   const n = a.length;
   const m = b.length;
+
+  if (oldText === newText) {
+    return a.map((line) => ({ type: 'equal', line }));
+  }
+
+  // Guard against tab freeze / out-of-memory on massive files (Client-Side DoS)
+  if (n * m > MAX_DIFF_CELLS) {
+    const fallback: DiffOp[] = [];
+    for (let i = 0; i < n; i++) fallback.push({ type: 'remove', line: a[i] });
+    for (let j = 0; j < m; j++) fallback.push({ type: 'add', line: b[j] });
+    return fallback;
+  }
 
   // lcs[i][j] = LCS length of a[i..] and b[j..]
   const lcs: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));

@@ -14,7 +14,7 @@ export function getInitialThemeId(storage?: Storage): ThemeId {
   if (store) {
     try {
       const saved = store.getItem(THEME_STORAGE_KEY);
-      if (saved && saved in THEMES) {
+      if (saved && Object.hasOwn(THEMES, saved)) {
         return saved as ThemeId;
       }
     } catch {

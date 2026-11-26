@@ -70,19 +70,19 @@ export function tokenize(input: string, env: ParseEnv): Token[] {
     i++;
     if (input[i] === '?') {
       i++;
-      return env.vars['?'] ?? '0';
+      return Object.hasOwn(env.vars, '?') ? env.vars['?'] : '0';
     }
     if (input[i] === '{') {
       const end = input.indexOf('}', i);
       if (end === -1) throw new ParseError('bad substitution');
       const name = input.slice(i + 1, end);
       i = end + 1;
-      return env.vars[name] ?? '';
+      return Object.hasOwn(env.vars, name) ? env.vars[name] : '';
     }
     const m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(input.slice(i));
     if (!m) return '$';
     i += m[0].length;
-    return env.vars[m[0]] ?? '';
+    return Object.hasOwn(env.vars, m[0]) ? env.vars[m[0]] : '';
   };
 
   while (i < n) {

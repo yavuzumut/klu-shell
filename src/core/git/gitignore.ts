@@ -17,13 +17,18 @@ interface IgnoreRule {
 }
 
 function globToRegex(glob: string): RegExp {
+  const clean = glob
+    .replace(/\/{2,}/g, '/')
+    .replace(/(?:\*\*\/)+/g, '**/')
+    .replace(/\*{3,}/g, '**');
+
   let re = '';
-  for (let i = 0; i < glob.length; i++) {
-    const ch = glob[i];
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i];
     if (ch === '*') {
-      if (glob[i + 1] === '*') {
+      if (clean[i + 1] === '*') {
         // `**/` matches zero or more directories, bare `**` matches anything
-        if (glob[i + 2] === '/') {
+        if (clean[i + 2] === '/') {
           re += '(?:.*/)?';
           i += 2;
         } else {
@@ -41,7 +46,11 @@ function globToRegex(glob: string): RegExp {
       re += ch;
     }
   }
-  return new RegExp(`^${re}$`);
+  try {
+    return new RegExp(`^${re}$`);
+  } catch {
+    return new RegExp('^' + clean.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '$');
+  }
 }
 
 export class GitIgnore {

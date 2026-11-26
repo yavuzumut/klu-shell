@@ -111,7 +111,8 @@ export class Shell {
   }
 
   private defaultEnv(): Record<string, string> {
-    return {
+    const env: Record<string, string> = Object.create(null);
+    Object.assign(env, {
       HOME: this.fs.home,
       USER: this.fs.user,
       LOGNAME: this.fs.user,
@@ -121,7 +122,8 @@ export class Shell {
       LANG: 'tr_TR.UTF-8',
       PWD: this.cwd,
       '?': '0',
-    };
+    });
+    return env;
   }
 
   /** Replace the file system (e.g. when a lesson starts) and reset the cwd. */

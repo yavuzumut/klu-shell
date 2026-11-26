@@ -19,7 +19,12 @@ export function globToRegExp(pattern: string): RegExp {
       }
     } else re += c.replace(/[.+^${}()|\\/]/g, '\\$&');
   }
-  return new RegExp(re + '$');
+  try {
+    return new RegExp(re + '$');
+  } catch {
+    // If the constructed regex was invalid (e.g. range out of order [z-a]), match literally
+    return new RegExp('^' + pattern.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '$');
+  }
 }
 
 export function hasGlob(segment: string): boolean {

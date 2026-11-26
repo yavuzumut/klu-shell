@@ -2,6 +2,7 @@ import { dirname, joinPath, type FsNode, type VirtualFS } from '../fs/VirtualFS'
 import { buildConflictContent } from './diff';
 import { GitIgnore } from './gitignore';
 import type {
+  GitBranchConfig,
   GitBranchInfo,
   GitCommit,
   GitConflict,
@@ -205,11 +206,21 @@ export class GitRepo {
 
   getIndex(): GitIndex {
     const indexPath = joinPath(this.gitDir, 'index.json');
-    if (!this.fs.exists(indexPath)) return {};
+    const result: GitIndex = Object.create(null);
+    if (!this.fs.exists(indexPath)) return result;
     try {
-      return JSON.parse(this.fs.readFile(indexPath)) as GitIndex;
+      const parsed = JSON.parse(this.fs.readFile(indexPath));
+      if (parsed && typeof parsed === 'object') {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+          if (typeof v === 'string') {
+            result[k] = v;
+          }
+        }
+      }
+      return result;
     } catch {
-      return {};
+      return result;
     }
   }
 
@@ -265,17 +276,38 @@ export class GitRepo {
 
   getConfig(): GitRepoConfig {
     const configPath = joinPath(this.gitDir, 'config.json');
+    const remotes: Record<string, { url: string }> = Object.create(null);
+    const branches: Record<string, GitBranchConfig> = Object.create(null);
     if (!this.fs.exists(configPath)) {
-      return { remotes: {}, branches: {} };
+      return { remotes, branches };
     }
     try {
       const parsed = JSON.parse(this.fs.readFile(configPath));
-      return {
-        remotes: parsed.remotes || {},
-        branches: parsed.branches || {},
-      };
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.remotes && typeof parsed.remotes === 'object') {
+          for (const [k, v] of Object.entries(parsed.remotes)) {
+            if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype' && v && typeof v === 'object' && 'url' in v) {
+              remotes[k] = { url: String((v as { url: unknown }).url) };
+            }
+          }
+        }
+        if (parsed.branches && typeof parsed.branches === 'object') {
+          for (const [k, v] of Object.entries(parsed.branches)) {
+            if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype' && v && typeof v === 'object') {
+              const b = v as { remote?: unknown; merge?: unknown };
+              if (typeof b.remote === 'string' && typeof b.merge === 'string') {
+                branches[k] = {
+                  remote: b.remote,
+                  merge: b.merge,
+                };
+              }
+            }
+          }
+        }
+      }
+      return { remotes, branches };
     } catch {
-      return { remotes: {}, branches: {} };
+      return { remotes, branches };
     }
   }
 
@@ -294,8 +326,11 @@ export class GitRepo {
     if (!trimmedName || !trimmedUrl) {
       throw new Error('fatal: remote name and URL are required');
     }
+    if (trimmedName === '__proto__' || trimmedName === 'constructor' || trimmedName === 'prototype') {
+      throw new Error(`fatal: '${trimmedName}' is not a valid remote name`);
+    }
     const conf = this.getConfig();
-    if (conf.remotes[trimmedName]) {
+    if (Object.hasOwn(conf.remotes, trimmedName)) {
       throw new Error(`fatal: remote ${trimmedName} already exists.`);
     }
     conf.remotes[trimmedName] = { url: trimmedUrl };
@@ -305,7 +340,7 @@ export class GitRepo {
   removeRemote(name: string): void {
     const trimmedName = name.trim();
     const conf = this.getConfig();
-    if (!conf.remotes[trimmedName]) {
+    if (!Object.hasOwn(conf.remotes, trimmedName)) {
       throw new Error(`fatal: No such remote: '${trimmedName}'`);
     }
     delete conf.remotes[trimmedName];
@@ -860,7 +895,7 @@ export class GitRepo {
         const matches = known.filter((p) => matchesSpec(p, spec));
         if (matches.length === 0) throw pathspecError(args[i]);
         for (const p of matches) {
-          if (p in headTree) index[p] = headTree[p];
+          if (Object.hasOwn(headTree, p)) index[p] = headTree[p];
           else delete index[p];
           restored.add(p);
         }

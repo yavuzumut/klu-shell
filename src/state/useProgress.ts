@@ -49,13 +49,45 @@ export function loadProgress(
     if (!raw) return fresh;
     const data = JSON.parse(raw) as unknown;
     if (!isRecord(data) || data.version !== 1) return fresh;
+    const completed: Record<string, string[]> = {};
+    if (isRecord(data.completed)) {
+      for (const [k, v] of Object.entries(data.completed)) {
+        if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+        if (Array.isArray(v)) {
+          completed[k] = v.filter((id): id is string => typeof id === 'string');
+        }
+      }
+    }
+
+    const attempts: Record<string, number> = {};
+    if (isRecord(data.attempts)) {
+      for (const [k, v] of Object.entries(data.attempts)) {
+        if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+        if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
+          attempts[k] = Math.floor(v);
+        }
+      }
+    }
+
+    const revealed: Record<string, boolean> = {};
+    if (isRecord(data.revealed)) {
+      for (const [k, v] of Object.entries(data.revealed)) {
+        if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+        if (typeof v === 'boolean') {
+          revealed[k] = v;
+        }
+      }
+    }
+
     return {
       version: 1,
       currentLessonId: typeof data.currentLessonId === 'string' ? data.currentLessonId : firstLessonId,
-      completed: isRecord(data.completed) ? (data.completed as ProgressState['completed']) : {},
-      attempts: isRecord(data.attempts) ? (data.attempts as ProgressState['attempts']) : {},
-      revealed: isRecord(data.revealed) ? (data.revealed as ProgressState['revealed']) : {},
-      history: Array.isArray(data.history) ? data.history.filter((h): h is string => typeof h === 'string') : [],
+      completed,
+      attempts,
+      revealed,
+      history: Array.isArray(data.history)
+        ? data.history.filter((h): h is string => typeof h === 'string').slice(-MAX_SAVED_HISTORY)
+        : [],
     };
   } catch {
     return fresh;

@@ -36,9 +36,14 @@ AÇIKLAMA
       if (arg === '-p') continue;
       const eq = arg.indexOf('=');
       const name = eq >= 0 ? arg.slice(0, eq) : arg;
-      const val = eq >= 0 ? arg.slice(eq + 1) : ctx.env[name] ?? '';
+      const val = eq >= 0 ? arg.slice(eq + 1) : (Object.hasOwn(ctx.env, name) ? ctx.env[name] : '');
 
-      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+      if (
+        !/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) ||
+        name === '__proto__' ||
+        name === 'constructor' ||
+        name === 'prototype'
+      ) {
         ctx.stderr(`bash: export: '${arg}': not a valid identifier\n`);
         exitCode = 1;
         continue;

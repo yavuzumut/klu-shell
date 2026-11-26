@@ -6,7 +6,9 @@
  * translate them into familiar Linux error messages.
  */
 
-export type FsErrorCode = 'ENOENT' | 'EEXIST' | 'ENOTDIR' | 'EISDIR' | 'ENOTEMPTY' | 'EINVAL';
+export type FsErrorCode = 'ENOENT' | 'EEXIST' | 'ENOTDIR' | 'EISDIR' | 'ENOTEMPTY' | 'EINVAL' | 'EFBIG';
+
+export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 const ERROR_MESSAGES: Record<FsErrorCode, string> = {
   ENOENT: 'No such file or directory',
@@ -15,6 +17,7 @@ const ERROR_MESSAGES: Record<FsErrorCode, string> = {
   EISDIR: 'Is a directory',
   ENOTEMPTY: 'Directory not empty',
   EINVAL: 'Invalid argument',
+  EFBIG: 'File too large',
 };
 
 export class FsError extends Error {
@@ -211,6 +214,11 @@ export class VirtualFS {
 
   writeFile(abs: string, content: string, options: { append?: boolean } = {}): void {
     const existing = this.tryLookup(abs);
+    const existingLen = existing && existing.type === 'file' ? existing.content.length : 0;
+    const finalLength = options.append ? existingLen + content.length : content.length;
+    if (finalLength > MAX_FILE_SIZE) {
+      throw new FsError('EFBIG', abs);
+    }
     if (existing) {
       if (existing.type === 'dir') throw new FsError('EISDIR', abs);
       existing.content = options.append ? existing.content + content : content;
@@ -401,10 +409,14 @@ export function isSubPath(path: string, ancestor: string): boolean {
   return path === ancestor || path.startsWith(ancestor + '/');
 }
 
-function cloneNode(node: FsNode): FsNode {
+function cloneNode(node: FsNode, depth = 0): FsNode {
+  if (depth > 64) throw new FsError('EINVAL', node.name);
   if (node.type === 'file') return { ...node };
   const children: Record<string, FsNode> = Object.create(null);
-  for (const [k, v] of Object.entries(node.children)) children[k] = cloneNode(v);
+  for (const [k, v] of Object.entries(node.children)) {
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+    children[k] = cloneNode(v, depth + 1);
+  }
   return { ...node, children };
 }
 

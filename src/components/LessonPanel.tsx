@@ -4,8 +4,31 @@ import type { Lesson, Level } from '../lessons/types';
 
 marked.setOptions({ gfm: true, breaks: false });
 
-const md = (text: string) => marked.parse(text.trim(), { async: false }) as string;
-const mdInline = (text: string) => marked.parseInline(text, { async: false }) as string;
+marked.use({
+  renderer: {
+    link({ href, title, text }: { href: string; title?: string | null; text: string }) {
+      const cleanHref = (href || '').trim();
+      const isSafe = /^(?:https?:|\/|#|mailto:)/i.test(cleanHref);
+      const safeHref = isSafe ? cleanHref : '#';
+      const isExternal = /^https?:\/\//i.test(safeHref);
+      const relTarget = isExternal ? ' target="_blank" rel="noopener noreferrer"' : '';
+      const titleAttr = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
+      return `<a href="${safeHref}"${relTarget}${titleAttr}>${text}</a>`;
+    },
+  },
+});
+
+export function sanitizeHtml(html: string): string {
+  let clean = html.replace(/<\s*(script|iframe|object|embed|form|input|base|link|meta)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
+  clean = clean.replace(/<\s*(script|iframe|object|embed|form|input|base|link|meta)[^>]*\/?>/gi, '');
+  clean = clean.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  clean = clean.replace(/\b(href|src)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*')/gi, '$1="#"');
+  clean = clean.replace(/\b(href|src)\s*=\s*(?:"\s*data:[^"]*"|'\s*data:[^']*')/gi, '$1="#"');
+  return clean;
+}
+
+const md = (text: string) => sanitizeHtml(marked.parse(text.trim(), { async: false }) as string);
+const mdInline = (text: string) => sanitizeHtml(marked.parseInline(text, { async: false }) as string);
 
 /** Hints become available one per wrong attempt; the solution after this many. */
 export const SOLUTION_THRESHOLD = 3;
