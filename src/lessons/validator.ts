@@ -80,7 +80,7 @@ export function evaluateCheck(check: TaskCheck, state: CheckState): boolean {
 }
 
 /** Commands referenced by `commandUsed` checks inside `check`. */
-function expectedCommands(check: TaskCheck): string[] {
+export function expectedCommands(check: TaskCheck): string[] {
   switch (check.type) {
     case 'commandUsed':
       return [check.command];
@@ -92,17 +92,81 @@ function expectedCommands(check: TaskCheck): string[] {
   }
 }
 
+/** Check if a command is a read-only git inspection command (status, log, diff, or branch without create/delete arguments). */
+export function isReadOnlyGitCommand(cmd: string[]): boolean {
+  if (cmd[0] !== 'git') return false;
+  const sub = cmd[1];
+  if (sub === 'status' || sub === 'log' || sub === 'diff') return true;
+  if (sub === 'branch') {
+    const subargs = cmd.slice(2);
+    return subargs.length === 0 || subargs.every((a) => a === '--list' || a === '-l');
+  }
+  return false;
+}
+
+/** Check if a task check specifically expects a given git subcommand. */
+export function taskSpecificallyExpectsGitSubcommand(check: TaskCheck, subcommand: string): boolean {
+  switch (check.type) {
+    case 'commandUsed':
+      return check.command === 'git' && (check.args ? check.args.includes(subcommand) : false);
+    case 'all':
+    case 'any':
+      return check.checks.some((c) => taskSpecificallyExpectsGitSubcommand(c, subcommand));
+    case 'not':
+      return taskSpecificallyExpectsGitSubcommand(check.check, subcommand);
+    default:
+      return false;
+  }
+}
+
+/** Check if the executed command matches the command expected by the task check. */
+export function isUsingExpectedCommand(cmd: string[], check: TaskCheck): boolean {
+  switch (check.type) {
+    case 'commandUsed': {
+      if (cmd[0] !== check.command) return false;
+      if (check.command === 'git' && check.args && check.args.length > 0) {
+        const expectedSub = check.args[0];
+        const actualSub = cmd[1];
+        return actualSub === expectedSub;
+      }
+      return true;
+    }
+    case 'all':
+    case 'any':
+      return check.checks.some((c) => isUsingExpectedCommand(cmd, c));
+    default:
+      return false;
+  }
+}
+
 /** True if the command line should count as a wrong attempt for `task`. */
 export function isWrongAttempt(task: Task, record: CommandRecord): boolean {
   if (!record.commands.length) return record.exitCode !== 0; // e.g. syntax error
   // A failing command always counts.
   if (record.exitCode !== 0) return true;
+
   // Using the expected command without satisfying the task counts too.
-  const expected = new Set(expectedCommands(task.check));
-  if (record.commands.some(([name]) => expected.has(name))) return true;
+  if (record.commands.some((cmd) => isUsingExpectedCommand(cmd, task.check))) {
+    return true;
+  }
+
   // Otherwise only non-exploration commands count.
   const neutral = new Set([...EXPLORATION_COMMANDS, ...(task.neutralCommands ?? [])]);
-  return record.commands.some(([name]) => !neutral.has(name));
+  return record.commands.some((cmd) => {
+    const [name] = cmd;
+    if (neutral.has(name)) return false;
+
+    // Read-only Git inspection commands do not count as wrong attempts
+    // unless the active task specifically expects that command.
+    if (isReadOnlyGitCommand(cmd)) {
+      const sub = cmd[1] ?? '';
+      if (!taskSpecificallyExpectsGitSubcommand(task.check, sub)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 }
 
 export interface TaskEvaluation {

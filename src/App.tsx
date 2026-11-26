@@ -7,13 +7,14 @@ import { CongratsModal } from './components/CongratsModal';
 import { CheatSheetView } from './cheatsheet/CheatSheetView';
 import { ExploreView } from './explore/ExploreView';
 import { GitIntroView } from './git/GitIntroView';
+import { GitWorkspace } from './git/GitWorkspace';
 import { createRegistry } from './core/commands';
 import { createDefaultFS } from './core/fs/defaultTree';
 import { Shell } from './core/shell/Shell';
 import { quotePath } from './core/shell/parser';
 import type { CommandRecord } from './core/shell/types';
 import { ALL_LESSONS, findLesson, LEVELS } from './lessons/content';
-import { createLessonFS, lessonStartCwd } from './lessons/session';
+import { createLessonFS, lessonStartCwd, runLessonSetupCommands } from './lessons/session';
 import { evaluateCommand } from './lessons/validator';
 import { taskKey, useProgress } from './state/useProgress';
 import { TerminalView, type TerminalHandle } from './terminal/TerminalView';
@@ -59,6 +60,8 @@ export default function App() {
   const recordsRef = useRef<CommandRecord[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('lesson');
+  const [gitView, setGitView] = useState<'intro' | 'workspace'>('intro');
+  const [selectedGitLessonId, setSelectedGitLessonId] = useState<string | undefined>(undefined);
 
   // Sync cwd state on execute
   useEffect(() => {
@@ -115,9 +118,10 @@ export default function App() {
 
   /** Reset the virtual file system to the lesson's starting state. */
   const startLessonSession = useCallback(
-    (message?: string) => {
+    async (message?: string) => {
       const fs = createLessonFS(lesson);
       lessonShell.reset(fs, lessonStartCwd(lesson, fs), lesson.setup?.processes);
+      await runLessonSetupCommands(lessonShell, lesson);
       setCurrentCwd(lessonShell.cwd);
       recordsRef.current = [];
       const banner =
@@ -318,6 +322,7 @@ export default function App() {
 
   const handleCongratsGoToGit = useCallback(() => {
     handleCloseCongrats();
+    setGitView('intro');
     handleModeChange('git');
   }, [handleCloseCongrats, handleModeChange]);
 
@@ -372,9 +377,22 @@ export default function App() {
       )}
 
       {mode === 'git' ? (
-        <main className="page-container">
-          <GitIntroView />
-        </main>
+        gitView === 'workspace' ? (
+          <GitWorkspace
+            onBackToIntro={() => setGitView('intro')}
+            terminalTheme={themeControls.terminalTheme}
+            initialLessonId={selectedGitLessonId}
+          />
+        ) : (
+          <main className="page-container">
+            <GitIntroView
+              onStartLesson={(lessonId) => {
+                setSelectedGitLessonId(lessonId);
+                setGitView('workspace');
+              }}
+            />
+          </main>
+        )
       ) : mode === 'cheatsheet' ? (
         <main className="page-container">
           <CheatSheetView onRunInSandbox={handleCheatSheetRun} />

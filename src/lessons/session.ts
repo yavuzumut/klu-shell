@@ -12,3 +12,15 @@ export function createLessonFS(lesson: Lesson): VirtualFS {
 export function lessonStartCwd(lesson: Lesson, fs: VirtualFS): string {
   return lesson.setup?.cwd ? fs.resolve(lesson.setup.cwd) : fs.home;
 }
+
+/** Execute setup commands silently if defined on the lesson. */
+export async function runLessonSetupCommands(
+  shell: { execute(cmd: string, options?: { recordHistory?: boolean }): Promise<unknown> },
+  lesson: Lesson,
+): Promise<void> {
+  if (!lesson.setup?.setupCommands?.length) return;
+  for (const cmd of lesson.setup.setupCommands) {
+    await shell.execute(cmd, { recordHistory: false });
+  }
+}
+

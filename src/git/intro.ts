@@ -11,7 +11,8 @@ export interface GitCurriculumTopic {
   title: string;
   commands: string[];
   description: string;
-  status: 'Yakında';
+  status: 'Yakında' | 'Hazır';
+  firstLessonId?: string;
 }
 
 export interface GitIntroData {
@@ -125,7 +126,7 @@ export const GIT_INTRO_DATA: GitIntroData = {
   },
   curriculum: {
     title: 'KLU\'da Neler Öğreneceksin?',
-    subtitle: 'Uygulamalı, simüle Git dersleri yakında KLU\'ya ekleniyor:',
+    subtitle: 'Git 1–3 uygulamalı dersleri hazır! Git 4 çok yakında:',
     topics: [
       {
         id: 'git-1',
@@ -133,7 +134,8 @@ export const GIT_INTRO_DATA: GitIntroData = {
         title: 'Temel Kavramlar ve İlk Depo',
         commands: ['init', 'status', 'add', 'commit', 'log'],
         description: 'Yeni bir Git deposu başlatma, dosya durumunu inceleme, hazırlık alanına alma, ilk commit\'i kaydetme ve geçmişi okuma.',
-        status: 'Yakında',
+        status: 'Hazır',
+        firstLessonId: 'git-1-init',
       },
       {
         id: 'git-2',
@@ -141,7 +143,8 @@ export const GIT_INTRO_DATA: GitIntroData = {
         title: 'Farkları Görme ve Güvenlik',
         commands: ['diff', 'restore', '.gitignore'],
         description: 'Yapılan değişiklikleri satır satır inceleme, hatalı düzenlemeleri geri alma ve depoya girmesini istemediğin dosyaları gizleme.',
-        status: 'Yakında',
+        status: 'Hazır',
+        firstLessonId: 'git-2-diff',
       },
       {
         id: 'git-3',
@@ -149,7 +152,8 @@ export const GIT_INTRO_DATA: GitIntroData = {
         title: 'Dallar ve Birleştirme',
         commands: ['branch', 'switch', 'merge'],
         description: 'Ana kodu riske atmadan yeni özellikler denemek için bağımsız dallar (branch) açma, dallar arasında geçiş yapma ve güvenle birleştirme.',
-        status: 'Yakında',
+        status: 'Hazır',
+        firstLessonId: 'git-3-branch',
       },
       {
         id: 'git-4',

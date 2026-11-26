@@ -1,6 +1,10 @@
 import { GIT_INTRO_DATA } from './intro';
 
-export function GitIntroView() {
+interface GitIntroViewProps {
+  onStartLesson?: (lessonId: string) => void;
+}
+
+export function GitIntroView({ onStartLesson }: GitIntroViewProps) {
   const data = GIT_INTRO_DATA;
 
   return (
@@ -10,8 +14,7 @@ export function GitIntroView() {
         <h1>{data.header.title}</h1>
         <p className="git-subtitle">{data.header.subtitle}</p>
         <div className="git-notice">
-          ℹ️ <strong>Bilgilendirme:</strong> Bu sayfa Git kavramlarını anlaman için hazırlanmış bir giriş rehberidir.
-          Simüle Git komutları ve uygulamalı dersler yakında KLU'ya eklenecektir.
+          ℹ️ <strong>Bilgilendirme:</strong> Git 1, Git 2 ve Git 3 uygulamalı dersleri hazır! Aşağıdaki kartlardan dilediğin konuya tıklayıp terminalde doğrudan pratik yapmaya başlayabilirsin. Git 4 (uzak depolar: push/pull/clone) ise yakında eklenecektir.
         </div>
       </header>
 
@@ -113,7 +116,17 @@ export function GitIntroView() {
                   <span className="git-curriculum-level">{topic.level}</span>
                   <h3>{topic.title}</h3>
                 </div>
-                <span className="git-status-badge">{topic.status}</span>
+                {topic.status === 'Hazır' && topic.firstLessonId ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-small git-start-btn"
+                    onClick={() => topic.firstLessonId && onStartLesson?.(topic.firstLessonId)}
+                  >
+                    Derse Başla →
+                  </button>
+                ) : (
+                  <span className="git-status-badge">{topic.status}</span>
+                )}
               </div>
 
               <div className="git-curriculum-cmds">

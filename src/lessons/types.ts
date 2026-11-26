@@ -65,6 +65,8 @@ export interface LessonSetup extends FsSeed {
   cwd?: string;
   /** Extra background processes running when the lesson starts. */
   processes?: (Partial<ShellProcess> & { pid: number; command: string })[];
+  /** Commands to execute silently (without shell history) upon session start. */
+  setupCommands?: string[];
 }
 
 export interface Lesson {

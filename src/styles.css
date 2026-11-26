@@ -2246,6 +2246,110 @@ pre {
   margin: 0 !important;
 }
 
+.git-start-btn {
+  white-space: nowrap;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+}
+
+/* ------------------------------------------------------------------ Git Workspace */
+.git-workspace-root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.git-workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.git-ws-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.git-back-btn {
+  font-weight: 500;
+}
+
+.git-level-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.git-level-pill {
+  padding: 4px 11px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--panel-hover);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.git-level-pill:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.git-level-pill.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.git-level-pill.done {
+  border-color: var(--green, #22c55e);
+}
+
+.git-ws-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.git-ws-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.git-ws-progress-text {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.git-ws-progress-bar {
+  width: 90px;
+  height: 6px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.git-ws-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
+
 /* ------------------------------------------------------------------ mobile */
 .mobile-tabs {
   display: none;
@@ -2351,6 +2455,14 @@ pre {
   .git-compare-grid,
   .git-curriculum-grid {
     grid-template-columns: 1fr;
+  }
+  .git-workspace-header {
+    padding: 6px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .git-ws-progress-text {
+    display: none;
   }
 }
 

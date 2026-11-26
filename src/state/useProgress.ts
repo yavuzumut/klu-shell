@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 export const STORAGE_KEY = 'klu.progress.v1';
+export const GIT_STORAGE_KEY = 'klu.git.progress.v1';
 const MAX_SAVED_HISTORY = 200;
 
 export interface ProgressState {
@@ -27,10 +28,24 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 /** Load progress, falling back to a fresh state if storage is missing or corrupt. */
-export function loadProgress(firstLessonId: string, storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): ProgressState {
+export function loadProgress(
+  firstLessonId: string,
+  storageOrKey?: Pick<Storage, 'getItem'> | string,
+  maybeStorage?: Pick<Storage, 'getItem'>,
+): ProgressState {
+  let storageKey = STORAGE_KEY;
+  let storage = globalThis.localStorage as Pick<Storage, 'getItem'> | undefined;
+
+  if (typeof storageOrKey === 'string') {
+    storageKey = storageOrKey;
+    storage = maybeStorage ?? (globalThis.localStorage as Pick<Storage, 'getItem'> | undefined);
+  } else if (storageOrKey) {
+    storage = storageOrKey;
+  }
+
   const fresh = initialProgress(firstLessonId);
   try {
-    const raw = storage?.getItem(STORAGE_KEY);
+    const raw = storage?.getItem(storageKey);
     if (!raw) return fresh;
     const data = JSON.parse(raw) as unknown;
     if (!isRecord(data) || data.version !== 1) return fresh;
@@ -47,16 +62,16 @@ export function loadProgress(firstLessonId: string, storage: Pick<Storage, 'getI
   }
 }
 
-export function useProgress(firstLessonId: string) {
-  const [progress, setProgress] = useState<ProgressState>(() => loadProgress(firstLessonId));
+export function useProgress(firstLessonId: string, storageKey: string = STORAGE_KEY) {
+  const [progress, setProgress] = useState<ProgressState>(() => loadProgress(firstLessonId, storageKey));
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+      localStorage.setItem(storageKey, JSON.stringify(progress));
     } catch {
       /* storage full or disabled: progress is kept in memory only */
     }
-  }, [progress]);
+  }, [progress, storageKey]);
 
   const setCurrentLesson = useCallback((lessonId: string) => {
     setProgress((p) => ({ ...p, currentLessonId: lessonId }));
