@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://klu-shell.pages.dev/sitemap.xml
