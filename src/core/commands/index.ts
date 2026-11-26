@@ -40,6 +40,7 @@ import { kill } from './kill';
 import { stat } from './stat';
 import { realpath } from './realpath';
 import { basename } from './basename';
+import { git } from './git';
 
 export const ALL_COMMANDS: CommandDefinition[] = [
   pwd,
@@ -77,6 +78,8 @@ export const ALL_COMMANDS: CommandDefinition[] = [
   stat,
   realpath,
   basename,
+  // Git (Interactive Git Module)
+  git,
 ];
 
 export function createRegistry(commands: CommandDefinition[] = ALL_COMMANDS): CommandRegistry {
