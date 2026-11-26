@@ -50,7 +50,7 @@ KLU gerçek bir Bash kabuğu değildir; eğitim amaçlı tarayıcı simülatör�
 
 - **Çatı & Dil:** React 18 (`^18.3.1`), TypeScript (`~5.6.2`), Vite 7 (`^7.3.8`)
 - **Terminal UI:** `@xterm/xterm` (`^5.5.0`), `@xterm/addon-fit` (`^0.10.0`)
-- **Birim & Entegrasyon Test:** Vitest 5 (`^5.1.1` - 257 test)
+- **Birim & Entegrasyon Test:** Vitest 5 (`^5.1.1` - 259 test)
 - **Markdown İşleme:** Marked (`^14.1.0`)
 - **Stil:** Modern Saf CSS (5 tema, CSS değişkenleri, duyarlı mobil tuş çubuğu)
 
@@ -84,7 +84,7 @@ Terminal çıktısında belirtilen adresi (varsayılan: `http://localhost:5173`)
 
 ### 4. Testleri Çalıştırma
 
-Vitest ile yazılmış 257 testi çalıştırmak için:
+Vitest ile yazılmış 259 testi çalıştırmak için:
 
 ```bash
 npm test
@@ -278,17 +278,21 @@ Sayfa otomatik olarak kategori filtrelerini, dağıtım sekmelerini ve "📋 Kop
 
 ## 🧪 Test Stratejisi & Mimarisi
 
-KLU, 13 test dosyasında toplam 257 test ile korunmaktadır. Test dosyaları test ettikleri modüllerin hemen yanında (`src/`) yer alır:
+KLU, `npm test` çıktısına göre 13 test dosyasında toplam 259 test ile korunmaktadır. Test dosyaları ve gerçek test sayıları:
 
-- `src/core/commands/commands.test.ts`: 14 çekirdek komutun bayrakları, argümanları ve POSIX hata çıktıları (39 test).
-- `src/core/fs/VirtualFS.test.ts`: Dizin ve dosya işlemleri, hata kodları, derin klonlama ve prototip kirlenmesi koruması (19 test).
-- `src/core/fs/treeListener.test.ts`: Dosya sistemi mutasyon dinleyicileri (`subscribe`) ve dosya ağacı tetikleyicileri (3 test).
-- `src/core/shell/parser.test.ts`: Kabuk girdi ayrıştırma, tırnaklar, boru hattı (`|`), yönlendirmeler (`>`, `>>`) ve değişken genişletme (13 test).
-- `src/core/shell/completion.test.ts`: Tab tuşu ile komut ve dosya/dizin adı tamamlama (5 test).
-- `src/lessons/validator.test.ts`: Görev doğrulama kuralları, keşif/nötr komutlar ve yanlış deneme mekanizması (16 test).
-- `src/explore/data.test.ts`: 15 CLI araç kartının şema doğrulaması ve kategori bütünlüğü (5 test).
-- `src/themes/themes.test.ts`: 5 tema tanımı, hex renk doğrulama regex'i ve CSS değişkenleri (9 test).
-- `src/state/progress.test.ts`: İlerleme durumu, localStorage senkronizasyonu ve geçmiş yönetimi (7 test).
+- `src/core/commands/commands.test.ts`: Komutlar ve kabukla entegrasyon (83 test).
+- `src/core/fs/VirtualFS.test.ts`: Sanal dosya sistemi işlemleri (21 test).
+- `src/core/fs/treeListener.test.ts`: Dosya sistemi değişiklik dinleyicileri (3 test).
+- `src/core/shell/parser.test.ts`: Kabuk ayrıştırma ve operatörler (14 test).
+- `src/core/shell/completion.test.ts`: Komut ve yol otomatik tamamlama (5 test).
+- `src/core/git/git.test.ts`: Git 1–4 komut ve depo akışları (35 test).
+- `src/core/security.test.ts`: Güvenlik, dayanıklılık, sanitizer ve kota regresyonları (22 test).
+- `src/git/lessons/gitLessons.test.ts`: Etkileşimli Git dersleri (19 test).
+- `src/lessons/validator.test.ts`: Ders görev doğrulaması (33 test).
+- `src/explore/data.test.ts`: Araç kartı verileri (5 test).
+- `src/themes/themes.test.ts`: Tema tanımları ve renk doğrulama (9 test).
+- `src/state/progress.test.ts`: İlerleme ve geçmiş saklama (7 test).
+- `src/state/congrats.test.ts`: Tebrik/ilerleme durumu (3 test).
 
 Testleri çalıştırmak için:
 ```bash

@@ -165,6 +165,9 @@ describe('Security & Resilience Audit Tests', () => {
       expect(urlToRemotePath('https://gitlab.com/org/project.git')).not.toBe(
         urlToRemotePath('https://github.com/org/project.git'),
       );
+      expect(urlToRemotePath('https://github.com/a-b/c.git')).not.toBe(
+        urlToRemotePath('https://github.com/a/b-c.git'),
+      );
     });
     it('returns an empty commit list for malformed commits.json data', () => {
       const fs = new VirtualFS();
@@ -172,6 +175,18 @@ describe('Security & Resilience Audit Tests', () => {
       fs.writeFile('/repo/.git/commits.json', '{"broken":true}');
       expect(() => repo.getCommits()).not.toThrow();
       expect(repo.getCommits()).toEqual([]);
+    });
+
+    it('rejects commit trees that target repository metadata paths', () => {
+      const fs = new VirtualFS();
+      const repo = GitRepo.init(fs, '/repo').repo;
+      const badCommit = {
+        hash: 'hash', shortHash: 'short', parent: null, message: 'bad', author: 'tester', timestamp: 1,
+        tree: { '.git/HEAD': 'ref: refs/heads/owned', '../outside': 'x', '/absolute': 'x' },
+      };
+      fs.writeFile('/repo/.git/commits.json', JSON.stringify([badCommit]));
+      expect(repo.getCommits()).toEqual([]);
+      expect(fs.readFile('/repo/.git/HEAD')).toBe('ref: refs/heads/main\n');
     });
     it('handles files named __proto__ or toString in git index safely', () => {
       const fs = new VirtualFS();
@@ -274,6 +289,12 @@ describe('Security & Resilience Audit Tests', () => {
 
     it('preserves safe external link target and rel attributes through sanitization', () => {
       const clean = sanitizeHtml('<a href="https://example.com" target="_blank" rel="noopener noreferrer">link</a>');
+      expect(clean).toContain('target="_blank"');
+      expect(clean).toContain('rel="noopener noreferrer"');
+    });
+
+    it('adds safe rel attributes to raw blank-target links', () => {
+      const clean = sanitizeHtml('<a href="https://example.com" target="_blank">link</a>');
       expect(clean).toContain('target="_blank"');
       expect(clean).toContain('rel="noopener noreferrer"');
     });

@@ -572,7 +572,7 @@ KLU projesi katı tip denetimi ve otomatik birim testleriyle korunmaktadır.
 
 ### Komutlar
 ```bash
-# Birim ve entegrasyon testlerini çalıştırır (257 test, 13 test dosyası)
+# Birim ve entegrasyon testlerini çalıştırır (259 test, 13 test dosyası)
 npm test
 
 # İzleme (watch) modunda testleri sürekli çalıştırmak için:
@@ -618,8 +618,7 @@ Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konu
    `BaseNode` nesnesinde `mode` (örn: `0o755`), `owner` ve `group` alanları tanımlıdır ve `chmod` için ayrılmıştır. Ancak mevcut aşamada `VirtualFS` üzerindeki okuma, yazma ve silme işlemlerinde yetki denetimi henüz işletilmemektedir (Örn: Standart kullanıcı hesabı olan `kullanici`, `/root` dizini altındaki dosyaları okuyabilmektedir).
 2. **Serbest Mod ve FS Kalıcılığı:**
    Sanal dosya sistemi tamamen RAM üzerinde yaşar. Sayfa yenilendiğinde (F5 / browser refresh) Serbest Mod'da oluşturulan dosyalar sıfırlanır ve varsayılan tohum ağacına döner (Kullanıcı ilerlemesi `localStorage` üzerinde saklanırken sanal FS saklanmaz).
-3. **Etkileşimli Git Simülasyonu:**
-   Mevcut durumda Seviye 0, Seviye 1, Seviye 2 ve Seviye 3 tam fonksiyonel olarak tamamlanmıştır. Git sekmesi şu an bilgilendirme modundadır; sanal `.git` motoru veya `git` komut seti henüz terminale entegre edilmemiştir.
+3. **Etkileşimli Git Motoru:** Git sekmesi Git 1–4 içeriklerini ve etkileşimli ders akışlarını çalıştırır. `GitRepo`, sanal `.git/` JSON verisini; Git komutları temel commit akışını, diff/restore işlemlerini, dallanma/birleştirmeyi ve Git 4 uzak depo işlemlerini yönetir. Uzak işlemler VirtualFS içindeki `/var/klu-remotes` simülasyonunu kullanır.
 4. **Mobil Klavye Kısayolları:**
    Mobil cihazlar için ekranda temel gezinme tuşlarını içeren bir çubuk (`.key-bar` — Tab, ↑, ↓, ←, →, ~, /, -, Ctrl+C) bulunmaktadır; ancak boru hattı (`|`), yönlendirme (`>`, `<`) ve kesme tuşları gibi gelişmiş terminal operatörleri için zengin bir sanal tuş takımı henüz geliştirilmemiştir.
 5. **Dosya İsimlerinde ANSI Kaçış Filtreleme:**
@@ -642,12 +641,11 @@ Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konu
 - Paket yöneticisi simülasyonu (`apt install` simülasyonu).
 - Ağ araçları (`curl`, `ping` simülasyonları).
 
-### Etkileşimli Git Motoru
-- **Konumlandırma:** Git simülasyonu, Linux seviyelerinden (Seviye 0-3) bağımsız olarak üst sekmelerde ("Git" sekmesi) ayrı bir eğitim ve pratik alanı olarak çalışır.
-- **Depolama Modeli:** Repo durumu `VirtualFS` içinde `.git/` klasöründe JSON formatında saklanır (gerçek Git binary/packfile formatı değil; hafif, şeffaf ve bellek içi JSON nesnesi).
-- **Gerçekçi Çıktı:** Komut çıktıları (`git status`, `git log` vb.) gerçek Git ile birebir aynı metin ve ANSI renklerinde üretilir.
-- **Canlı Panel:** Çalışma Alanı (Working Tree) / Hazırlık Alanı (Staging) / Depo (Repository) ve commit grafiği, `VirtualFS.subscribe` olay dinleyicisi üzerinden gerçek zamanlı güncellenir.
-- **4 Aşamalı Plan:**
+### Etkileşimli Git Motoru (Tamamlandı)
+- Git sekmesi Linux seviyelerinden ayrı eğitim alanı ve etkileşimli ders akışı sunar.
+- Repo durumu `VirtualFS` içindeki `.git/` klasöründe JSON olarak saklanır; gerçek Git binary/packfile formatı kullanılmaz.
+- Terminal Git komutları ile çalışma alanı, hazırlık alanı, yerel depo ve commit grafiği sunulur.
+- Git 1–4 motoru tamamlanmıştır; uzak depo işlemleri `/var/klu-remotes` altında sanal olarak yürütülür.
   - **Git 1 (Temel Akış):** `git init`, `git config`, `git status`, `git add`, `git commit`, `git log`.
   - **Git 2 (İnce Ayar & Düzeltmeler):** `git diff`, `git restore`, `.gitignore` desteği, `git commit --amend`.
   - **Git 3 (Dallanma & Birleştirme):** `git branch`, `git switch` / `git checkout`, `git merge`.
@@ -712,11 +710,9 @@ KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içi
 6. **Hile Kağıdı (Cheat Sheet):** 13 kategoride 33 komutun hızlı başvuru tablosu ve Serbest Mod terminaline aktarım desteği.
 7. **Meraklısına (Explore):** 15 modern CLI aracı, 5 kategori filtresi (`media`, `system`, `files`, `productivity`, `fun`), dağıtım sekmeleri (Debian, Fedora, Arch), ipuçları ve tek tıkla kopyalama.
 8. **Tema Motoru:** 5 renk teması, terminal renklerinin canlı eşzamanlanması, hex doğrulayıcılı özel vurgu rengi seçici.
-9. **Kalite & Test Güvencesi:** 257 testi (13 test dosyasında), sıfır TypeScript hatası, `dist/index.html` içinde üretim CSP'si, 0 `npm audit` açığı.
+9. **Kalite & Test Güvencesi:** 259 testi (13 test dosyasında), sıfır TypeScript hatası, `dist/index.html` içinde üretim CSP'si, 0 `npm audit` açığı.
 
-### Henüz Yapılmamış / Gelecek Adımlar (Yapılacaklar)
-1. **`src/git/` Modülü (Etkileşimli Git Terminali):**
-   - *Mevcut Durum:* `GitRepo` motoru ve terminal Git komutları Git 1–4 kapsamını yürütür. Git sekmesinde etkileşimli dersler ve görsel depo durumu bulunur. Uzak depolar gerçek ağa çıkmadan `/var/klu-remotes` altında VirtualFS ile simüle edilir.
-2. **Terminal ANSI Filtreleme:**
+### Gelecek Geliştirmeler
+1. **Terminal ANSI Filtreleme:**
    - `ls` komutu ve satır düzenleyicide dosya isimlerindeki ham ANSI kaçış karakterlerinin temizlenmesi tamamlanacaktır.
 

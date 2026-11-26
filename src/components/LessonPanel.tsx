@@ -5,6 +5,12 @@ import type { Lesson, Level } from '../lessons/types';
 
 marked.setOptions({ gfm: true, breaks: false });
 
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.nodeName === 'A' && node.getAttribute('target')?.toLowerCase() === '_blank') {
+    node.setAttribute('rel', 'noopener noreferrer');
+  }
+});
+
 marked.use({
   renderer: {
     link({ href, title, text }: { href: string; title?: string | null; text: string }) {

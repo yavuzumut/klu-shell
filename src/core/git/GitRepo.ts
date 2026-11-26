@@ -24,31 +24,48 @@ export function urlToRemotePath(url: string): string {
     return trimmed;
   }
   let host = '';
+  let owner = '';
+  let repo = '';
   try {
-    host = new URL(trimmed).host;
+    const parsedUrl = new URL(trimmed);
+    host = parsedUrl.host;
+    const parts = parsedUrl.pathname.split('/').filter(Boolean);
+    owner = parts.at(-2) ?? '';
+    repo = (parts.at(-1) ?? '').replace(/\.git$/i, '');
   } catch {
     // SCP-style Git URLs and virtual paths are parsed below.
     const scp = trimmed.match(/^(?:[^@]+@)?([^:]+):/);
     host = scp?.[1] ?? '';
+    const path = trimmed.slice(trimmed.indexOf(':') + 1).replace(/\.git\/?$/i, '');
+    const parts = path.split('/').filter(Boolean);
+    owner = parts.at(-2) ?? '';
+    repo = parts.at(-1) ?? '';
   }
-  const noGit = trimmed.replace(/\.git\/?$/, '');
-  const segments = noGit
-    .split(/[/:]+/)
-    .filter((s) => s !== 'https' && s !== 'http' && s !== 'git' && s !== 'ssh');
-  let slug = '';
-  if (segments.length >= 2) {
-    const owner = segments[segments.length - 2];
-    const repo = segments[segments.length - 1];
-    // Keep the established GitHub virtual paths stable; other hosts are namespaced.
-    const hostPrefix = host && host.toLowerCase() !== 'github.com' ? `${host}-` : '';
-    slug = `${hostPrefix}${owner}-${repo}`;
-  } else if (segments.length === 1) {
-    slug = segments[0];
-  } else {
-    slug = 'klu-repo';
+  if (!owner || !repo) {
+    const fallback = trimmed.split('/').filter(Boolean).at(-1)?.replace(/\.git$/i, '') || 'klu-repo';
+    return `/var/klu-remotes/${encodeURIComponent(fallback)}`;
   }
-  const safe = slug.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/^-+|-+$/g, '');
-  return `/var/klu-remotes/${safe || 'klu-repo'}`;
+  const safeSegment = (part: string) => encodeURIComponent(part).replace(/%2F/gi, '%252F');
+  return `/var/klu-remotes/${safeSegment(host || 'local')}/${safeSegment(owner)}/${safeSegment(repo)}`;
+}
+
+/** Resolve older GitHub lesson fixtures while new remotes use collision-safe paths. */
+function remotePathFor(fs: VirtualFS, url: string): string {
+  const canonical = urlToRemotePath(url);
+  if (fs.exists(canonical)) return canonical;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.toLowerCase() === 'github.com') {
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      const owner = parts.at(-2);
+      const repo = parts.at(-1)?.replace(/\.git$/i, '');
+      if (owner && repo) {
+        const legacy = `/var/klu-remotes/${`${owner}-${repo}`.replace(/[^a-zA-Z0-9._-]/g, '-')}`;
+        if (fs.exists(legacy)) return legacy;
+      }
+    }
+  } catch { /* Invalid URLs simply use the canonical mapping. */ }
+  return canonical;
 }
 
 function generateHash(seed: string): string {
@@ -207,7 +224,9 @@ export class GitRepo {
           typeof c.message === 'string' && typeof c.author === 'string' &&
           typeof c.timestamp === 'number' && (c.parent === null || typeof c.parent === 'string') &&
           !!c.tree && typeof c.tree === 'object' && !Array.isArray(c.tree) &&
-          Object.values(c.tree as Record<string, unknown>).every((value) => typeof value === 'string') &&
+          Object.entries(c.tree as Record<string, unknown>).every(([path, value]) =>
+            typeof value === 'string' && !path.startsWith('/') &&
+            !path.split('/').some((part) => part === '..' || part === '.git')) &&
           (c.mergeParent === undefined || c.mergeParent === null || typeof c.mergeParent === 'string');
       });
     } catch {
@@ -1340,7 +1359,7 @@ export class GitRepo {
       );
     }
 
-    const remotePath = urlToRemotePath(rConfig.url);
+    const remotePath = remotePathFor(this.fs, rConfig.url);
     const remoteRepo = GitRepo.open(this.fs, remotePath);
     if (!remoteRepo) {
       throw new Error(
@@ -1432,7 +1451,7 @@ export class GitRepo {
       );
     }
 
-    const remotePath = urlToRemotePath(rConfig.url);
+    const remotePath = remotePathFor(this.fs, rConfig.url);
     const remoteRepo = GitRepo.open(this.fs, remotePath);
     if (!remoteRepo) {
       throw new Error(
@@ -1482,7 +1501,7 @@ export class GitRepo {
       }
     }
 
-    const remotePath = urlToRemotePath(url);
+    const remotePath = remotePathFor(fs, url);
     const remoteRepo = GitRepo.open(fs, remotePath);
     if (!remoteRepo) {
       throw new Error(`fatal: repository '${url}' does not exist`);
