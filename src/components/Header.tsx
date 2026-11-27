@@ -77,31 +77,31 @@ export function Header({
           className={`mode-tab ${mode === 'lessons' ? 'active' : ''}`}
           onClick={() => onModeChange('lessons')}
         >
-          📖 {t('modes.lessons')}
+          📖 <span className="mode-tab-label">{t('modes.lessons')}</span>
         </button>
         <button
           className={`mode-tab ${mode === 'sandbox' ? 'active' : ''}`}
           onClick={() => onModeChange('sandbox')}
         >
-          💻 {t('modes.sandbox')}
+          💻 <span className="mode-tab-label">{t('modes.sandbox')}</span>
         </button>
         <button
           className={`mode-tab ${mode === 'git' ? 'active' : ''}`}
           onClick={() => onModeChange('git')}
         >
-          🌿 {t('modes.git')}
+          🌿 <span className="mode-tab-label">{t('modes.git')}</span>
         </button>
         <button
           className={`mode-tab ${mode === 'cheatsheet' ? 'active' : ''}`}
           onClick={() => onModeChange('cheatsheet')}
         >
-          📑 {t('modes.cheatsheet')}
+          📑 <span className="mode-tab-label">{t('modes.cheatsheet')}</span>
         </button>
         <button
           className={`mode-tab ${mode === 'explore' ? 'active' : ''}`}
           onClick={() => onModeChange('explore')}
         >
-          🚀 {t('modes.explore')}
+          🚀 <span className="mode-tab-label">{t('modes.explore')}</span>
         </button>
       </nav>
 
@@ -168,7 +168,7 @@ export function Header({
             title={t('header.fileTreeTitle')}
             aria-pressed={showFileTree}
           >
-            🗂️ {t('header.fileTreeBtn')}
+            🗂️ <span className="header-tree-label">{t('header.fileTreeBtn')}</span>
           </button>
         )}
         <LanguageSwitcher className="header-lang-switcher" />

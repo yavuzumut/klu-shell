@@ -263,6 +263,11 @@ pre {
   flex-shrink: 0;
 }
 
+.mode-tab-label,
+.header-tree-label {
+  white-space: nowrap;
+}
+
 .mode-tab:hover {
   color: var(--text);
 }
@@ -2536,6 +2541,93 @@ pre {
   }
   .explore-card {
     padding: 16px;
+  }
+}
+
+/* Keep the full desktop header on one line without shrinking labels away. */
+@media (min-width: 768px) {
+  .header {
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 8px;
+    padding-inline: 12px;
+  }
+
+  .mode-nav {
+    min-width: 0;
+    max-width: none;
+    gap: 1px;
+    padding: 2px;
+  }
+
+  .mode-tab {
+    padding-inline: 5px;
+    white-space: nowrap;
+  }
+
+  .header-tree-btn,
+  .header-lang-switcher,
+  .theme-toggle-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .header-right-actions {
+    margin-left: auto;
+    flex: 0 0 auto;
+    gap: 10px;
+  }
+
+  .progress {
+    min-width: 0;
+    margin-left: 0;
+    gap: 8px;
+  }
+
+  .progress-text {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .progress-segments {
+    flex: 0 1 auto;
+    gap: 3px;
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 1400px) {
+  .level-name,
+  .level-badge-intro {
+    display: none;
+  }
+
+  .level-pill {
+    padding: 4px 7px;
+  }
+
+  .progress .segment {
+    width: 12px;
+  }
+
+  .mode-tab {
+    padding-inline: 4px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  .mode-nav {
+    flex: 1 1 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .mode-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .progress .segment {
+    width: 12px;
   }
 }
 
