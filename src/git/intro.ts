@@ -11,7 +11,7 @@ export interface GitCurriculumTopic {
   title: string;
   commands: string[];
   description: string;
-  status: 'Yakında' | 'Hazır';
+  status: 'Yakında' | 'Hazır' | 'Coming soon' | 'Ready';
   firstLessonId?: string;
 }
 

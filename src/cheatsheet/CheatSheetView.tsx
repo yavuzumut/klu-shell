@@ -1,22 +1,27 @@
+import { useMemo } from 'react';
 import { CHEAT_SHEET_DATA, type CheatItem } from './data';
+import { useI18n } from '../i18n/I18nProvider';
+import { localizeCheatSheet } from '../i18n/localize';
 
 interface Props {
   onRunInSandbox: (command: string) => void;
 }
 
 export function CheatSheetView({ onRunInSandbox }: Props) {
+  const { lang, t } = useI18n();
+  const data = useMemo(() => localizeCheatSheet(CHEAT_SHEET_DATA, lang), [lang]);
+
   return (
     <div className="cheatsheet-page">
       <div className="cheatsheet-header">
-        <h1>📑 Linux Komut Hile Kağıdı</h1>
+        <h1>{t('cheatsheet.title')}</h1>
         <p className="muted">
-          KLU'da desteklenen tüm temel komutların derlenmiş listesi. Bir komutun veya örneğin üzerine tıklayarak
-          doğrudan <strong>Serbest Mod</strong> terminaline aktarabilirsin.
+          {t('cheatsheet.subtitle')}
         </p>
       </div>
 
       <div className="cheatsheet-grid">
-        {CHEAT_SHEET_DATA.map((cat) => (
+        {data.map((cat) => (
           <section key={cat.title} className="cheatsheet-category">
             <h2>{cat.title}</h2>
             <div className="cheatsheet-table">
@@ -26,7 +31,7 @@ export function CheatSheetView({ onRunInSandbox }: Props) {
                     <button
                       className="cmd-badge"
                       onClick={() => onRunInSandbox(item.command)}
-                      title="Serbest Mod terminaline yaz"
+                      title={t('cheatsheet.cmdTitle')}
                     >
                       {item.command}
                     </button>
@@ -36,7 +41,7 @@ export function CheatSheetView({ onRunInSandbox }: Props) {
                     <button
                       className="example-badge"
                       onClick={() => onRunInSandbox(item.example)}
-                      title="Serbest Mod terminaline yaz"
+                      title={t('cheatsheet.cmdTitle')}
                     >
                       <code>$ {item.example}</code>
                     </button>

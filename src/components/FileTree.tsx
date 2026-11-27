@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { VirtualFS, FsNode } from '../core/fs/VirtualFS';
+import { useI18n } from '../i18n/I18nProvider';
 
 interface FileTreeProps {
   fs: VirtualFS;
@@ -182,15 +183,16 @@ export function FileTree({ fs, cwd, onSelectPath, onResetFs, highlightedPath: ex
     });
   };
 
+  const { t } = useI18n();
   const activeHighlight = externalHighlight ?? internalHighlight;
 
   return (
     <div className="file-tree-container">
       <div className="file-tree-header">
-        <span className="file-tree-title">🗂️ Dosya Sistemi</span>
+        <span className="file-tree-title">{t('fileTree.title')}</span>
         {onResetFs && (
-          <button className="btn btn-small btn-ghost" onClick={onResetFs} title="Sanal dosya sistemini sıfırla">
-            ↺ Sıfırla
+          <button className="btn btn-small btn-ghost" onClick={onResetFs} title={t('fileTree.resetTitle')}>
+            {t('fileTree.resetBtn')}
           </button>
         )}
       </div>

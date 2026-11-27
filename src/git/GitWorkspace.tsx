@@ -11,6 +11,8 @@ import { evaluateCommand } from '../lessons/validator';
 import { GIT_STORAGE_KEY, taskKey, useProgress } from '../state/useProgress';
 import type { ITheme } from '@xterm/xterm';
 import { findGitLesson, GIT_ALL_LESSONS, GIT_LEVELS } from './lessons';
+import { useI18n } from '../i18n/I18nProvider';
+import { localizeLesson, localizeLevels } from '../i18n/localize';
 
 const FIRST_GIT_LESSON_ID = GIT_ALL_LESSONS[0].id;
 
@@ -31,6 +33,7 @@ interface GitWorkspaceProps {
 }
 
 export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: GitWorkspaceProps) {
+  const { lang, t } = useI18n();
   const { progress, actions } = useProgress(FIRST_GIT_LESSON_ID, GIT_STORAGE_KEY);
   const lastAppliedInitialId = useRef<string | undefined>(undefined);
   const sessionIdRef = useRef(0);
@@ -46,21 +49,30 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
     }
   }, [initialLessonId, actions]);
 
-  const found = findGitLesson(progress.currentLessonId) ?? findGitLesson(FIRST_GIT_LESSON_ID)!;
-  const { level, lesson, index: lessonIndex } = found;
+  const rawFound = findGitLesson(progress.currentLessonId) ?? findGitLesson(FIRST_GIT_LESSON_ID)!;
+  const level = useMemo(() => localizeLevels([rawFound.level], lang, true)[0], [rawFound.level, lang]);
+  const lesson = useMemo(() => localizeLesson(rawFound.lesson, lang, true), [rawFound.lesson, lang]);
+  const lessonIndex = rawFound.index;
+
+  const localizedGitLevels = useMemo(() => localizeLevels(GIT_LEVELS, lang, true), [lang]);
 
   const [showFileTree, setShowFileTree] = useState(true);
   const [mobileTab, setMobileTab] = useState<MobileTab>('lesson');
 
   const [gitShell] = useState(() => {
-    const fs = createLessonFS(lesson);
+    const fs = createLessonFS(rawFound.lesson);
     return new Shell({
       fs,
       registry: createRegistry(),
-      cwd: lessonStartCwd(lesson, fs),
+      cwd: lessonStartCwd(rawFound.lesson, fs),
       history: progress.history,
+      lang,
     });
   });
+
+  useEffect(() => {
+    gitShell.lang = lang;
+  }, [gitShell, lang]);
 
   const [currentCwd, setCurrentCwd] = useState(gitShell.cwd);
   const termRef = useRef<TerminalHandle>(null);
@@ -99,11 +111,11 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
       const banner =
         ansi.cyan(`── Git ${level.number}: ${lesson.title} ──`) +
         '\n' +
-        ansi.dim(message ?? "Komutları yazıp Enter'a bas. Durumu görmek için: git status") +
+        ansi.dim(message ?? t('terminal.bannerGitHintDefault')) +
         '\n';
       termRef.current?.resetScreen(banner);
     },
-    [gitShell, lesson, level.number],
+    [gitShell, lesson, level.number, t],
   );
 
   useEffect(() => {
@@ -139,8 +151,8 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
         };
         const task = cur.tasks.find((t) => t.id === taskId)!;
         const remaining = cur.tasks.filter((t) => t.id !== taskId && !completed.includes(t.id));
-        let msg = ansi.green(`✔ Görev tamamlandı: ${plain(task.description)}`);
-        if (!remaining.length) msg += '\n' + ansi.green('🎉 Ders tamamlandı! Sol paneldeki "Sonraki →" ile devam et.');
+        let msg = ansi.green(t('terminal.taskCompleted', { desc: plain(task.description) }));
+        if (!remaining.length) msg += '\n' + ansi.green(t('terminal.lessonCompleted'));
         return msg;
       }
 
@@ -153,12 +165,12 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
           progress: { ...p, attempts: { ...p.attempts, [taskKey(cur.id, task.id)]: attempts } },
         };
         const hint = task.hints[Math.min(attempts, task.hints.length) - 1];
-        let msg = hint ? ansi.yellow(`💡 İpucu: ${plain(hint)}`) : '';
-        if (attempts >= 3) msg += (msg ? '\n' : '') + ansi.dim('Takıldın mı? Sol panelde "Çözümü göster" düğmesi açıldı.');
+        let msg = hint ? ansi.yellow(t('terminal.hintPrefix', { hint: plain(hint) })) : '';
+        if (attempts >= 3) msg += (msg ? '\n' : '') + ansi.dim(t('terminal.stuckHint'));
         return msg || undefined;
       }
     },
-    [actions, gitShell],
+    [actions, gitShell, t],
   );
 
   const goToLesson = useCallback(
@@ -220,12 +232,12 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
             type="button"
             className="btn btn-small btn-ghost git-back-btn"
             onClick={onBackToIntro}
-            title="Git Giriş Rehberi'ne dön"
+            title={t('gitWorkspace.backToIntroTitle')}
           >
-            ← Git Rehberi
+            {t('gitWorkspace.backToIntro')}
           </button>
-          <div className="git-level-pills" role="tablist" aria-label="Git seviyeleri">
-            {GIT_LEVELS.map((lvl) => {
+          <div className="git-level-pills" role="tablist" aria-label={t('gitWorkspace.levelsAria')}>
+            {localizedGitLevels.map((lvl) => {
               const isActive = lvl.id === level.id;
               const lvlDone = lvl.lessons.every((l) => isLessonDone(l.id));
               return (
@@ -234,7 +246,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
                   type="button"
                   className={`git-level-pill ${isActive ? 'active' : ''} ${lvlDone ? 'done' : ''}`}
                   onClick={() => goToLesson(lvl.lessons[0].id)}
-                  title={`${lvl.title} (${lvl.lessons.length} ders)`}
+                  title={t('gitWorkspace.levelTitle', { title: lvl.title, count: lvl.lessons.length })}
                 >
                   {lvlDone && <span className="git-pill-check">✓</span>}
                   <span>Git {lvl.number}</span>
@@ -243,7 +255,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
             })}
           </div>
 
-          <div className="git-lesson-segments" aria-label={`${level.title} dersleri`}>
+          <div className="git-lesson-segments" aria-label={t('gitWorkspace.lessonsAria', { title: level.title })}>
             {level.lessons.map((l, i) => {
               const isCurrent = l.id === lesson.id;
               const isDone = isLessonDone(l.id);
@@ -253,7 +265,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
                   type="button"
                   className={`git-lesson-segment ${isCurrent ? 'active' : ''} ${isDone ? 'done' : ''}`}
                   onClick={() => goToLesson(l.id)}
-                  title={`Ders ${i + 1}: ${l.title}${isDone ? ' (Tamamlandı)' : ''}`}
+                  title={`${t('gitWorkspace.lessonTitle', { num: i + 1, title: l.title })}${isDone ? t('gitWorkspace.lessonCompletedSuffix') : ''}`}
                 >
                   {isDone && !isCurrent ? '✓' : i + 1}
                 </button>
@@ -265,7 +277,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
         <div className="git-ws-right">
           <div className="git-ws-progress">
             <span className="git-ws-progress-text">
-              {completedLessonsCount}/{GIT_ALL_LESSONS.length} ders (%{progressPercent})
+              {t('gitWorkspace.progressText', { done: completedLessonsCount, total: GIT_ALL_LESSONS.length, percent: progressPercent })}
             </span>
             <div className="git-ws-progress-bar">
               <div className="git-ws-progress-fill" style={{ width: `${progressPercent}%` }} />
@@ -275,9 +287,9 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
             type="button"
             className={`btn btn-small ${showFileTree ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setShowFileTree((prev) => !prev)}
-            title="Dosya ağacını göster/gizle"
+            title={t('gitWorkspace.treeToggleTitle')}
           >
-            🗂️ Ağaç
+            {t('gitWorkspace.treeBtn')}
           </button>
         </div>
       </header>
@@ -285,7 +297,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
       {/* Mobile Tabs */}
       <div className="mobile-tabs" role="tablist">
         <button className={mobileTab === 'lesson' ? 'active' : ''} onClick={() => setMobileTab('lesson')}>
-          📖 Ders
+          {t('mobileTabs.lesson')}
         </button>
         <button
           className={mobileTab === 'terminal' ? 'active' : ''}
@@ -294,11 +306,11 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
             requestAnimationFrame(() => termRef.current?.focus());
           }}
         >
-          ⌨️ Terminal
+          {t('mobileTabs.terminal')}
         </button>
         {showFileTree && (
           <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
-            🗂️ Dosya Ağacı
+            {t('mobileTabs.fileTree')}
           </button>
         )}
       </div>
@@ -321,9 +333,9 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
             onInsertCommand={insertCommand}
             onRestartLesson={() => {
               actions.restartLesson(lesson.id);
-              startLessonSession('Ders baştan başladı.');
+              startLessonSession(t('terminal.sessionRestartLesson'));
             }}
-            onResetTerminal={() => startLessonSession('Dosya sistemi dersin başlangıç haline döndürüldü.')}
+            onResetTerminal={() => startLessonSession(t('terminal.sessionResetFs'))}
           />
         </section>
 
@@ -332,7 +344,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
             <span className="dots" aria-hidden>
               <i /> <i /> <i />
             </span>
-            <span className="terminal-title">kullanici@klu: git terminali</span>
+            <span className="terminal-title">{t('terminal.titleGit')}</span>
           </div>
           <TerminalView
             ref={termRef}
@@ -340,7 +352,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
             onExecuted={onExecuted}
             terminalTheme={terminalTheme}
           />
-          <div className="key-bar" aria-label="Terminal tuşları">
+          <div className="key-bar" aria-label={t('terminal.keysAria')}>
             {mobileKeys.map((k) => (
               <button
                 key={k.label}
@@ -359,7 +371,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
               fs={gitShell.fs}
               cwd={currentCwd}
               onSelectPath={handleTreeSelectPath}
-              onResetFs={() => startLessonSession('Dosya sistemi sıfırlandı.')}
+              onResetFs={() => startLessonSession(t('terminal.sessionFsReset'))}
             />
           </aside>
         )}

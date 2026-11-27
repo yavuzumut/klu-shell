@@ -35,6 +35,33 @@ Git 4 — uzak depolar:
 Ayrıntılı bilgi için: man git
 `;
 
+const EN_HELP_TEXT = `usage: git <command> [<args>]
+
+KLU Virtual Git commands:
+   init       Create an empty Git repository
+   status     Show the working tree and staging status
+   add        Add file contents to the staging area
+   commit     Record changes to the repository
+   log        Show commit logs
+
+Git 2 — diff and restore:
+   diff       Show changes between commits, commit and working tree, etc
+   restore    Restore working tree files or unstage files (--staged)
+
+Git 3 — branches:
+   branch     List, create, or delete branches
+   switch     Switch branches (-c: create and switch)
+   merge      Join two or more development histories together
+
+Git 4 — remotes:
+   clone      Clone a repository into a new directory
+   remote     Manage set of tracked repositories (-v, add, remove)
+   push       Update remote refs along with associated objects
+   pull       Fetch from and integrate with another repository
+
+For more information: man git
+`;
+
 const errMsg = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 function plural(n: number): string {
@@ -159,14 +186,14 @@ ALT KOMUTLAR (Git 4)
 
   run(args, ctx) {
     if (args.length === 0) {
-      ctx.stderr(HELP_TEXT);
+      ctx.stderr(ctx.shell.lang === 'en' ? EN_HELP_TEXT : HELP_TEXT);
       return 1;
     }
 
     const sub = args[0];
 
     if (sub === '--help' || sub === '-h') {
-      ctx.stdout(HELP_TEXT);
+      ctx.stdout(ctx.shell.lang === 'en' ? EN_HELP_TEXT : HELP_TEXT);
       return 0;
     }
 
@@ -484,7 +511,7 @@ ALT KOMUTLAR (Git 4)
       }
       const name = subargs.find((a) => !a.startsWith('-'));
       if (!name) {
-        ctx.stderr('fatal: No remote for the current branch.\nkullanım: git merge <dal>\n');
+        ctx.stderr('fatal: No branch specified.\nusage: git merge <branch>\n');
         return 128;
       }
       try {

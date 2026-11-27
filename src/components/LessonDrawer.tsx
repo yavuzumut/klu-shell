@@ -1,14 +1,8 @@
 import { useEffect } from 'react';
 import type { Level } from '../lessons/types';
 import type { AppMode } from './Header';
-
-const MODE_ITEMS: { id: AppMode; label: string }[] = [
-  { id: 'lessons', label: '📖 Dersler' },
-  { id: 'sandbox', label: '💻 Serbest Mod' },
-  { id: 'git', label: '🌿 Git' },
-  { id: 'cheatsheet', label: '📑 Hile Kağıdı' },
-  { id: 'explore', label: '🚀 Meraklısına' },
-];
+import { useI18n } from '../i18n/I18nProvider';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface Props {
   open: boolean;
@@ -37,6 +31,16 @@ export function LessonDrawer({
   showFileTree,
   onToggleFileTree,
 }: Props) {
+  const { t } = useI18n();
+
+  const modeItems: { id: AppMode; label: string }[] = [
+    { id: 'lessons', label: `📖 ${t('modes.lessons')}` },
+    { id: 'sandbox', label: `💻 ${t('modes.sandbox')}` },
+    { id: 'git', label: `🌿 ${t('modes.git')}` },
+    { id: 'cheatsheet', label: `📑 ${t('modes.cheatsheet')}` },
+    { id: 'explore', label: `🚀 ${t('modes.explore')}` },
+  ];
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -50,18 +54,23 @@ export function LessonDrawer({
       <aside className={`drawer ${open ? 'open' : ''}`} aria-hidden={!open}>
         <div className="drawer-head">
           <strong>
-            <span className="drawer-title-desktop">Dersler</span>
-            <span className="drawer-title-mobile">Menü</span>
+            <span className="drawer-title-desktop">{t('drawer.titleDesktop')}</span>
+            <span className="drawer-title-mobile">{t('drawer.titleMobile')}</span>
           </strong>
-          <button className="icon-btn" onClick={onClose} aria-label="Kapat">
+          <button className="icon-btn" onClick={onClose} aria-label={t('drawer.closeAria')}>
             ✕
           </button>
         </div>
 
         {/* Mobile only (< 768px): items that live in the header on desktop. */}
-        <section className="drawer-mobile-nav" aria-label="Gezinme">
-          <div className="drawer-mode-switch" role="group" aria-label="Mod seçimi">
-            {MODE_ITEMS.map((m) => (
+        <section className="drawer-mobile-nav" aria-label={t('drawer.navAria')}>
+          <div className="drawer-lang-row">
+            <span className="drawer-lang-label">{t('drawer.language')}:</span>
+            <LanguageSwitcher className="drawer-lang-switcher" />
+          </div>
+
+          <div className="drawer-mode-switch" role="group" aria-label={t('drawer.modeAria')}>
+            {modeItems.map((m) => (
               <button
                 key={m.id}
                 className={`drawer-mode-btn ${mode === m.id ? 'active' : ''}`}
@@ -81,16 +90,17 @@ export function LessonDrawer({
               aria-pressed={showFileTree}
               onClick={onToggleFileTree}
             >
-              🗂️ Dosya Ağacı {showFileTree ? 'açık' : 'kapalı'}
+              {t('drawer.treeBtn', { state: showFileTree ? t('drawer.treeOpen') : t('drawer.treeClosed') })}
             </button>
           )}
         </section>
 
-        <div className="drawer-section-title">Dersler</div>
+        <div className="drawer-section-title">{t('drawer.sectionLessons')}</div>
         {levels.map((lv) => (
           <section key={lv.id} className="drawer-level">
             <h3>
-              Seviye {lv.number}: {lv.title} {lv.comingSoon && <span className="badge">Yakında</span>}
+              {t('drawer.levelLabel', { num: lv.number, title: lv.title })}{' '}
+              {lv.comingSoon && <span className="badge">{t('drawer.badgeComingSoon')}</span>}
             </h3>
             <p className="muted small">{lv.description}</p>
             <ul>
@@ -117,10 +127,10 @@ export function LessonDrawer({
         <button
           className="btn btn-ghost danger"
           onClick={() => {
-            if (confirm('Tüm ilerlemen silinecek. Emin misin?')) onResetAll();
+            if (confirm(t('drawer.resetAllConfirm'))) onResetAll();
           }}
         >
-          Tüm ilerlemeyi sıfırla
+          {t('drawer.resetAll')}
         </button>
       </aside>
     </>

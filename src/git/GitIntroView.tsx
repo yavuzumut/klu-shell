@@ -1,11 +1,15 @@
+import { useMemo } from 'react';
 import { GIT_INTRO_DATA } from './intro';
+import { useI18n } from '../i18n/I18nProvider';
+import { localizeGitIntro } from '../i18n/localize';
 
 interface GitIntroViewProps {
   onStartLesson?: (lessonId: string) => void;
 }
 
 export function GitIntroView({ onStartLesson }: GitIntroViewProps) {
-  const data = GIT_INTRO_DATA;
+  const { lang, t } = useI18n();
+  const data = useMemo(() => localizeGitIntro(GIT_INTRO_DATA, lang), [lang]);
 
   return (
     <div className="git-page">
@@ -14,7 +18,7 @@ export function GitIntroView({ onStartLesson }: GitIntroViewProps) {
         <h1>{data.header.title}</h1>
         <p className="git-subtitle">{data.header.subtitle}</p>
         <div className="git-notice">
-          ℹ️ <strong>Bilgilendirme:</strong> Git 1, Git 2, Git 3 ve Git 4 uygulamalı dersleri hazır! Aşağıdaki kartlardan dilediğin konuya tıklayıp terminalde doğrudan pratik yapmaya başlayabilirsin.
+          {t('gitIntro.notice')}
         </div>
       </header>
 
@@ -26,7 +30,7 @@ export function GitIntroView({ onStartLesson }: GitIntroViewProps) {
         <div className="git-example-box">
           <div className="git-example-icon">📁</div>
           <div className="git-example-content">
-            <span className="git-example-label">Tanıdık bir senaryo:</span>
+            <span className="git-example-label">{t('gitIntro.familiarScenario')}</span>
             <code className="git-bad-example">{data.whatIsGit.exampleFilename}</code>
             <p className="git-example-desc">{data.whatIsGit.description}</p>
           </div>
@@ -72,7 +76,7 @@ export function GitIntroView({ onStartLesson }: GitIntroViewProps) {
         <h2>{data.threeAreas.title}</h2>
         <p className="git-section-sub">{data.threeAreas.subtitle}</p>
 
-        <div className="git-pipeline-diagram" aria-label="Git üç temel alan şeması">
+        <div className="git-pipeline-diagram" aria-label={t('gitIntro.threeAreasAria')}>
           {data.threeAreas.areas.map((area, index) => (
             <div key={area.id} className="git-pipeline-step">
               <div className="git-stage-card">
@@ -98,7 +102,7 @@ export function GitIntroView({ onStartLesson }: GitIntroViewProps) {
         <div className="git-prereq-card">
           <p>{data.prerequisites.body}</p>
           <div className="git-prereq-tip">
-            💡 <strong>İpucu:</strong> {data.prerequisites.tip}
+            💡 <strong>{t('gitIntro.tipLabel')}</strong> {data.prerequisites.tip}
           </div>
         </div>
       </section>
@@ -116,13 +120,13 @@ export function GitIntroView({ onStartLesson }: GitIntroViewProps) {
                   <span className="git-curriculum-level">{topic.level}</span>
                   <h3>{topic.title}</h3>
                 </div>
-                {topic.status === 'Hazır' && topic.firstLessonId ? (
+                {(topic.status === 'Hazır' || (topic.status as string) === 'Ready') && topic.firstLessonId ? (
                   <button
                     type="button"
                     className="btn btn-primary btn-small git-start-btn"
                     onClick={() => topic.firstLessonId && onStartLesson?.(topic.firstLessonId)}
                   >
-                    Derse Başla →
+                    {t('gitIntro.startLessonBtn')}
                   </button>
                 ) : (
                   <span className="git-status-badge">{topic.status}</span>

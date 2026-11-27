@@ -1,5 +1,6 @@
 import type { CommandDefinition } from '../shell/types';
 import { color } from './_utils';
+import { getCommandDoc } from '../../i18n/localize';
 
 export const man: CommandDefinition = {
   name: 'man',
@@ -21,8 +22,11 @@ AÇIKLAMA
     man ls
     man man`,
   run(args, ctx) {
+    const lang = ctx.shell.lang;
     if (!args.length) {
-      ctx.stderr("What manual page do you want?\nFor example, try 'man man'.\n");
+      ctx.stderr(lang === 'en'
+        ? "What manual page do you want?\nFor example, try 'man man'.\n"
+        : "Hangi kılavuz sayfasını görmek istiyorsun?\nÖrneğin 'man man' komutunu dene.\n");
       return 1;
     }
     let exitCode = 0;
@@ -33,9 +37,11 @@ AÇIKLAMA
         exitCode = 16;
         return;
       }
+      const doc = getCommandDoc(def, lang);
       const title = `${name.toUpperCase()}(1)`;
-      const header = `${title}${'KLU Kılavuzu'.padStart(30)}${title.padStart(20)}`;
-      let body = def.manPage;
+      const headerTitle = lang === 'en' ? 'KLU Manual' : 'KLU Kılavuzu';
+      const header = `${title}${headerTitle.padStart(30)}${title.padStart(20)}`;
+      let body = doc.manPage ?? def.manPage;
       if (ctx.isTTY) {
         // Bold section headings (lines in ALL CAPS)
         body = body.replace(/^([A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜ ()]+)$/gm, (m) => color.bold(m));

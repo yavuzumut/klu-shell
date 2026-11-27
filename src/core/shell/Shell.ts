@@ -4,6 +4,9 @@ import { parse, ParseError, type Pipeline, type SimpleCommand } from './parser';
 import type { CommandRegistry } from './registry';
 import type { CommandContext, CommandRecord, OutputChunk, ShellProcess } from './types';
 
+import type { Lang } from '../../i18n/types';
+import { getCommandDoc } from '../../i18n/localize';
+
 export interface ShellOptions {
   fs: VirtualFS;
   registry: CommandRegistry;
@@ -11,6 +14,7 @@ export interface ShellOptions {
   hostname?: string;
   history?: string[];
   processes?: ShellProcess[];
+  lang?: Lang;
 }
 
 type Listener = (record: CommandRecord) => void;
@@ -28,6 +32,7 @@ export class Shell {
   history: string[];
   lastExitCode = 0;
   processes: ShellProcess[];
+  lang: Lang;
   private listeners = new Set<Listener>();
 
   constructor(options: ShellOptions) {
@@ -38,6 +43,7 @@ export class Shell {
     this.history = options.history ? [...options.history] : [];
     this.env = this.defaultEnv();
     this.processes = options.processes ? [...options.processes] : this.defaultProcesses();
+    this.lang = options.lang ?? 'tr';
   }
 
   defaultProcesses(): ShellProcess[] {
@@ -351,7 +357,12 @@ export class Shell {
       return 127;
     }
     if (args.includes('--help')) {
-      ctx.stdout(`Kullanım: ${def.usage}\n${def.summary}\n\nAyrıntılı bilgi için: man ${def.name}\n`);
+      const doc = getCommandDoc(def, this.lang);
+      if (this.lang === 'en') {
+        ctx.stdout(`Usage: ${doc.usage}\n${doc.summary}\n\nFor more information: man ${def.name}\n`);
+      } else {
+        ctx.stdout(`Kullanım: ${doc.usage}\n${doc.summary}\n\nAyrıntılı bilgi için: man ${def.name}\n`);
+      }
       return 0;
     }
     try {

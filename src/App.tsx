@@ -19,6 +19,8 @@ import { evaluateCommand } from './lessons/validator';
 import { taskKey, useProgress } from './state/useProgress';
 import { TerminalView, type TerminalHandle } from './terminal/TerminalView';
 import { useTheme } from './themes/useTheme';
+import { useI18n } from './i18n/I18nProvider';
+import { localizeLesson, localizeLevels } from './i18n/localize';
 
 const FIRST_LESSON_ID = ALL_LESSONS[0].id;
 const MAIN_CURRICULUM_LESSONS = LEVELS.filter((l) => l.id !== 'level-0').flatMap((l) => l.lessons);
@@ -34,24 +36,35 @@ const plain = (md: string) => md.replace(/`([^`]+)`/g, '$1').replace(/\*\*([^*]+
 type MobileTab = 'lesson' | 'terminal' | 'tree';
 
 export default function App() {
+  const { lang, t } = useI18n();
   const { progress, actions } = useProgress(FIRST_LESSON_ID);
-  const found = findLesson(progress.currentLessonId) ?? findLesson(FIRST_LESSON_ID)!;
-  const { level, lesson, index: lessonIndex } = found;
+
+  const rawFound = findLesson(progress.currentLessonId) ?? findLesson(FIRST_LESSON_ID)!;
+  const level = useMemo(() => localizeLevels([rawFound.level], lang)[0], [rawFound.level, lang]);
+  const lesson = useMemo(() => localizeLesson(rawFound.lesson, lang), [rawFound.lesson, lang]);
+  const lessonIndex = rawFound.index;
+
+  const localizedLevels = useMemo(() => localizeLevels(LEVELS, lang), [lang]);
 
   const [mode, setMode] = useState<AppMode>('lessons');
   const [showFileTree, setShowFileTree] = useState(false);
 
   // Shell for Lessons
   const [lessonShell] = useState(() => {
-    const fs = createLessonFS(lesson);
-    return new Shell({ fs, registry: createRegistry(), cwd: lessonStartCwd(lesson, fs), history: progress.history });
+    const fs = createLessonFS(rawFound.lesson);
+    return new Shell({ fs, registry: createRegistry(), cwd: lessonStartCwd(rawFound.lesson, fs), history: progress.history, lang });
   });
 
   // Dedicated Shell for Sandbox (Serbest Mod)
   const [sandboxShell] = useState(() => {
     const fs = createDefaultFS();
-    return new Shell({ fs, registry: createRegistry(), cwd: fs.home });
+    return new Shell({ fs, registry: createRegistry(), cwd: fs.home, lang });
   });
+
+  useEffect(() => {
+    lessonShell.lang = lang;
+    sandboxShell.lang = lang;
+  }, [lessonShell, sandboxShell, lang]);
 
   const activeShell = mode === 'lessons' ? lessonShell : sandboxShell;
 
@@ -75,11 +88,7 @@ export default function App() {
       if (newMode === 'sandbox') {
         setShowFileTree(true);
         setMobileTab('terminal');
-        const banner =
-          ansi.cyan('── KLU Serbest Mod (Sandbox) ──') +
-          '\n' +
-          ansi.dim('İstediğin komutları dene. Yan panelde dosya ağacını canlı izleyebilirsin.') +
-          '\n';
+        const banner = ansi.cyan(t('terminal.bannerSandbox'));
         requestAnimationFrame(() => {
           termRef.current?.resetScreen(banner);
         });
@@ -87,16 +96,13 @@ export default function App() {
         setShowFileTree(false);
         setMobileTab('lesson');
         const banner =
-          ansi.cyan(`── Ders ${lessonIndex + 1}: ${lesson.title} ──`) +
-          '\n' +
-          ansi.dim("Komutları yazıp Enter'a bas. Yardım için: help") +
-          '\n';
+          ansi.cyan(t('terminal.bannerLesson', { num: lessonIndex + 1, title: lesson.title, hint: ansi.dim(t('terminal.bannerLessonHintDefault')) }));
         requestAnimationFrame(() => {
           termRef.current?.resetScreen(banner);
         });
       }
     },
-    [lesson.title, lessonIndex],
+    [lesson.title, lessonIndex, t],
   );
 
   // Latest values for the (stable) terminal callback.
@@ -122,20 +128,21 @@ export default function App() {
   const startLessonSession = useCallback(
     async (message?: string) => {
       const sessionId = ++sessionIdRef.current;
-      const fs = createLessonFS(lesson);
-      lessonShell.reset(fs, lessonStartCwd(lesson, fs), lesson.setup?.processes);
-      await runLessonSetupCommands(lessonShell, lesson, () => sessionIdRef.current !== sessionId);
+      const fs = createLessonFS(rawFound.lesson);
+      lessonShell.reset(fs, lessonStartCwd(rawFound.lesson, fs), rawFound.lesson.setup?.processes);
+      await runLessonSetupCommands(lessonShell, rawFound.lesson, () => sessionIdRef.current !== sessionId);
       if (sessionIdRef.current !== sessionId) return;
       setCurrentCwd(lessonShell.cwd);
       recordsRef.current = [];
       const banner =
-        ansi.cyan(`── Ders ${lessonIndex + 1}: ${lesson.title} ──`) +
-        '\n' +
-        ansi.dim(message ?? "Komutları yazıp Enter'a bas. Yardım için: help") +
-        '\n';
+        ansi.cyan(t('terminal.bannerLesson', {
+          num: lessonIndex + 1,
+          title: lesson.title,
+          hint: ansi.dim(message ?? t('terminal.bannerLessonHintDefault')),
+        }));
       termRef.current?.resetScreen(banner);
     },
-    [lesson, lessonIndex, lessonShell],
+    [rawFound.lesson, lesson.title, lessonIndex, lessonShell, t],
   );
 
   // Reset sandbox FS
@@ -143,13 +150,9 @@ export default function App() {
     const fs = createDefaultFS();
     sandboxShell.reset(fs, fs.home);
     setCurrentCwd(sandboxShell.cwd);
-    const banner =
-      ansi.cyan('── KLU Serbest Mod ──') +
-      '\n' +
-      ansi.dim('Sanal dosya sistemi sıfırlandı.') +
-      '\n';
+    const banner = ansi.cyan(t('terminal.bannerSandboxReset'));
     termRef.current?.resetScreen(banner);
-  }, [sandboxShell]);
+  }, [sandboxShell, t]);
 
   // New lesson → fresh file system (if in lesson mode).
   useEffect(() => {
@@ -192,8 +195,8 @@ export default function App() {
         };
         const task = cur.tasks.find((t) => t.id === taskId)!;
         const remaining = cur.tasks.filter((t) => t.id !== taskId && !completed.includes(t.id));
-        let msg = ansi.green(`✔ Görev tamamlandı: ${plain(task.description)}`);
-        if (!remaining.length) msg += '\n' + ansi.green('🎉 Ders tamamlandı! Sol paneldeki "Sonraki →" ile devam et.');
+        let msg = ansi.green(t('terminal.taskCompleted', { desc: plain(task.description) }));
+        if (!remaining.length) msg += '\n' + ansi.green(t('terminal.lessonCompleted'));
         return msg;
       }
 
@@ -206,12 +209,12 @@ export default function App() {
           progress: { ...p, attempts: { ...p.attempts, [taskKey(cur.id, task.id)]: attempts } },
         };
         const hint = task.hints[Math.min(attempts, task.hints.length) - 1];
-        let msg = hint ? ansi.yellow(`💡 İpucu: ${plain(hint)}`) : '';
-        if (attempts >= 3) msg += (msg ? '\n' : '') + ansi.dim('Takıldın mı? Sol panelde "Çözümü göster" düğmesi açıldı.');
+        let msg = hint ? ansi.yellow(t('terminal.hintPrefix', { hint: plain(hint) })) : '';
+        if (attempts >= 3) msg += (msg ? '\n' : '') + ansi.dim(t('terminal.stuckHint'));
         return msg || undefined;
       }
     },
-    [actions, activeShell],
+    [actions, activeShell, t],
   );
 
   const goToLesson = useCallback(
@@ -349,15 +352,15 @@ export default function App() {
     setCongratsSeen(false);
     setCongratsOpen(false);
     activeShell.history.length = 0;
-    startLessonSession('İlerleme sıfırlandı.');
-  }, [actions, activeShell.history, startLessonSession]);
+    startLessonSession(t('terminal.sessionResetProgress'));
+  }, [actions, activeShell.history, startLessonSession, t]);
 
   const showLevel0Banner = mode === 'lessons' && !hasCompletedAnyLevel0 && !bannerDismissed;
 
   return (
     <div className={`app app-mode-${mode} ${showFileTree ? 'with-tree' : ''}`}>
       <Header
-        levels={LEVELS}
+        levels={localizedLevels}
         currentLevel={level}
         currentLessonId={lesson.id}
         isLessonDone={isLessonDone}
@@ -371,18 +374,20 @@ export default function App() {
       />
 
       {showLevel0Banner && (
-        <div className="level0-callout-bar" role="region" aria-label="Yeni başlayanlar için rehber">
+        <div className="level0-callout-bar" role="region" aria-label={t('level0Banner.regionAria')}>
           <button
             className="level0-callout-btn"
             onClick={() => goToLesson(level0FirstLessonId)}
           >
-            🌱 Yeni misin? <strong>'Başlamadan Önce'</strong> ile başla →
+            {t('level0Banner.cta', { bold: '' }).split('{bold}')[0]}
+            <strong>{t('level0Banner.boldText')}</strong>
+            {t('level0Banner.cta', { bold: '' }).split('{bold}')[1] ?? ' →'}
           </button>
           <button
             className="level0-callout-close"
             onClick={handleDismissBanner}
-            aria-label="Kapat"
-            title="Kapat"
+            aria-label={t('level0Banner.close')}
+            title={t('level0Banner.close')}
           >
             ✕
           </button>
@@ -423,7 +428,7 @@ export default function App() {
             {mode === 'lessons' ? (
               <>
                 <button className={mobileTab === 'lesson' ? 'active' : ''} onClick={() => setMobileTab('lesson')}>
-                  📖 Ders
+                  {t('mobileTabs.lesson')}
                 </button>
                 <button
                   className={mobileTab === 'terminal' ? 'active' : ''}
@@ -432,11 +437,11 @@ export default function App() {
                     requestAnimationFrame(() => termRef.current?.focus());
                   }}
                 >
-                  ⌨️ Terminal
+                  {t('mobileTabs.terminal')}
                 </button>
                 {showFileTree && (
                   <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
-                    🗂️ Ağaç
+                    {t('mobileTabs.tree')}
                   </button>
                 )}
               </>
@@ -449,11 +454,11 @@ export default function App() {
                     requestAnimationFrame(() => termRef.current?.focus());
                   }}
                 >
-                  ⌨️ Terminal
+                  {t('mobileTabs.terminal')}
                 </button>
                 {showFileTree && (
                   <button className={mobileTab === 'tree' ? 'active' : ''} onClick={() => setMobileTab('tree')}>
-                    🗂️ Dosya Ağacı
+                    {t('mobileTabs.fileTree')}
                   </button>
                 )}
               </>
@@ -478,9 +483,9 @@ export default function App() {
                   onInsertCommand={insertCommand}
                   onRestartLesson={() => {
                     actions.restartLesson(lesson.id);
-                    startLessonSession('Ders baştan başladı.');
+                    startLessonSession(t('terminal.sessionRestartLesson'));
                   }}
-                  onResetTerminal={() => startLessonSession('Dosya sistemi dersin başlangıç haline döndürüldü.')}
+                  onResetTerminal={() => startLessonSession(t('terminal.sessionResetFs'))}
                 />
               </section>
             )}
@@ -491,16 +496,16 @@ export default function App() {
                   <i /> <i /> <i />
                 </span>
                 <span className="terminal-title">
-                  {mode === 'sandbox' ? 'kullanici@klu: bash (serbest mod)' : 'kullanici@klu: bash'}
+                  {mode === 'sandbox' ? t('terminal.titleSandbox') : t('terminal.titleLessons')}
                 </span>
                 {mode === 'sandbox' && (
                   <div className="sandbox-chrome-actions">
                     <button
                       className="btn btn-small btn-ghost"
                       onClick={resetSandboxFS}
-                      title="Sanal dosya sistemini sıfırla"
+                      title={t('terminal.resetFsTitle')}
                     >
-                      ↺ Sıfırla
+                      {t('terminal.resetFsBtn')}
                     </button>
                   </div>
                 )}
@@ -511,7 +516,7 @@ export default function App() {
                 onExecuted={onExecuted}
                 terminalTheme={themeControls.terminalTheme}
               />
-              <div className="key-bar" aria-label="Terminal tuşları">
+              <div className="key-bar" aria-label={t('terminal.keysAria')}>
                 {mobileKeys.map((k) => (
                   <button
                     key={k.label}
@@ -530,7 +535,7 @@ export default function App() {
                   fs={activeShell.fs}
                   cwd={currentCwd}
                   onSelectPath={handleTreeSelectPath}
-                  onResetFs={mode === 'sandbox' ? resetSandboxFS : () => startLessonSession('Dosya sistemi sıfırlandı.')}
+                  onResetFs={mode === 'sandbox' ? resetSandboxFS : () => startLessonSession(t('terminal.sessionFsReset'))}
                 />
               </aside>
             )}
@@ -540,7 +545,7 @@ export default function App() {
 
       <LessonDrawer
         open={drawerOpen}
-        levels={LEVELS}
+        levels={localizedLevels}
         currentLessonId={lesson.id}
         isLessonDone={isLessonDone}
         onSelectLesson={goToLesson}

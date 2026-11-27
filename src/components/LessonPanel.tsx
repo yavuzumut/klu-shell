@@ -52,7 +52,10 @@ interface Props {
   onResetTerminal(): void;
 }
 
+import { useI18n } from '../i18n/I18nProvider';
+
 export function LessonPanel(props: Props) {
+  const { t } = useI18n();
   const { level, lesson, lessonIndex, completedTaskIds } = props;
   const html = useMemo(() => md(lesson.content), [lesson.content]);
   const done = new Set(completedTaskIds);
@@ -62,7 +65,7 @@ export function LessonPanel(props: Props) {
   return (
     <div className="lesson">
       <div className="lesson-meta">
-        Seviye {level.number} · Ders {lessonIndex + 1}/{level.lessons.length}
+        {t('lessonPanel.meta', { level: level.number, current: lessonIndex + 1, total: level.lessons.length })}
       </div>
       <h1 className="lesson-title">{lesson.title}</h1>
 
@@ -70,11 +73,11 @@ export function LessonPanel(props: Props) {
 
       {lesson.examples.length > 0 && (
         <section className="examples">
-          <h2>Örnek komutlar</h2>
-          <p className="muted small">Tıkla, terminale yazılsın; çalıştırmak için Enter'a bas.</p>
+          <h2>{t('lessonPanel.examplesTitle')}</h2>
+          <p className="muted small">{t('lessonPanel.examplesSubtitle')}</p>
           <div className="chips">
             {lesson.examples.map((ex) => (
-              <button key={ex} className="chip" onClick={() => props.onInsertCommand(ex)} title="Terminale yaz">
+              <button key={ex} className="chip" onClick={() => props.onInsertCommand(ex)} title={t('lessonPanel.examplesChipTitle')}>
                 <span className="chip-prompt">$</span> {ex}
               </button>
             ))}
@@ -84,7 +87,7 @@ export function LessonPanel(props: Props) {
 
       <section className="tasks">
         <h2>
-          Görevler{' '}
+          {t('lessonPanel.tasksTitle')}{' '}
           <span className="muted small">
             ({completedTaskIds.filter((id) => lesson.tasks.some((t) => t.id === id)).length}/{lesson.tasks.length})
           </span>
@@ -110,25 +113,25 @@ export function LessonPanel(props: Props) {
                 {isActive && attempts > 0 && (
                   <div className="task-feedback">
                     <div className="attempts">
-                      Yanlış deneme: <strong>{attempts}</strong>
+                      {t('lessonPanel.wrongAttempt')} <strong>{attempts}</strong>
                     </div>
                     {visibleHints.map((h, idx) => (
                       <div key={idx} className="hint">
-                        <span className="hint-label">💡 İpucu {idx + 1}</span>
+                        <span className="hint-label">{t('lessonPanel.hintLabel', { num: idx + 1 })}</span>
                         <span dangerouslySetInnerHTML={{ __html: mdInline(h) }} />
                       </div>
                     ))}
                     {canReveal && !revealed && (
                       <button className="btn btn-warn" onClick={() => props.onRevealSolution(task.id)}>
-                        Çözümü göster
+                        {t('lessonPanel.showSolution')}
                       </button>
                     )}
                     {revealed && (
                       <div className="solution">
-                        <span className="hint-label">Çözüm</span>
+                        <span className="hint-label">{t('lessonPanel.solutionLabel')}</span>
                         <code>{task.solution}</code>
                         <button className="btn btn-small" onClick={() => props.onInsertCommand(task.solution)}>
-                          Terminale yaz
+                          {t('lessonPanel.typeToTerminal')}
                         </button>
                       </div>
                     )}
@@ -141,29 +144,29 @@ export function LessonPanel(props: Props) {
 
         {lessonDone && (
           <div className="lesson-complete">
-            <strong>🎉 Ders tamamlandı!</strong>
-            <span>{props.hasNext ? 'Sonraki derse geçmeye hazırsın.' : 'Tüm dersleri tamamladın. Harika iş!'}</span>
+            <strong>{t('lessonPanel.lessonCompleteTitle')}</strong>
+            <span>{props.hasNext ? t('lessonPanel.lessonCompleteNext') : t('lessonPanel.lessonCompleteAll')}</span>
           </div>
         )}
       </section>
 
       <div className="lesson-actions">
-        <button className="btn btn-ghost" onClick={props.onResetTerminal} title="Dosya sistemini dersin başlangıç haline döndür">
-          ↺ Terminali sıfırla
+        <button className="btn btn-ghost" onClick={props.onResetTerminal} title={t('lessonPanel.resetTerminalTitle')}>
+          {t('lessonPanel.resetTerminal')}
         </button>
         {completedTaskIds.length > 0 && (
           <button className="btn btn-ghost" onClick={props.onRestartLesson}>
-            Dersi tekrarla
+            {t('lessonPanel.restartLesson')}
           </button>
         )}
       </div>
 
       <nav className="lesson-nav">
         <button className="btn" onClick={props.onPrev} disabled={!props.hasPrev}>
-          ← Önceki
+          {t('lessonPanel.prev')}
         </button>
         <button className={`btn ${lessonDone ? 'btn-primary' : ''}`} onClick={props.onNext} disabled={!props.hasNext}>
-          Sonraki →
+          {t('lessonPanel.next')}
         </button>
       </nav>
     </div>

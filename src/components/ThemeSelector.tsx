@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { THEME_LIST, type ThemeId } from '../themes/themes';
 import type { UseThemeReturn } from '../themes/useTheme';
+import { useI18n } from '../i18n/I18nProvider';
 
 const ACCENT_PRESETS = [
   '#7ee787', // Yeşil (Terminal)
@@ -21,6 +22,7 @@ export function ThemeSelector({
   setAccent,
   resetAccent,
 }: UseThemeReturn) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -54,45 +56,45 @@ export function ThemeSelector({
       <button
         className={`theme-toggle-btn ${open ? 'active' : ''}`}
         onClick={() => setOpen((prev) => !prev)}
-        aria-label="Tema ve görünüm ayarları"
-        title="Tema ve Renkler"
+        aria-label={t('theme.ariaLabel')}
+        title={t('theme.title')}
         aria-expanded={open}
       >
         <span className="theme-color-dot" style={{ background: currentAccent }} />
         <span className="theme-btn-icon" aria-hidden="true">🎨</span>
-        <span className="theme-btn-label">{theme.name}</span>
+        <span className="theme-btn-label">{t(`theme.names.${themeId}`)}</span>
       </button>
 
       {open && (
-        <div className="theme-dropdown" role="dialog" aria-label="Tema Seçimi">
+        <div className="theme-dropdown" role="dialog" aria-label={t('theme.dialogAria')}>
           <div className="theme-dropdown-header">
-            <h3>Görünüm & Tema</h3>
+            <h3>{t('theme.headerTitle')}</h3>
           </div>
 
           <div className="theme-section">
-            <span className="theme-section-title">Tema Seç</span>
+            <span className="theme-section-title">{t('theme.selectSection')}</span>
             <div className="theme-options-grid">
-              {THEME_LIST.map((t) => {
-                const isActive = t.id === themeId;
+              {THEME_LIST.map((th) => {
+                const isActive = th.id === themeId;
                 return (
                   <button
-                    key={t.id}
+                    key={th.id}
                     className={`theme-option-btn ${isActive ? 'selected' : ''}`}
-                    onClick={() => selectTheme(t.id as ThemeId)}
+                    onClick={() => selectTheme(th.id as ThemeId)}
                   >
                     <span
                       className="theme-preview-box"
                       style={{
-                        background: t.cssVars['--bg-term'],
-                        borderColor: t.cssVars['--border-strong'],
+                        background: th.cssVars['--bg-term'],
+                        borderColor: th.cssVars['--border-strong'],
                       }}
                     >
                       <span
                         className="theme-preview-dot"
-                        style={{ background: t.defaultAccent }}
+                        style={{ background: th.defaultAccent }}
                       />
                     </span>
-                    <span className="theme-option-name">{t.name}</span>
+                    <span className="theme-option-name">{t(`theme.names.${th.id}`)}</span>
                     {isActive && <span className="theme-check">✓</span>}
                   </button>
                 );
@@ -102,14 +104,14 @@ export function ThemeSelector({
 
           <div className="theme-section">
             <div className="theme-accent-header">
-              <span className="theme-section-title">Vurgu Rengi</span>
+              <span className="theme-section-title">{t('theme.accentSection')}</span>
               {isCustomized && (
                 <button
                   className="btn btn-small btn-ghost reset-accent-btn"
                   onClick={resetAccent}
-                  title="Temanın orijinal rengine dön"
+                  title={t('theme.resetAccentTitle')}
                 >
-                  ↺ Varsayılana dön
+                  {t('theme.resetAccent')}
                 </button>
               )}
             </div>
@@ -123,12 +125,12 @@ export function ThemeSelector({
                     style={{ background: color }}
                     onClick={() => setAccent(color)}
                     title={color}
-                    aria-label={`Vurgu rengi ${color}`}
+                    aria-label={t('theme.colorAria', { color })}
                   />
                 ))}
               </div>
 
-              <label className="accent-custom-label" title="Özel renk seç">
+              <label className="accent-custom-label" title={t('theme.customColorTitle')}>
                 <input
                   type="color"
                   value={currentAccent}

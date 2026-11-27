@@ -4,8 +4,12 @@ import '@xterm/xterm/css/xterm.css';
 import './styles.css';
 import App from './App';
 
+import { LanguageProvider } from './i18n/I18nProvider';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </StrictMode>,
 );

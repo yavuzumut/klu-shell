@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { EXPLORE_TOOLS, type ExploreCategory, type ExploreTool } from './data';
+import { useI18n } from '../i18n/I18nProvider';
+import { localizeExplore } from '../i18n/localize';
 
 function CopySnippet({ text }: { text: string }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -15,8 +18,8 @@ function CopySnippet({ text }: { text: string }) {
   };
 
   return (
-    <button className="copy-btn" onClick={handleCopy} title="Panoya kopyala">
-      {copied ? '✓ Kopyalandı' : '📋 Kopyala'}
+    <button className="copy-btn" onClick={handleCopy} title={t('explore.copyTitle')}>
+      {copied ? t('explore.copiedBtn') : t('explore.copyBtn')}
     </button>
   );
 }
@@ -27,16 +30,8 @@ const DISTROS: { id: 'debian' | 'fedora' | 'arch'; label: string }[] = [
   { id: 'arch', label: 'Arch' },
 ];
 
-const CATEGORIES: { id: 'all' | ExploreCategory; label: string }[] = [
-  { id: 'all', label: 'Hepsi' },
-  { id: 'media', label: 'Medya ve İnternet' },
-  { id: 'system', label: 'Sistem' },
-  { id: 'files', label: 'Dosya ve Arama' },
-  { id: 'productivity', label: 'Verimlilik' },
-  { id: 'fun', label: 'Eğlence' },
-];
-
 function ExploreCard({ tool }: { tool: ExploreTool }) {
+  const { t } = useI18n();
   const [activeDistro, setActiveDistro] = useState<'debian' | 'fedora' | 'arch'>('debian');
   const currentInstallCmd = tool.install[activeDistro];
 
@@ -47,7 +42,7 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
           <h2>{tool.name}</h2>
           {tool.replaces && (
             <span className="explore-replaces">
-              Alternatifi: <code>{tool.replaces}</code>
+              {t('explore.replaces')} <code>{tool.replaces}</code>
             </span>
           )}
         </div>
@@ -58,7 +53,7 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
             rel="noopener noreferrer"
             className="explore-source-link"
           >
-            Kaynak ↗
+            {t('explore.source')}
           </a>
         )}
       </div>
@@ -74,11 +69,11 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
 
       <div className="explore-section">
         <div className="section-head">
-          <span className="section-title">Kurulum:</span>
+          <span className="section-title">{t('explore.install')}</span>
           {currentInstallCmd && <CopySnippet text={currentInstallCmd} />}
         </div>
 
-        <div className="distro-tabs" role="tablist" aria-label="Dağıtım seçimi">
+        <div className="distro-tabs" role="tablist" aria-label={t('explore.distroTabsAria')}>
           {DISTROS.map((d) => (
             <button
               key={d.id}
@@ -99,13 +94,13 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
           </pre>
         ) : (
           <div className="distro-empty">
-            Bu dağıtım için doğrulanmış komut yok; dağıtımının paket deposunda ara.
+            {t('explore.distroEmpty')}
           </div>
         )}
 
         {tool.install.note && (
           <div className="explore-note">
-            <span className="explore-note-label">💡 Not:</span> {tool.install.note}
+            <span className="explore-note-label">{t('explore.noteLabel')}</span> {tool.install.note}
           </div>
         )}
       </div>
@@ -113,7 +108,7 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
       {tool.tips && tool.tips.length > 0 && (
         <div className="explore-section">
           <div className="section-head">
-            <span className="section-title">İpuçları:</span>
+            <span className="section-title">{t('explore.tipsTitle')}</span>
           </div>
           <ul className="explore-tips-list">
             {tool.tips.map((tip, idx) => (
@@ -125,7 +120,7 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
 
       <div className="explore-section">
         <div className="section-head">
-          <span className="section-title">Örnek Kullanım:</span>
+          <span className="section-title">{t('explore.exampleUsage')}</span>
           <CopySnippet text={tool.exampleCommand} />
         </div>
         <pre className="code-block">
@@ -135,7 +130,7 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
 
       <div className="explore-section">
         <div className="section-head">
-          <span className="section-title">Örnek Çıktı:</span>
+          <span className="section-title">{t('explore.exampleOutput')}</span>
         </div>
         <pre className="code-block terminal-output">
           <code>{tool.exampleOutput}</code>
@@ -146,27 +141,42 @@ function ExploreCard({ tool }: { tool: ExploreTool }) {
 }
 
 export function ExploreView() {
+  const { lang, t } = useI18n();
   const [activeCategory, setActiveCategory] = useState<'all' | ExploreCategory>('all');
+
+  const categories: { id: 'all' | ExploreCategory; label: string }[] = useMemo(
+    () => [
+      { id: 'all', label: t('explore.categories.all') },
+      { id: 'media', label: t('explore.categories.media') },
+      { id: 'system', label: t('explore.categories.system') },
+      { id: 'files', label: t('explore.categories.files') },
+      { id: 'productivity', label: t('explore.categories.productivity') },
+      { id: 'fun', label: t('explore.categories.fun') },
+    ],
+    [t],
+  );
+
+  const localizedTools = useMemo(() => localizeExplore(EXPLORE_TOOLS, lang), [lang]);
 
   const filteredTools =
     activeCategory === 'all'
-      ? EXPLORE_TOOLS
-      : EXPLORE_TOOLS.filter((tool) => tool.category === activeCategory);
+      ? localizedTools
+      : localizedTools.filter((tool) => tool.category === activeCategory);
 
   return (
     <div className="explore-page">
       <div className="explore-header">
-        <h1>🚀 Meraklısına: Güçlü Linux Araçları</h1>
+        <h1>{t('explore.title')}</h1>
         <div className="explore-notice">
-          ⚠️ <strong>Önemli Bilgilendirme:</strong> Aşağıda listelenen araçlar gerçek bir Linux dağıtımında (Ubuntu, Debian, Fedora, Arch vb.) terminal üzerinden kullanabileceğin popüler harici araçlardır. <strong>Bu araçlar tarayıcıdaki simüle KLU terminalinde çalışmaz.</strong> Kendi Linux bilgisayarında veya bir sanal makinede deneyebilirsin.
+          {t('explore.notice')}
         </div>
         <div className="explore-output-notice">
-          ℹ️ <em>Örnek çıktılar sürüme göre farklı olabilir.</em>
+          {t('explore.outputNotice')}
         </div>
       </div>
 
-      <div className="explore-filter-bar" role="group" aria-label="Kategori Filtresi">
-        {CATEGORIES.map((cat) => (
+      <div className="explore-filter-bar" role="group" aria-label={t('explore.filterAria')}>
+        {categories.map((cat) => (
           <button
             key={cat.id}
             type="button"

@@ -2963,3 +2963,72 @@ pre {
   }
 }
 
+/* ==========================================================================
+   Language Switcher
+   ========================================================================== */
+
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-term);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px 4px;
+  gap: 2px;
+  user-select: none;
+}
+
+.lang-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.lang-btn:hover {
+  color: var(--text);
+  background: var(--bg-elev-2);
+}
+
+.lang-btn.active {
+  color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 1px var(--accent-dim);
+}
+
+.lang-divider {
+  color: var(--border);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+/* Hide header lang switcher on mobile (< 768px) to prevent bar crowding */
+@media (max-width: 767.98px) {
+  .header-lang-switcher {
+    display: none !important;
+  }
+}
+
+/* Drawer mobile language row */
+.drawer-lang-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px;
+  margin-bottom: 4px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.drawer-lang-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}

@@ -322,7 +322,7 @@ describe('clear / help / man / history', () => {
     const { run } = createTestShell();
     expect((await run('man ls')).out).toContain('ls - dizin içeriğini listeler');
     expect((await run('man yok')).err).toBe('No manual entry for yok\n');
-    expect((await run('man')).err).toContain('What manual page do you want?');
+    expect((await run('man')).err).toContain('Hangi kılavuz sayfasını görmek istiyorsun?');
   });
 
   it('history lists previous commands', async () => {

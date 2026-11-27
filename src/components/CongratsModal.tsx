@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useI18n } from '../i18n/I18nProvider';
 
 interface CongratsModalProps {
   open: boolean;
@@ -8,6 +9,8 @@ interface CongratsModalProps {
 }
 
 export function CongratsModal({ open, onClose, onGoToSandbox, onGoToGit }: CongratsModalProps) {
+  const { t } = useI18n();
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -37,8 +40,8 @@ export function CongratsModal({ open, onClose, onGoToSandbox, onGoToGit }: Congr
           type="button"
           className="congrats-modal-close-icon"
           onClick={onClose}
-          aria-label="Kapat"
-          title="Kapat"
+          aria-label={t('congrats.closeAria')}
+          title={t('congrats.closeAria')}
         >
           ✕
         </button>
@@ -55,22 +58,19 @@ export function CongratsModal({ open, onClose, onGoToSandbox, onGoToGit }: Congr
         </div>
 
         <h2 id="congrats-modal-title" className="congrats-modal-title">
-          🎉 Tebrikler! Terminal Yolculuğunu Tamamladın
+          {t('congrats.title')}
         </h2>
 
         <p className="congrats-modal-desc">
-          Seviye 1, 2 ve 3'teki tüm dersleri başarıyla bitirdin! Artık gerçek bir Linux terminalinde komutları güvenle koşturabilir, dosya ve süreçleri yönetebilir ve üretkenliğini dilediğin gibi katlayabilirsin.
+          {t('congrats.desc')}
         </p>
 
         <blockquote className="congrats-modal-quote">
           <p className="congrats-quote-text-tr">
-            &ldquo;Zekâ, iş yapmaktan kaçınıp yine de işi halletme yeteneğidir.&rdquo;
-          </p>
-          <p className="congrats-quote-text-en">
-            (Intelligence is the ability to avoid doing work, yet getting the work done.)
+            &ldquo;{t('congrats.quote')}&rdquo;
           </p>
           <footer className="congrats-quote-author">
-            &mdash; <strong>Linus Torvalds</strong>, Linux'un yaratıcısı
+            &mdash; <strong>Linus Torvalds</strong>, {t('congrats.quoteAuthor')}
           </footer>
         </blockquote>
 
@@ -80,21 +80,21 @@ export function CongratsModal({ open, onClose, onGoToSandbox, onGoToGit }: Congr
             className="btn btn-primary congrats-action-btn"
             onClick={onGoToSandbox}
           >
-            💻 Serbest Mod'da Takıl
+            {t('congrats.btnSandbox')}
           </button>
           <button
             type="button"
             className="btn congrats-action-btn"
             onClick={onGoToGit}
           >
-            🌿 Git'e Göz At
+            {t('congrats.btnGit')}
           </button>
           <button
             type="button"
             className="btn btn-ghost congrats-action-btn"
             onClick={onClose}
           >
-            Kapat
+            {t('congrats.btnClose')}
           </button>
         </div>
       </div>
