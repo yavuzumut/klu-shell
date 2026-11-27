@@ -14,7 +14,7 @@ import { EN_COMMAND_DOCS } from './content/en/commandDocs';
 import { EN_EXPLORE_TOOLS } from './content/en/explore';
 import { EN_GIT_INTRO } from './content/en/gitIntro';
 import { EN_GIT_LESSONS, EN_GIT_LEVELS } from './content/en/gitLessons';
-import { EN_LESSONS, EN_LEVELS } from './content/en/lessons';
+import { EN_LESSONS, EN_LEVELS, EN_LESSON_EXAMPLES, EN_LESSON_EXTENSIONS } from './content/en/lessons';
 
 const keys = (items: string[]) => [...items].sort();
 
@@ -32,6 +32,8 @@ describe('English translation catalog coverage', () => {
     expect(keys(Object.keys(EN_LEVELS))).toEqual(keys(LEVELS.map((level) => level.id)));
     expect(keys(Object.keys(EN_GIT_LESSONS))).toEqual(keys(GIT_ALL_LESSONS.map((lesson) => lesson.id)));
     expect(keys(Object.keys(EN_GIT_LEVELS))).toEqual(keys(GIT_LEVELS.map((level) => level.id)));
+    expect(keys(Object.keys(EN_LESSON_EXAMPLES))).toEqual(keys(ALL_LESSONS.map((lesson) => lesson.id)));
+    expect(keys(Object.keys(EN_LESSON_EXTENSIONS))).toEqual(keys(ALL_LESSONS.map((lesson) => lesson.id)));
 
     for (const [lessons, catalog] of [[ALL_LESSONS, EN_LESSONS], [GIT_ALL_LESSONS, EN_GIT_LESSONS]] as const) {
       for (const lesson of lessons) {
@@ -41,6 +43,9 @@ describe('English translation catalog coverage', () => {
         expect(translated?.content, `${lesson.id} content`).toBeTruthy();
         expect(translated?.title).not.toBe(lesson.title);
         expect(translated?.summary).not.toBe(lesson.summary);
+        expect(keys(Object.keys(translated?.tasks ?? {})), `${lesson.id} task IDs`).toEqual(
+          keys(lesson.tasks.map((task) => task.id)),
+        );
         const localized = localizeLesson(lesson, 'en', lessons === GIT_ALL_LESSONS);
         for (const task of lesson.tasks) {
           const localizedTask = localized.tasks.find((item) => item.id === task.id);
@@ -49,10 +54,19 @@ describe('English translation catalog coverage', () => {
           expect(localizedTask?.hints.length, `${lesson.id}/${task.id} hints`).toBeGreaterThan(0);
           expect(localizedTask?.hints.every(Boolean), `${lesson.id}/${task.id} hint text`).toBe(true);
           expect(localizedTask?.hints).not.toEqual(task.hints);
-          expect(localizedTask?.solution).toBe(task.solution);
+          const translatedSolution = catalog[lesson.id]?.tasks?.[task.id]?.solution;
+          expect(localizedTask?.solution).toBe(translatedSolution ?? task.solution);
           expect(localizedTask?.check).toEqual(task.check);
         }
         expect(localized.tasks.map((task) => task.id)).toEqual(lesson.tasks.map((task) => task.id));
+        if (lessons === ALL_LESSONS) {
+          expect(EN_LESSON_EXAMPLES[lesson.id], `${lesson.id} examples`).toHaveLength(lesson.examples.length);
+          expect(localized.examples).toHaveLength(lesson.examples.length);
+          expect(localized.examples?.every(Boolean), `${lesson.id} example text`).toBe(true);
+        } else {
+          expect(translated.examples, `${lesson.id} examples`).toHaveLength(lesson.examples.length);
+          expect(localized.examples).toEqual(translated.examples);
+        }
       }
     }
   });

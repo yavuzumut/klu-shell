@@ -5,6 +5,8 @@ import { CHEAT_SHEET_DATA } from '../cheatsheet/data';
 import { EXPLORE_TOOLS } from '../explore/data';
 import { GIT_INTRO_DATA } from '../git/intro';
 import { ALL_COMMANDS } from '../core/commands';
+import { EN_GIT_LESSONS } from './content/en/gitLessons';
+import { EN_LESSONS } from './content/en/lessons';
 import {
   localizeLesson,
   localizeLevels,
@@ -32,7 +34,7 @@ describe('i18n content localization & coverage', () => {
 
       for (let i = 0; i < lesson.tasks.length; i++) {
         expect(en.tasks[i].id).toBe(lesson.tasks[i].id);
-        expect(en.tasks[i].solution).toBe(lesson.tasks[i].solution);
+        expect(en.tasks[i].solution).toBe(EN_LESSONS[lesson.id]?.tasks?.[lesson.tasks[i].id]?.solution ?? lesson.tasks[i].solution);
         expect(en.tasks[i].check).toEqual(lesson.tasks[i].check);
         expect(en.tasks[i].description).not.toBe('');
       }
@@ -49,7 +51,7 @@ describe('i18n content localization & coverage', () => {
 
       for (let i = 0; i < lesson.tasks.length; i++) {
         expect(en.tasks[i].id).toBe(lesson.tasks[i].id);
-        expect(en.tasks[i].solution).toBe(lesson.tasks[i].solution);
+        expect(en.tasks[i].solution).toBe(EN_GIT_LESSONS[lesson.id]?.tasks?.[lesson.tasks[i].id]?.solution ?? lesson.tasks[i].solution);
         expect(en.tasks[i].check).toEqual(lesson.tasks[i].check);
       }
     }

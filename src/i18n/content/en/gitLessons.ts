@@ -23,6 +23,7 @@ export const EN_GIT_LESSONS: Record<string, LessonTranslation> = {
   'git-1-init': {
     title: 'Initialize Your First Repository',
     summary: 'Initialize a new repository with git init and check working tree state with git status',
+    examples: ['git status', 'git init', 'touch notlar.txt'],
     content: `
 ### What is a Git Repository?
 
@@ -68,6 +69,7 @@ Initialized empty Git repository in /home/kullanici/.git/
   'git-1-commit': {
     title: 'Staging and First Commit',
     summary: 'Stage files with git add and record your first permanent snapshot with git commit',
+    examples: ['git status', 'git add notlar.txt', 'git commit -m "First commit"', 'git log --oneline'],
     content: `
 ### Staging Area (The Index)
 
@@ -89,8 +91,8 @@ Once your files are staged, you bundle them into a permanent snapshot with \`git
 Every commit requires a clear, meaningful message describing the change:
 
 \`\`\`
-$ git commit -m "Ilk notlar dosyasi eklendi"
-[main (root-commit) 4a8b1c2] Ilk notlar dosyasi eklendi
+$ git commit -m "Add first notes file"
+[main (root-commit) 4a8b1c2] Add first notes file
  1 file changed, 0 insertions(+), 0 deletions(-)
 \`\`\`
 
@@ -102,7 +104,7 @@ Run \`git log\` to review your repository's commit history:
 
 \`\`\`
 $ git log --oneline
-4a8b1c2 Ilk notlar dosyasi eklendi
+4a8b1c2 Add first notes file
 \`\`\`
 `,
     tasks: {
@@ -111,8 +113,9 @@ $ git log --oneline
         hints: ['Type `git add notlar.txt` and check `git status` to confirm it is staged.'],
       },
       'git-commit': {
-        description: 'Commit staged changes with message `"Ilk commit"` using `git commit -m "Ilk commit"`.',
-        hints: ['Run `git commit -m "Ilk commit"`. Make sure the message matches.'],
+        description: 'Commit the staged file with the message `First commit`.',
+        hints: ['Run `git commit -m "First commit"`.', 'The check requires a successful commit command; the message can be written in English.'],
+        solution: 'git commit -m "First commit"',
       },
       'git-log': {
         description: 'Run `git log` to see your recorded commit in the history.',
@@ -123,6 +126,7 @@ $ git log --oneline
   'git-2-diff': {
     title: 'Inspecting Changes: git diff',
     summary: 'View modified lines before staging, and compare staged changes against HEAD',
+    examples: ['git status', 'git diff', 'git add metin.txt', 'git diff --staged'],
     content: `
 ### Seeing Differences: \`git diff\`
 
@@ -133,13 +137,12 @@ When you edit files in your working directory, \`git diff\` displays exactly wha
 
 \`\`\`
 $ git diff
-diff --git a/kod.py b/kod.py
---- a/kod.py
-+++ b/kod.py
-@@ -1,3 +1,4 @@
- def selam():
--    print("Merhaba")
-+    print("Merhaba Dunya")
+diff --git a/metin.txt b/metin.txt
+--- a/metin.txt
++++ b/metin.txt
+@@ -1,1 +1,2 @@
+ Temel proje metni.
++Bu satır sonradan eklendi.
 \`\`\`
 
 ---
@@ -148,15 +151,17 @@ diff --git a/kod.py b/kod.py
 
 - \`git diff\`: Compares **Working Directory** against **Staging Area**.
 - \`git diff --staged\`: Compares **Staging Area** against the **last commit (HEAD)**.
+
+These two comparisons answer different questions. Review the unstaged diff before adding files; after staging, review the staged diff to confirm exactly what the next commit will contain. Neither command changes the worktree or the index.
 `,
     tasks: {
       'git-diff-working': {
-        description: 'Run `git diff` to view unstaged modifications made to `kod.py`.',
+        description: 'Run `git diff` to view the unstaged modification in the prepared `metin.txt` fixture.',
         hints: ['Type `git diff` to inspect line modifications.'],
       },
       'git-add-change': {
-        description: 'Stage `kod.py` with `git add kod.py`.',
-        hints: ['Run `git add kod.py`.'],
+        description: 'Stage the prepared `metin.txt` fixture with `git add metin.txt`.',
+        hints: ['Run `git add metin.txt`.'],
       },
       'git-diff-staged': {
         description: 'Inspect the staged changes using `git diff --staged`.',
@@ -167,10 +172,11 @@ diff --git a/kod.py b/kod.py
   'git-2-restore': {
     title: 'Undoing Changes and .gitignore',
     summary: 'Unstage files, discard unstaged modifications, and ignore sensitive/temp files with .gitignore',
+    examples: ['git status', 'git restore --staged app.js', 'git restore app.js', 'echo "*.log" > .gitignore'],
     content: `
 ### Discarding Mistakes: \`git restore\`
 
-Made a mistake or staged something by accident?
+Made a mistake or staged something by accident? Git can help you recover, but a restore operation is not a universal undo button: restoring a file in the worktree discards its uncommitted edits.
 
 - \`git restore --staged <file>\`: Removes file from staging area, leaving your working directory untouched.
 - \`git restore <file>\`: Discards modifications in the working directory, restoring file to the last committed state.
@@ -180,18 +186,20 @@ Made a mistake or staged something by accident?
 ### Ignoring Files: \`.gitignore\`
 
 Files like temporary logs, compiled binaries, or sensitive environment files should not be tracked by Git.
-Add file patterns to a \`.gitignore\` file in the root of your repository:
+Add file patterns to a \`.gitignore\` file in the root of your repository. Git applies these rules to untracked files; adding a pattern does not remove a file that is already tracked. Review the status after creating the file to confirm which entries it affects:
 
 \`\`\`
 *.log
 node_modules/
 .env
 \`\`\`
+
+Use narrow patterns when possible. A broad ignore rule can hide a file you intended to commit, so check \`git status --ignored\` if you are unsure whether a path is being ignored.
 `,
     tasks: {
       'git-restore-staged': {
-        description: 'Remove `notlar.txt` from the staging area using `git restore --staged notlar.txt`.',
-        hints: ['Run `git restore --staged notlar.txt`.'],
+        description: 'Remove the staged `app.js` file from the index with `git restore --staged app.js`.',
+        hints: ['Run `git restore --staged app.js`.'],
       },
       'git-restore-worktree': {
         description: 'Discard uncommitted changes in `kod.py` using `git restore kod.py`.',
@@ -206,6 +214,7 @@ node_modules/
   'git-3-branch': {
     title: 'Branches & Switching: branch and switch',
     summary: 'Create independent lines of development, switch branches, and delete merged branches',
+    examples: ['git branch', 'git switch -c ozellik', 'git switch main'],
     content: `
 ### What is a Branch?
 
@@ -216,6 +225,8 @@ A branch in Git is simply a movable pointer to a commit. By creating a branch, y
 - \`git switch <name>\`: Switch to an existing branch.
 - \`git switch -c <name>\`: Create and switch to a new branch in one command.
 - \`git branch -d <name>\`: Delete a merged branch.
+
+Branches are lightweight names that move as new commits are made; they are not separate copies of the whole project. Switching changes which branch HEAD points to and updates the working tree to that branch's snapshot. Commit or save work before switching if you are unsure how Git will carry local edits across.
 `,
     tasks: {
       'git-branch-list': {
@@ -235,6 +246,7 @@ A branch in Git is simply a movable pointer to a commit. By creating a branch, y
   'git-3-merge': {
     title: 'Merging Branches: git merge',
     summary: 'Integrate feature branch changes into main using fast-forward or 3-way merge',
+    examples: ['git branch', 'git merge yeni-ozellik', 'git log --oneline'],
     content: `
 ### Merging Branches
 
@@ -242,41 +254,54 @@ Once work on a branch is finished and verified, you merge it into your target br
 
 \`\`\`
 $ git switch main
-$ git merge ozellik
+$ git merge yeni-ozellik
 Updating 4a8b1c2..8e2d3f1
 Fast-forward
- kod.py | 2 +-
+ buton.js | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 \`\`\`
 
 - **Fast-forward:** If main hasn't diverged, Git simply moves the pointer forward.
 - **3-way merge:** If both branches have new commits, Git creates a dedicated merge commit.
+
+If both branches changed the same lines in incompatible ways, Git can pause the merge and mark a conflict for the user to resolve. Review the marked file, choose the intended content, stage the resolution, and finish the merge. This lesson's prepared history is arranged for a fast-forward, so its merge command completes without a conflict.
 `,
     tasks: {
-      'git-merge-feature': {
-        description: 'Merge the `ozellik` branch into `main` using `git merge ozellik`.',
-        hints: ['Make sure you are on `main`, then run `git merge ozellik`.'],
+      'git-branch-check': {
+        description: 'Run `git branch` to confirm the feature branch exists before merging.',
+        hints: ['Type `git branch`.', 'The list should contain `yeni-ozellik`.'],
       },
-      'git-delete-branch': {
-        description: 'Delete the merged `ozellik` branch with `git branch -d ozellik`.',
-        hints: ['Type `git branch -d ozellik`.'],
+      'git-merge-feature': {
+        description: 'Merge `yeni-ozellik` into the current branch with `git merge yeni-ozellik`.',
+        hints: ['Confirm you are on `main`, then run `git merge yeni-ozellik`.'],
+      },
+      'git-log-verify': {
+        description: 'Review the one-line history after the merge with `git log --oneline`.',
+        hints: ['Run `git log --oneline` and inspect the newest commit.'],
       },
     },
   },
   'git-4-push': {
-    title: 'Cloning Remote Repositories: git clone',
-    summary: 'Clone an existing remote repository and inspect origin configuration',
+    title: 'Connect and Push to a Remote Repository',
+    summary: 'Configure a remote, inspect its URL, and push commits with an upstream branch',
+    examples: ['git remote add origin https://github.com/klu/notlar.git', 'git remote -v', 'git push -u origin main'],
     content: `
-### What is a Remote Repository?
+### Add a Remote
 
-A remote repository is a Git repository hosted on a server or another directory.
-With \`git clone\`, Git copies the complete project history, creates a working directory, and automatically sets up a connection named \`origin\`.
+A remote configuration associates a short name, usually \`origin\`, with a repository URL. \`git remote -v\` displays the configured fetch and push URLs. Adding a URL only stores configuration; it does not itself send data over the network.
 
 \`\`\`
-$ git clone /srv/git/proje.git
-Cloning into 'proje'...
-done.
+$ git remote add origin https://github.com/klu/notlar.git
+$ git remote -v
+origin  https://github.com/klu/notlar.git (fetch)
+origin  https://github.com/klu/notlar.git (push)
 \`\`\`
+
+### Push Local Commits
+
+\`git push -u origin main\` sends the local branch's commits to the configured remote. The \`-u\` option (also called \`--set-upstream\`) records the upstream branch, so later pushes can usually use the shorter \`git push\` command.
+
+> **KLU simulation:** KLU does not connect to GitHub or the public internet. Remote URLs in these lessons resolve to local virtual repositories under \`/var/klu-remotes\`; push and pull operate only on that simulated filesystem.
 `,
     tasks: {
       'git-remote-add': {
@@ -294,18 +319,30 @@ done.
     },
   },
   'git-4-clone-pull': {
-    title: 'Syncing Changes: push and pull',
-    summary: 'Push local commits to remote with git push, and pull remote updates with git pull',
+    title: 'Clone a Project and Pull Updates',
+    summary: 'Clone a simulated remote, enter the project, pull a new commit, and inspect history',
+    examples: ['git clone https://github.com/klu/notlar.git', 'cd ekip-projesi', 'git pull', 'git log --oneline'],
     content: `
-### Synchronizing with Remote: \`git push\` and \`git pull\`
+### Clone a Repository
 
-- \`git push\`: Uploads your local commits to the remote repository.
-- \`git pull\`: Fetches commits from the remote repository and immediately integrates them into your current branch.
+\`git clone <url>\` creates a working directory, copies the available files and history, and configures the remote as \`origin\`. In this exercise the URL maps to a local virtual remote; it is not fetched from GitHub.
 
 \`\`\`
-$ git push origin main
-$ git pull origin main
+$ git clone https://github.com/klu/notlar.git
+$ cd notlar
+$ git remote -v
 \`\`\`
+
+### Pull New Changes
+
+After another contributor pushes a commit, \`git pull\` fetches it from the configured remote and integrates it into the current branch. Inspect the working tree and history afterward to confirm what arrived.
+
+\`\`\`
+$ git pull
+$ git log --oneline
+\`\`\`
+
+> **KLU simulation:** The URL is a lesson fixture. Clone and pull use local repositories under \`/var/klu-remotes\`, without a real GitHub or internet connection.
 `,
     tasks: {
       'git-clone-notlar': {

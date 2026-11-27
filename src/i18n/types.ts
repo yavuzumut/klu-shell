@@ -14,12 +14,14 @@ export type DeepPartial<T> = {
 export interface TaskTranslation {
   description?: string;
   hints?: string[];
+  solution?: string;
 }
 
 export interface LessonTranslation {
   title?: string;
   summary?: string;
   content?: string;
+  examples?: string[];
   tasks?: Record<string, TaskTranslation>;
 }
 

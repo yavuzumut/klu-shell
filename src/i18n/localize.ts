@@ -5,7 +5,7 @@ import type { ExploreTool } from '../explore/data';
 import type { GitIntroData } from '../git/intro';
 import type { CommandDefinition } from '../core/shell/types';
 
-import { EN_LESSONS, EN_LEVELS } from './content/en/lessons';
+import { EN_LESSONS, EN_LEVELS, EN_LESSON_EXTENSIONS, EN_LESSON_EXAMPLES } from './content/en/lessons';
 import { EN_GIT_LESSONS, EN_GIT_LEVELS } from './content/en/gitLessons';
 import { EN_CHEAT_SHEET } from './content/en/cheatsheet';
 import { EN_EXPLORE_TOOLS } from './content/en/explore';
@@ -34,6 +34,7 @@ export function localizeLesson(lesson: Lesson, lang: Lang, isGit = false): Lesso
       ...task,
       description: taskOverlay.description ?? task.description,
       hints: taskOverlay.hints ?? task.hints,
+      solution: taskOverlay.solution ?? task.solution,
     };
   });
 
@@ -41,7 +42,8 @@ export function localizeLesson(lesson: Lesson, lang: Lang, isGit = false): Lesso
     ...lesson,
     title: overlay?.title ?? lesson.title,
     summary: overlay?.summary ?? lesson.summary,
-    content: overlay?.content ?? lesson.content,
+    content: [overlay?.content, EN_LESSON_EXTENSIONS[lesson.id]].filter(Boolean).join('\n\n') || lesson.content,
+    examples: overlay?.examples ?? EN_LESSON_EXAMPLES[lesson.id] ?? lesson.examples,
     tasks: localizedTasks,
   };
 }
