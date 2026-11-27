@@ -2,6 +2,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { useMemo } from 'react';
 import type { Lesson, Level } from '../lessons/types';
+import type { FeedbackKey } from '../lessons/validator';
 
 marked.setOptions({ gfm: true, breaks: false });
 
@@ -40,6 +41,7 @@ interface Props {
   lesson: Lesson;
   lessonIndex: number;
   completedTaskIds: string[];
+  feedbackKey?: FeedbackKey;
   attemptsFor: (taskId: string) => number;
   isRevealed: (taskId: string) => boolean;
   hasPrev: boolean;
@@ -60,6 +62,7 @@ export function LessonPanel(props: Props) {
   const html = useMemo(() => md(lesson.content), [lesson.content]);
   const done = new Set(completedTaskIds);
   const activeTask = lesson.tasks.find((t) => !done.has(t.id)) ?? null;
+  const feedbackText = props.feedbackKey ? t(`terminal.feedback.${props.feedbackKey}`) : '';
   const lessonDone = !activeTask;
 
   return (
@@ -112,6 +115,7 @@ export function LessonPanel(props: Props) {
 
                 {isActive && attempts > 0 && (
                   <div className="task-feedback">
+                    {feedbackText && <div className="hint feedback-guidance">{feedbackText}</div>}
                     <div className="attempts">
                       {t('lessonPanel.wrongAttempt')} <strong>{attempts}</strong>
                     </div>

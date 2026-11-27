@@ -20,7 +20,7 @@ describe('i18n translate function', () => {
 
     expect(
       translate('en', 'header.progressText', { done: 3, total: 10, percent: 30 }),
-    ).toBe('3/10 lessons · %30');
+    ).toBe('3/10 lessons · 30%');
   });
 
   it('falls back to Turkish when key is missing in English', () => {

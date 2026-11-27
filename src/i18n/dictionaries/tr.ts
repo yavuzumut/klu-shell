@@ -54,6 +54,12 @@ export const tr = {
     lessonCompleted: '🎉 Ders tamamlandı! Sol paneldeki "Sonraki →" ile devam et.',
     hintPrefix: '💡 İpucu: {hint}',
     stuckHint: 'Takıldın mı? Sol panelde "Çözümü göster" düğmesi açıldı.',
+    feedback: {
+      wrongDirectory: 'Yanlış dizindesin. Görevin istediği dizine geçip yeniden dene.',
+      missingFlag: 'Komut doğru görünüyor, ancak beklenen seçenek eksik.',
+      commandNotFound: 'Komut bulunamadı. Komut adını ve yazımını kontrol et.',
+      syntaxError: 'Komut sözdiziminde hata var. Tırnakları ve yönlendirmeyi kontrol et.',
+    },
     sessionResetProgress: 'İlerleme sıfırlandı.',
     sessionRestartLesson: 'Ders baştan başladı.',
     sessionResetFs: 'Dosya sistemi dersin başlangıç haline döndürüldü.',
@@ -98,6 +104,9 @@ export const tr = {
     badgeComingSoon: 'Yakında',
     resetAll: 'Tüm ilerlemeyi sıfırla',
     resetAllConfirm: 'Tüm ilerlemen silinecek. Emin misin?',
+    exportProgress: 'Dışa aktar',
+    importProgress: 'İçe aktar',
+    importInvalid: 'Bu ilerleme dosyası geçersiz veya desteklenmiyor.',
     language: 'Dil / Language',
   },
   congrats: {

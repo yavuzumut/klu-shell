@@ -2,6 +2,7 @@ import type { Lang } from './types';
 import type { TaskCheck } from '../lessons/types';
 
 const FIXTURE_NAME_PAIRS = [
+  ['kod.py', 'code.py'],
   ['kullanici', 'user'],
   ['Belgeler', 'Documents'],
   ['belgeler', 'documents'],
@@ -105,6 +106,16 @@ const TEXT_PAIRS = [
   ['Kullanici', 'User'],
 ] as const;
 
+const LOCALIZED_FIXTURE_SCRIPTS = new Map([
+  ['echo "KLU Linux dunyasina hos geldin!"', 'echo "Welcome to the KLU Linux world!"'],
+  ['echo "Yedek aliniyor..."', 'echo "Creating a backup..."'],
+]);
+
+/** Localize known lesson fixture commands while keeping shell logic free of lesson content. */
+export function localizeScriptCommand(command: string, lang: Lang): string {
+  return lang === 'en' ? (LOCALIZED_FIXTURE_SCRIPTS.get(command) ?? command) : command;
+}
+
 const TR_ERROR_PAIRS = [
   ['syntax error near unexpected token', 'beklenmeyen belirteç yakınında sözdizimi hatası'],
   ['bad substitution', 'geçersiz değişken genişletme'],
@@ -157,10 +168,24 @@ const TR_ERROR_PAIRS = [
   [' for more information.', ' hakkında daha fazla bilgi için.'],
 ] as const;
 
-function replacePairs(value: string, pairs: readonly (readonly [string, string])[]): string {
+type PairList = readonly (readonly [string, string])[];
+type CompiledPairs = { translations: Map<string, string>; pattern: RegExp };
+
+function compilePairs(pairs: PairList): CompiledPairs {
   const sortedPairs = [...pairs].sort(([a], [b]) => b.length - a.length);
   const translations = new Map(sortedPairs);
   const pattern = new RegExp(sortedPairs.map(([from]) => from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
+  return { translations, pattern };
+}
+
+const REPLACEMENTS = new Map<PairList, CompiledPairs>([
+  [FIXTURE_NAME_PAIRS, compilePairs(FIXTURE_NAME_PAIRS)],
+  [TEXT_PAIRS, compilePairs(TEXT_PAIRS)],
+  [TR_ERROR_PAIRS, compilePairs(TR_ERROR_PAIRS)],
+]);
+
+function replacePairs(value: string, pairs: PairList): string {
+  const { translations, pattern } = REPLACEMENTS.get(pairs)!;
   return value.replace(pattern, (match, offset: number, source: string) => {
     if (pairs === FIXTURE_NAME_PAIRS) {
       const before = source[offset - 1] ?? '';

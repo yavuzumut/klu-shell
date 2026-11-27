@@ -112,6 +112,38 @@ describe('validator', () => {
     expect(await run('pwd')).toMatchObject({ activeTaskId: null });
   });
 
+  it('provides deterministic feedback for common task mistakes', async () => {
+    const flaggedTask: Lesson['tasks'][number] = {
+      id: 'log', description: '', hints: [], solution: 'git log --oneline',
+      check: { type: 'commandUsed', command: 'git', args: ['log'], flags: ['oneline'] },
+    };
+    const fs = createDefaultFS();
+    const shell = new Shell({ fs, registry: createRegistry() });
+    const missingFlag = await shell.execute('git log');
+    expect(evaluateCommand({ ...lesson, tasks: [flaggedTask] }, [], {
+      fs, cwd: shell.cwd, last: missingFlag, records: [missingFlag], shell,
+    })).toMatchObject({ wrongAttempt: true, feedbackKey: 'missingFlag' });
+
+    const missingCommand = await shell.execute('not-a-command');
+    expect(evaluateCommand({ ...lesson, tasks: [flaggedTask] }, [], {
+      fs, cwd: shell.cwd, last: missingCommand, records: [missingCommand], shell,
+    })).toMatchObject({ wrongAttempt: true, feedbackKey: 'commandNotFound' });
+
+    const cwdTask: Lesson['tasks'][number] = {
+      id: 'cwd', description: '', hints: [], solution: 'cd /tmp',
+      check: { type: 'cwdIs', path: '/tmp' },
+    };
+    const wrongDirectory = await shell.execute('cd /');
+    expect(evaluateCommand({ ...lesson, tasks: [cwdTask] }, [], {
+      fs, cwd: shell.cwd, last: wrongDirectory, records: [wrongDirectory], shell,
+    })).toMatchObject({ wrongAttempt: true, feedbackKey: 'wrongDirectory' });
+
+    const syntaxError = await shell.execute('echo "unterminated');
+    expect(evaluateCommand({ ...lesson, tasks: [flaggedTask] }, [], {
+      fs, cwd: shell.cwd, last: syntaxError, records: [syntaxError], shell,
+    })).toMatchObject({ wrongAttempt: true, feedbackKey: 'syntaxError' });
+  });
+
   it('evaluates composite checks', async () => {
     const fs = createDefaultFS();
     const shell = new Shell({ fs, registry: createRegistry() });

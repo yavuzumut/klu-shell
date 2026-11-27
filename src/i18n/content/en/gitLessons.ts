@@ -118,8 +118,8 @@ $ git log --oneline
         solution: 'git commit -m "First commit"',
       },
       'git-log': {
-        description: 'Run `git log` to see your recorded commit in the history.',
-        hints: ['Type `git log` or `git log --oneline`.'],
+        description: 'Run `git log --oneline` to see your recorded commit in a compact history.',
+        hints: ['Type `git log --oneline` to display the commit history one line at a time.'],
       },
     },
   },
@@ -141,8 +141,8 @@ diff --git a/metin.txt b/metin.txt
 --- a/metin.txt
 +++ b/metin.txt
 @@ -1,1 +1,2 @@
- Temel proje metni.
-+Bu satır sonradan eklendi.
+ Base project text.
++This line was added later.
 \`\`\`
 
 ---
@@ -194,7 +194,7 @@ node_modules/
 .env
 \`\`\`
 
-Use narrow patterns when possible. A broad ignore rule can hide a file you intended to commit, so check \`git status --ignored\` if you are unsure whether a path is being ignored.
+Use narrow patterns when possible. A broad ignore rule can hide a file you intended to commit, so check \`git status\` after adding a pattern to review the repository status.
 `,
     tasks: {
       'git-restore-staged': {
@@ -202,8 +202,8 @@ Use narrow patterns when possible. A broad ignore rule can hide a file you inten
         hints: ['Run `git restore --staged app.js`.'],
       },
       'git-restore-worktree': {
-        description: 'Discard uncommitted changes in `kod.py` using `git restore kod.py`.',
-        hints: ['Type `git restore kod.py` to revert it back to the last commit.'],
+        description: 'Discard uncommitted changes in `code.py` using `git restore code.py`.',
+        hints: ['Type `git restore code.py` to revert it back to the last commit.'],
       },
       'create-gitignore': {
         description: 'Create a `.gitignore` file and append `*.log` into it, or verify untracked logs are ignored.',
@@ -235,7 +235,7 @@ Branches are lightweight names that move as new commits are made; they are not s
       },
       'git-switch-create': {
         description: 'Create and switch to a new branch named `ozellik` using `git switch -c ozellik`.',
-        hints: ['Run `git switch -c ozellik` or `git checkout -b ozellik`.'],
+        hints: ['Run `git switch -c ozellik` to create and switch to the branch.'],
       },
       'git-switch-back': {
         description: 'Switch back to the `main` branch with `git switch main`.',
@@ -281,6 +281,30 @@ If both branches changed the same lines in incompatible ways, Git can pause the 
       'git-log-verify': {
         description: 'Review the one-line history after the merge with `git log --oneline`.',
         hints: ['Run `git log --oneline` and inspect the newest commit.'],
+      },
+    },
+  },
+  'git-3-merge-conflict': {
+    title: 'Resolving a Merge Conflict',
+    summary: 'Resolve conflicting edits to the same line in two branches and commit the result.',
+    examples: ['git status', 'git merge feature', 'echo "Final greeting" > greeting.txt', 'git add greeting.txt', 'git commit -m "Resolve greeting conflict"'],
+    content: `
+When two branches change the same line in different ways, Git cannot choose safely and reports a **merge conflict**. Inspect the conflict, rewrite the file with its intended final content, then stage the resolution and complete the merge commit.
+
+In this exercise, \`main\` and \`feature\` changed the same line in \`greeting.txt\`. The merge will stop and leave conflict markers in the file. Replace the file's contents with \`echo ... > greeting.txt\`.
+`,
+    tasks: {
+      'git-conflict-merge': {
+        description: 'Run `git merge feature` to merge the feature branch and see the file conflict.',
+        hints: ['Use `git status` to confirm you are on `main`.', 'Run `git merge feature`; Git will report conflict markers in the file.'],
+      },
+      'git-conflict-resolve-stage': {
+        description: 'Resolve `greeting.txt` with `echo "Final greeting" > greeting.txt`, then stage it with `git add greeting.txt`.',
+        hints: ['Redirection `>` replaces the file contents; put the final text in quotes.', 'Edit the file and run `git add greeting.txt` on the same command line.'],
+      },
+      'git-conflict-commit': {
+        description: 'Finish the conflict resolution with `git commit -m "Resolve greeting conflict"`.',
+        hints: ['The resolution is staged; now create the merge commit.', 'Run `git commit -m "Resolve greeting conflict"`.'],
       },
     },
   },

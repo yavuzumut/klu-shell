@@ -9,8 +9,23 @@ import { diffLines } from './git/diff';
 import { GitIgnore } from './git/gitignore';
 import { sanitizeHtml } from '../components/LessonPanel';
 import { marked } from 'marked';
+import { LineEditor } from '../terminal/LineEditor';
 
 describe('Security & Resilience Audit Tests', () => {
+  it('renders raw control characters in filenames as harmless visible text', async () => {
+    const name = '\x1b[31mspoof\x1b[0m';
+    const { fs, run } = createTestShell();
+    fs.writeFile(`/home/kullanici/${name}`, 'safe');
+    const result = await run('ls -1');
+    expect(result.out).toContain('\\x1b[31mspoof\\x1b[0m');
+    expect(result.out).not.toContain('\x1b[31m');
+    const { shell } = createTestShell();
+    const writes: string[] = [];
+    const editor = new LineEditor({ cols: 80, write: (text) => writes.push(text) }, shell);
+    editor.setValue(`cat ${name}`);
+    expect(writes.join('')).toContain('\\x1b[31mspoof\\x1b[0m');
+    expect(writes.join('')).not.toContain('\x1b[31m');
+  });
   describe('1. Theme Manager & Prototype Crash Prevention', () => {
     it('falls back to default theme when localStorage contains Object prototype property names', () => {
       const mockStorage = {

@@ -130,5 +130,67 @@ Yan dalda geliştirdiğin yeni özellik tamamlandı ve sorunsuz çalışıyor. �
         },
       ],
     },
+    {
+      id: 'git-3-merge-conflict',
+      title: 'Birleştirme Çakışmasını Çözme',
+      summary: 'Aynı dosyanın iki dalda değişen satırlarını birleştir ve conflict çözümünü commit et.',
+      content: `
+İki dal aynı dosyanın aynı satırını farklı biçimde değiştirdiğinde Git güvenli bir seçim yapamaz ve **merge conflict (birleştirme çakışması)** bildirir. Çakışmalı dosyadaki işaretleri incele, dosyanın son halini yeniden yaz, ardından çözümü stage edip merge commit'ini tamamla.
+
+Bu alıştırmada \`main\` ve \`feature\` dalları \`greeting.txt\` dosyasının aynı satırını değiştirdi. Birleştirme durduğunda dosya işaretleyiciler içerecek. \`echo ... > greeting.txt\` ile dosyanın tamamını istediğin son metinle değiştir.
+`,
+      examples: ['git status', 'git merge feature', 'echo "Final greeting" > greeting.txt', 'git add greeting.txt', 'git commit -m "Resolve greeting conflict"'],
+      setup: {
+        files: { '~/greeting.txt': 'Welcome\n' },
+        setupCommands: [
+          'git init',
+          'git add .',
+          'git commit -m "Base greeting"',
+          'git switch -c feature',
+          'echo "Hello from feature" > greeting.txt',
+          'git add greeting.txt',
+          'git commit -m "Feature greeting"',
+          'git switch main',
+          'echo "Hello from main" > greeting.txt',
+          'git add greeting.txt',
+          'git commit -m "Main greeting"',
+        ],
+      },
+      tasks: [
+        {
+          id: 'git-conflict-merge',
+          description: '`git merge feature` komutuyla feature dalını birleştir ve dosyadaki çakışmayı gör.',
+          hints: ['`git status` ile `main` dalında olduğunu doğrula.', '`git merge feature` çalıştır; Git çakışma işaretleyicilerini bildirecek.'],
+          solution: 'git merge feature',
+          check: {
+            type: 'all',
+            checks: [
+              { type: 'commandUsed', command: 'git', args: ['merge', 'feature'], allowFailure: true },
+              { type: 'outputContains', text: 'CONFLICT (content)' },
+            ],
+          },
+        },
+        {
+          id: 'git-conflict-resolve-stage',
+          description: '`greeting.txt` dosyasını `echo "Final greeting" > greeting.txt` ile düzelt ve `git add greeting.txt` ile stage et.',
+          hints: ['Yönlendirme `>` dosyanın mevcut içeriğini değiştirir; son metni tırnak içine al.', 'Dosyayı düzenleyip aynı komut satırında `git add greeting.txt` çalıştır.'],
+          solution: 'echo "Final greeting" > greeting.txt && git add greeting.txt',
+          check: {
+            type: 'all',
+            checks: [
+              { type: 'fileContains', path: '~/greeting.txt', text: 'Final greeting' },
+              { type: 'commandUsed', command: 'git', args: ['add', 'greeting.txt'] },
+            ],
+          },
+        },
+        {
+          id: 'git-conflict-commit',
+          description: 'Çakışma çözümünü `git commit -m "Resolve greeting conflict"` ile tamamla.',
+          hints: ['Çözüm stage edildi; şimdi merge commitini oluştur.', '`git commit -m "Resolve greeting conflict"` komutunu çalıştır.'],
+          solution: 'git commit -m "Resolve greeting conflict"',
+          check: { type: 'commandUsed', command: 'git', args: ['commit'], allowFailure: true },
+        },
+      ],
+    },
   ],
 };

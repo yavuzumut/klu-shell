@@ -1309,6 +1309,14 @@ pre {
   width: 100%;
 }
 
+.drawer-progress-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.drawer-progress-actions .btn { flex: 1; }
+
 /* ------------------------------------------------------------------ file tree */
 .file-tree-container {
   display: flex;
@@ -3123,4 +3131,14 @@ pre {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-muted);
+}
+
+.view-loading {
+  display: grid;
+  min-height: 12rem;
+  place-items: center;
+  color: var(--text-muted);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }

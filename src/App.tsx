@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Header, type AppMode } from './components/Header';
 import { LessonDrawer } from './components/LessonDrawer';
 import { LessonPanel } from './components/LessonPanel';
 import { FileTree } from './components/FileTree';
-import { CongratsModal } from './components/CongratsModal';
-import { CheatSheetView } from './cheatsheet/CheatSheetView';
-import { ExploreView } from './explore/ExploreView';
-import { GitIntroView } from './git/GitIntroView';
-import { GitWorkspace } from './git/GitWorkspace';
+const CongratsModal = lazy(() => import('./components/CongratsModal').then((m) => ({ default: m.CongratsModal })));
+const CheatSheetView = lazy(() => import('./cheatsheet/CheatSheetView').then((m) => ({ default: m.CheatSheetView })));
+const ExploreView = lazy(() => import('./explore/ExploreView').then((m) => ({ default: m.ExploreView })));
+const GitIntroView = lazy(() => import('./git/GitIntroView').then((m) => ({ default: m.GitIntroView })));
+const GitWorkspace = lazy(() => import('./git/GitWorkspace').then((m) => ({ default: m.GitWorkspace })));
 import { createRegistry } from './core/commands';
 import { createDefaultFS } from './core/fs/defaultTree';
 import { Shell } from './core/shell/Shell';
@@ -15,7 +15,7 @@ import { quotePath } from './core/shell/parser';
 import type { CommandRecord } from './core/shell/types';
 import { ALL_LESSONS, findLesson, LEVELS } from './lessons/content';
 import { createLessonFS, lessonStartCwd, runLessonSetupCommands } from './lessons/session';
-import { evaluateCommand } from './lessons/validator';
+import { evaluateCommand, type FeedbackKey } from './lessons/validator';
 import { taskKey, useProgress } from './state/useProgress';
 import { TerminalView, type TerminalHandle } from './terminal/TerminalView';
 import { useTheme } from './themes/useTheme';
@@ -70,6 +70,7 @@ export default function App() {
   const activeShell = mode === 'lessons' ? lessonShell : sandboxShell;
 
   const [currentCwd, setCurrentCwd] = useState(activeShell.cwd);
+  const [feedbackKey, setFeedbackKey] = useState<FeedbackKey>();
   const termRef = useRef<TerminalHandle>(null);
   const recordsRef = useRef<CommandRecord[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -186,6 +187,7 @@ export default function App() {
         shell: activeShell,
         env: activeShell.env,
       });
+      setFeedbackKey(result.wrongAttempt ? result.feedbackKey : undefined);
 
       if (result.completedTaskId) {
         const taskId = result.completedTaskId;
@@ -211,6 +213,7 @@ export default function App() {
         };
         const hint = task.hints[Math.min(attempts, task.hints.length) - 1];
         let msg = hint ? ansi.yellow(t('terminal.hintPrefix', { hint: plain(hint) })) : '';
+        if (result.feedbackKey) msg += (msg ? '\n' : '') + ansi.yellow(t(`terminal.feedback.${result.feedbackKey}`));
         if (attempts >= 3) msg += (msg ? '\n' : '') + ansi.dim(t('terminal.stuckHint'));
         return msg || undefined;
       }
@@ -274,6 +277,11 @@ export default function App() {
       { label: '~', data: '~' },
       { label: '/', data: '/' },
       { label: '-', data: '-' },
+      { label: '|', data: '|' },
+      { label: '>', data: '>' },
+      { label: '<', data: '<' },
+      { label: '&&', data: '&&' },
+      { label: '"', data: '"' },
       { label: 'Ctrl+C', data: '\x03' },
     ],
     [],
@@ -395,6 +403,7 @@ export default function App() {
         </div>
       )}
 
+      <Suspense fallback={<div className="view-loading" role="status" aria-live="polite">Loading…</div>}>
       {mode === 'git' ? (
         gitView === 'workspace' ? (
           <GitWorkspace
@@ -474,6 +483,7 @@ export default function App() {
                   lesson={lesson}
                   lessonIndex={lessonIndex}
                   completedTaskIds={completedTaskIds}
+                  feedbackKey={feedbackKey}
                   attemptsFor={(taskId) => progress.attempts[taskKey(lesson.id, taskId)] ?? 0}
                   isRevealed={(taskId) => !!progress.revealed[taskKey(lesson.id, taskId)]}
                   hasPrev={!!prevLesson}
@@ -543,6 +553,7 @@ export default function App() {
           </main>
         </>
       )}
+      </Suspense>
 
       <LessonDrawer
         open={drawerOpen}
@@ -558,12 +569,12 @@ export default function App() {
         onToggleFileTree={toggleFileTree}
       />
 
-      <CongratsModal
+      <Suspense fallback={null}><CongratsModal
         open={congratsOpen}
         onClose={handleCloseCongrats}
         onGoToSandbox={handleCongratsGoToSandbox}
         onGoToGit={handleCongratsGoToGit}
-      />
+      /></Suspense>
     </div>
   );
 }

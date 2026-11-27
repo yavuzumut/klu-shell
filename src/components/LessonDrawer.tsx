@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Level } from '../lessons/types';
 import type { AppMode } from './Header';
 import { useI18n } from '../i18n/I18nProvider';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { exportProgressPayload, GIT_STORAGE_KEY, importProgressPayload, loadProgress, STORAGE_KEY } from '../state/useProgress';
 
 interface Props {
   open: boolean;
@@ -32,6 +33,29 @@ export function LessonDrawer({
   onToggleFileTree,
 }: Props) {
   const { t } = useI18n();
+  const importInput = useRef<HTMLInputElement>(null);
+
+  const exportProgress = () => {
+    const payload = exportProgressPayload(loadProgress('l0-intro', STORAGE_KEY), loadProgress('git-1-init', GIT_STORAGE_KEY));
+    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'klu-progress.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importProgress = async (file?: File) => {
+    if (!file) return;
+    const payload = importProgressPayload(await file.text());
+    if (!payload) {
+      alert(t('drawer.importInvalid'));
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload.linux));
+    localStorage.setItem(GIT_STORAGE_KEY, JSON.stringify(payload.git));
+    window.location.reload();
+  };
 
   const modeItems: { id: AppMode; label: string }[] = [
     { id: 'lessons', label: `📖 ${t('modes.lessons')}` },
@@ -124,6 +148,14 @@ export function LessonDrawer({
             </ul>
           </section>
         ))}
+        <div className="drawer-progress-actions">
+        <button className="btn btn-small btn-ghost" onClick={exportProgress}>{t('drawer.exportProgress')}</button>
+        <button className="btn btn-small btn-ghost" onClick={() => importInput.current?.click()}>{t('drawer.importProgress')}</button>
+        <input ref={importInput} type="file" accept="application/json,.json" hidden onChange={(event) => {
+          void importProgress(event.currentTarget.files?.[0]);
+          event.currentTarget.value = '';
+        }} />
+        </div>
         <button
           className="btn btn-ghost danger"
           onClick={() => {

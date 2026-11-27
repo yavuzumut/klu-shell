@@ -1,0 +1,14 @@
+{
+  "name": "KLU — Interactive Linux Terminal & Git Learning Simulator",
+  "short_name": "KLU",
+  "description": "Learn Linux and Git through interactive browser-based lessons.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    { "src": "/klu-mascot-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

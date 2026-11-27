@@ -178,6 +178,8 @@ export function isWrongAttempt(task: Task, record: CommandRecord): boolean {
   });
 }
 
+export type FeedbackKey = 'wrongDirectory' | 'missingFlag' | 'commandNotFound' | 'syntaxError';
+
 export interface TaskEvaluation {
   /** Id of the task that was completed by this command, if any. */
   completedTaskId: string | null;
@@ -185,6 +187,31 @@ export interface TaskEvaluation {
   wrongAttempt: boolean;
   /** Id of the task that was active when the command ran. */
   activeTaskId: string | null;
+  feedbackKey?: FeedbackKey;
+}
+
+function findCheck(check: TaskCheck, type: TaskCheck['type']): TaskCheck[] {
+  if (check.type === type) return [check];
+  if (check.type === 'all' || check.type === 'any') return check.checks.flatMap((item) => findCheck(item, type));
+  if (check.type === 'not') return findCheck(check.check, type);
+  return [];
+}
+
+/** Infer a short, deterministic hint from the active check and latest command. */
+export function inferFeedbackKey(task: Task, record: CommandRecord, cwd: string, fs: CheckState['fs']): TaskEvaluation['feedbackKey'] {
+  if (/command not found|komut bulunamadı|not recognized as an internal or external command/i.test(record.stderr)) return 'commandNotFound';
+  if (!record.commands.length && record.stderr) return 'syntaxError';
+
+  const cwdChecks = findCheck(task.check, 'cwdIs') as Extract<TaskCheck, { type: 'cwdIs' }>[];
+  if (cwdChecks.some((check) => cwd !== fs.resolve(check.path, '/'))) return 'wrongDirectory';
+
+  const commandChecks = findCheck(task.check, 'commandUsed') as Extract<TaskCheck, { type: 'commandUsed' }>[];
+  for (const check of commandChecks) {
+    if (!check.flags?.length) continue;
+    const matching = record.commands.find(([name, ...args]) => name === check.command && (!check.args || check.args.every((arg) => args.includes(arg))));
+    if (matching && !check.flags.every((flag) => hasFlag(matching.slice(1), flag))) return 'missingFlag';
+  }
+  return undefined;
 }
 
 /** First task of the lesson that is not completed yet. */
@@ -203,5 +230,11 @@ export function evaluateCommand(lesson: Lesson, completed: Iterable<string>, sta
   if (evaluateCheck(task.check, state)) {
     return { completedTaskId: task.id, wrongAttempt: false, activeTaskId: task.id };
   }
-  return { completedTaskId: null, wrongAttempt: isWrongAttempt(task, state.last), activeTaskId: task.id };
+  const wrongAttempt = isWrongAttempt(task, state.last);
+  return {
+    completedTaskId: null,
+    wrongAttempt,
+    activeTaskId: task.id,
+    ...(wrongAttempt ? { feedbackKey: inferFeedbackKey(task, state.last, state.cwd, state.fs) } : {}),
+  };
 }

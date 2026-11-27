@@ -19,6 +19,7 @@ const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
 const ESCAPE_SEQ = /^\x1b(?:\[[0-9;]*[A-Za-z~]|O[A-Za-z])/;
 
 const visibleLength = (s: string) => s.replace(ANSI_RE, '').length;
+const safeTerminalText = (s: string) => s.replace(/[\x00-\x1f\x7f-\x9f]/g, (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`);
 
 /**
  * Readline-like line editor on top of a raw terminal:
@@ -66,14 +67,16 @@ export class LineEditor {
     let out = '';
     const drawnRow = Math.floor((pl + this.drawnCursor) / cols);
     if (drawnRow > 0) out += `\x1b[${drawnRow}A`;
-    out += '\r\x1b[J' + this.shell.prompt + this.buffer;
+    const displayBuffer = safeTerminalText(this.buffer);
+    const displayCursor = visibleLength(safeTerminalText(this.buffer.slice(0, this.cursor)));
+    out += '\r\x1b[J' + this.shell.prompt + displayBuffer;
 
-    const end = pl + this.buffer.length;
+    const end = pl + visibleLength(displayBuffer);
     // At an exact multiple of cols xterm keeps the cursor in a "pending wrap"
     // state on the previous row; force the wrap so our row math stays valid.
     if (end > 0 && end % cols === 0) out += ' \b';
 
-    const target = pl + this.cursor;
+    const target = pl + displayCursor;
     const up = Math.floor(end / cols) - Math.floor(target / cols);
     if (up > 0) out += `\x1b[${up}A`;
     out += '\r';

@@ -24,12 +24,12 @@ function createTestShell(lesson = GIT_ALL_LESSONS[0], lang: 'tr' | 'en' = 'tr') 
 }
 
 describe('Git Curriculum Structure', () => {
-  it('contains exactly 4 levels and 8 interactive lessons', () => {
+  it('contains exactly 4 levels and 9 interactive lessons', () => {
     expect(GIT_LEVELS).toHaveLength(4);
-    expect(GIT_ALL_LESSONS).toHaveLength(8);
+    expect(GIT_ALL_LESSONS).toHaveLength(9);
     expect(gitLevel1.lessons).toHaveLength(2);
     expect(gitLevel2.lessons).toHaveLength(2);
-    expect(gitLevel3.lessons).toHaveLength(2);
+    expect(gitLevel3.lessons).toHaveLength(3);
     expect(gitLevel4.lessons).toHaveLength(2);
   });
 
@@ -661,7 +661,7 @@ describe('Git Navigation Logic Across Levels', () => {
     expect(GIT_LEVELS[3].lessons[0].id).toBe('git-4-push');
   });
 
-  it('correctly navigates sequentially through all 8 lessons without breaking prev/next chain', () => {
+  it('correctly navigates sequentially through all 9 lessons without breaking prev/next chain', () => {
     for (let i = 0; i < GIT_ALL_LESSONS.length; i++) {
       const cur = GIT_ALL_LESSONS[i];
       const prev = GIT_ALL_LESSONS[i - 1];

@@ -27,7 +27,7 @@ function linkCount(node: FsNode): number {
 }
 
 function formatName(entry: Entry, ctx: CommandContext): string {
-  const name = ctx.shell.displayName(entry.name);
+  const name = ctx.shell.displayName(entry.name).replace(/[\x00-\x1f\x7f-\x9f]/g, (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`);
   return ctx.isTTY && entry.node.type === 'dir' ? color.dir(name) : name;
 }
 

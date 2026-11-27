@@ -632,7 +632,7 @@ npm run build
 
 - **Kullanıcı Arayüzü ve Metinler:** Kullanıcıya dönük tüm arayüz metinleri, ders anlatımları, görevler, ipuçları ve yardım dokümanları **Türkçe** yazılır.
 - **Kod Tabanı:** Fonksiyon isimleri, değişkenler, tip arayüzleri, CSS sınıfları ve Git commit mesajları **İngilizce** yazılır.
-- **Hata Mesajları:** Terminal komutlarının standart hata çıktıları (stderr), gerçek Linux ve POSIX standartlarına sadık kalmak amacıyla **İngilizce** üretilir (örn. `ls: cannot access 'dosya': No such file or directory`, `rm: missing operand`).
+- **Hata Mesajları:** Terminal komutlarının stderr çıktıları çoğunlukla İngilizce üretilir; Türkçe modda `Shell.ts` içindeki `localizeCommandError`, bilinen hata ifadelerini Türkçeye çevirir. Tanınmayan ifadeler özgün metinleriyle kalabilir.
 
 ---
 

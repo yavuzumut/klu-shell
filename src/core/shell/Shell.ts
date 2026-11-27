@@ -6,7 +6,7 @@ import type { CommandContext, CommandRecord, OutputChunk, ShellProcess } from '.
 
 import type { Lang } from '../../i18n/types';
 import { getCommandDoc } from '../../i18n/localize';
-import { localizeCommandError, localizeFixtureName, localizeFixturePath, localizeFixtureText, resolveFixturePath } from '../../i18n/fixtureLocale';
+import { localizeCommandError, localizeFixtureName, localizeFixturePath, localizeFixtureText, localizeScriptCommand, resolveFixturePath } from '../../i18n/fixtureLocale';
 
 export interface ShellOptions {
   fs: VirtualFS;
@@ -387,13 +387,10 @@ export class Shell {
         }
         const lines = node.content.split('\n');
         let code = 0;
-        const isEnglishLocalizedFixture =
-          this.lang === 'en' &&
-          (node.content === 'echo "KLU Linux dunyasina hos geldin!"\n' || node.content === 'echo "Yedek aliniyor..."\n');
         for (const raw of lines) {
           const trimmed = raw.trim();
           if (!trimmed || trimmed.startsWith('#')) continue;
-          const command = isEnglishLocalizedFixture ? this.displayText(trimmed) : trimmed;
+          const command = localizeScriptCommand(trimmed, this.lang);
           const rec = await this.execute(command, { recordHistory: false });
           code = rec.exitCode;
           if (rec.stdout) ctx.stdout(rec.stdout);

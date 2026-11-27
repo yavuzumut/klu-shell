@@ -7,7 +7,7 @@ import { Shell } from '../core/shell/Shell';
 import { quotePath } from '../core/shell/parser';
 import type { CommandRecord } from '../core/shell/types';
 import { createLessonFS, lessonStartCwd, runLessonSetupCommands } from '../lessons/session';
-import { evaluateCommand } from '../lessons/validator';
+import { evaluateCommand, type FeedbackKey } from '../lessons/validator';
 import { GIT_STORAGE_KEY, taskKey, useProgress } from '../state/useProgress';
 import type { ITheme } from '@xterm/xterm';
 import { findGitLesson, GIT_ALL_LESSONS, GIT_LEVELS } from './lessons';
@@ -76,6 +76,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
   }, [gitShell, lang]);
 
   const [currentCwd, setCurrentCwd] = useState(gitShell.cwd);
+  const [feedbackKey, setFeedbackKey] = useState<FeedbackKey>();
   const termRef = useRef<TerminalHandle>(null);
   const recordsRef = useRef<CommandRecord[]>([]);
 
@@ -142,6 +143,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
         shell: gitShell,
         env: gitShell.env,
       });
+      setFeedbackKey(result.wrongAttempt ? result.feedbackKey : undefined);
 
       if (result.completedTaskId) {
         const taskId = result.completedTaskId;
@@ -167,6 +169,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
         };
         const hint = task.hints[Math.min(attempts, task.hints.length) - 1];
         let msg = hint ? ansi.yellow(t('terminal.hintPrefix', { hint: plain(hint) })) : '';
+        if (result.feedbackKey) msg += (msg ? '\n' : '') + ansi.yellow(t(`terminal.feedback.${result.feedbackKey}`));
         if (attempts >= 3) msg += (msg ? '\n' : '') + ansi.dim(t('terminal.stuckHint'));
         return msg || undefined;
       }
@@ -216,6 +219,11 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
       { label: '~', data: '~' },
       { label: '/', data: '/' },
       { label: '-', data: '-' },
+      { label: '|', data: '|' },
+      { label: '>', data: '>' },
+      { label: '<', data: '<' },
+      { label: '&&', data: '&&' },
+      { label: '"', data: '"' },
       { label: 'Ctrl+C', data: '\x03' },
     ],
     [],
@@ -324,6 +332,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
             lesson={lesson}
             lessonIndex={lessonIndex}
             completedTaskIds={completedTaskIds}
+            feedbackKey={feedbackKey}
             attemptsFor={(taskId) => progress.attempts[taskKey(lesson.id, taskId)] ?? 0}
             isRevealed={(taskId) => !!progress.revealed[taskKey(lesson.id, taskId)]}
             hasPrev={!!prevLesson}
