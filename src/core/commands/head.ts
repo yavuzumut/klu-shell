@@ -37,7 +37,7 @@ export function runHeadTail(
     if (showHeaders) out += `${i ? '\n' : ''}==> ${input.name} <==\n`;
     out += joinLines(pick(splitLines(input.text), count, fromStart));
   });
-  ctx.stdout(out);
+  ctx.stdout(ctx.shell.displayText(out));
   return failed ? 1 : 0;
 }
 

@@ -6,14 +6,14 @@ describe('shell basics', () => {
   it('reports unknown commands', async () => {
     const { run } = createTestShell();
     const r = await run('foo');
-    expect(r.err).toBe('bash: foo: command not found\n');
+    expect(r.err).toBe('bash: foo: komut bulunamadı\n');
     expect(r.exitCode).toBe(127);
   });
 
   it('reports syntax errors', async () => {
     const { run } = createTestShell();
     const r = await run('| ls');
-    expect(r.err).toContain("syntax error near unexpected token `|'");
+    expect(r.err).toContain("beklenmeyen belirteç yakınında sözdizimi hatası `|'");
     expect(r.exitCode).toBe(2);
   });
 
@@ -41,7 +41,7 @@ describe('shell basics', () => {
     expect(fs.readFile('/tmp/f.txt')).toBe('bir\niki\n');
     expect((await run('cat < /tmp/f.txt')).out).toBe('bir\niki\n');
     expect((await run('cat /tmp/f.txt | cat -n')).out).toBe('     1\tbir\n     2\tiki\n');
-    expect((await run('echo x > /etc')).err).toBe('bash: /etc: Is a directory\n');
+    expect((await run('echo x > /etc')).err).toBe('bash: /etc: Bir dizin\n');
   });
 
   it('expands globs', async () => {
@@ -101,10 +101,10 @@ describe('pwd / cd', () => {
 
   it('cd reports errors', async () => {
     const { run, shell } = createTestShell();
-    expect((await run('cd yok')).err).toBe('bash: cd: yok: No such file or directory\n');
-    expect((await run('cd merhaba.txt')).err).toBe('bash: cd: merhaba.txt: Not a directory\n');
-    expect((await run('cd a b')).err).toBe('bash: cd: too many arguments\n');
-    expect((await run('cd -')).err).toBe('bash: cd: OLDPWD not set\n');
+    expect((await run('cd yok')).err).toBe('bash: cd: yok: Böyle bir dosya veya dizin yok\n');
+    expect((await run('cd merhaba.txt')).err).toBe('bash: cd: merhaba.txt: Dizin değil\n');
+    expect((await run('cd a b')).err).toBe('bash: cd: çok fazla argüman\n');
+    expect((await run('cd -')).err).toBe('bash: cd: OLDPWD ayarlanmamış\n');
     expect(shell.cwd).toBe('/home/kullanici');
   });
 });
@@ -130,13 +130,13 @@ describe('ls', () => {
     const out = (await run('ls -l Belgeler')).out;
     expect(out).toMatch(/^total \d+\n/);
     expect(out).toContain('-rw-r--r-- 1 kullanici kullanici');
-    expect(out).toMatch(/Nov 19 10:30 rapor\.txt/);
+    expect(out).toMatch(/Kas 19 10:30 rapor\.txt/);
   });
 
   it('-l shows dirs and owners', async () => {
     const { run } = createTestShell();
     const out = (await run('ls -l /')).out;
-    expect(out).toMatch(/drwxr-xr-x +\d+ root +root +4096 Nov 19 10:30 etc/);
+    expect(out).toMatch(/drwxr-xr-x +\d+ root +root +4096 Kas 19 10:30 etc/);
   });
 
   it('lists files and multiple directories', async () => {
@@ -154,9 +154,9 @@ describe('ls', () => {
   it('reports missing paths and bad options', async () => {
     const { run } = createTestShell();
     const r = await run('ls yok');
-    expect(r.err).toBe("ls: cannot access 'yok': No such file or directory\n");
+    expect(r.err).toBe("ls: erişilemiyor 'yok': Böyle bir dosya veya dizin yok\n");
     expect(r.exitCode).toBe(2);
-    expect((await run('ls -z')).err).toBe("ls: invalid option -- 'z'\nTry 'ls --help' for more information.\n");
+    expect((await run('ls -z')).err).toBe("ls: geçersiz seçenek -- 'z'\nŞunu deneyin: 'ls --help' hakkında daha fazla bilgi için.\n");
   });
 });
 
@@ -171,11 +171,11 @@ describe('mkdir / touch', () => {
 
   it('reports mkdir errors', async () => {
     const { run } = createTestShell();
-    expect((await run('mkdir Belgeler')).err).toBe("mkdir: cannot create directory 'Belgeler': File exists\n");
-    expect((await run('mkdir q/w')).err).toBe("mkdir: cannot create directory 'q/w': No such file or directory\n");
-    expect((await run('mkdir')).err).toBe("mkdir: missing operand\nTry 'mkdir --help' for more information.\n");
+    expect((await run('mkdir Belgeler')).err).toBe("mkdir: dizin oluşturulamıyor 'Belgeler': Dosya zaten var\n");
+    expect((await run('mkdir q/w')).err).toBe("mkdir: dizin oluşturulamıyor 'q/w': Böyle bir dosya veya dizin yok\n");
+    expect((await run('mkdir')).err).toBe("mkdir: argüman eksik\nŞunu deneyin: 'mkdir --help' hakkında daha fazla bilgi için.\n");
     expect((await run('mkdir -p merhaba.txt')).err).toBe(
-      "mkdir: cannot create directory 'merhaba.txt': File exists\n",
+      "mkdir: dizin oluşturulamıyor 'merhaba.txt': Dosya zaten var\n",
     );
   });
 
@@ -184,8 +184,8 @@ describe('mkdir / touch', () => {
     await run('touch yeni.txt merhaba.txt');
     expect(fs.readFile('/home/kullanici/yeni.txt')).toBe('');
     expect(fs.readFile('/home/kullanici/merhaba.txt')).toContain('Merhaba');
-    expect((await run('touch yok/a')).err).toBe("touch: cannot touch 'yok/a': No such file or directory\n");
-    expect((await run('touch')).err).toContain('touch: missing file operand');
+    expect((await run('touch yok/a')).err).toBe("touch: oluşturulamıyor 'yok/a': Böyle bir dosya veya dizin yok\n");
+    expect((await run('touch')).err).toContain('touch: dosya argümanı eksik');
   });
 });
 
@@ -200,7 +200,7 @@ describe('cat / echo', () => {
     const { run } = createTestShell({ files: { '~/a': 'A\n' } });
     const r = await run('cat yok a Belgeler');
     expect(r.out).toBe('A\n');
-    expect(r.err).toBe('cat: yok: No such file or directory\ncat: Belgeler: Is a directory\n');
+    expect(r.err).toBe('cat: yok: Böyle bir dosya veya dizin yok\ncat: Belgeler: Bir dizin\n');
     expect(r.exitCode).toBe(1);
   });
 
@@ -225,7 +225,7 @@ describe('cp', () => {
 
   it('copies directories with -r', async () => {
     const { run, fs } = createTestShell();
-    expect((await run('cp Belgeler B')).err).toBe("cp: -r not specified; omitting directory 'Belgeler'\n");
+    expect((await run('cp Belgeler B')).err).toBe("cp: -r belirtilmedi; dizin atlanıyor 'Belgeler'\n");
     await run('cp -r Belgeler B');
     expect(fs.isFile('/home/kullanici/B/rapor.txt')).toBe(true);
     await run('cp -r Belgeler B');
@@ -234,18 +234,18 @@ describe('cp', () => {
 
   it('reports cp errors', async () => {
     const { run } = createTestShell();
-    expect((await run('cp')).err).toContain('cp: missing file operand');
-    expect((await run('cp a')).err).toContain("cp: missing destination file operand after 'a'");
-    expect((await run('cp yok x')).err).toBe("cp: cannot stat 'yok': No such file or directory\n");
+    expect((await run('cp')).err).toContain('cp: dosya argümanı eksik');
+    expect((await run('cp a')).err).toContain("cp: hedef dosya argümanı eksik: 'a'");
+    expect((await run('cp yok x')).err).toBe("cp: durum bilgisi alınamıyor 'yok': Böyle bir dosya veya dizin yok\n");
     expect((await run('cp merhaba.txt merhaba.txt')).err).toBe(
-      "cp: 'merhaba.txt' and 'merhaba.txt' are the same file\n",
+      "cp: 'merhaba.txt' and 'merhaba.txt' aynı dosya\n",
     );
     expect((await run('cp -r Belgeler Belgeler/alt')).err).toBe(
-      "cp: cannot copy a directory, 'Belgeler', into itself, 'Belgeler/alt'\n",
+      "cp: dizin kopyalanamıyor, 'Belgeler', into itself, 'Belgeler/alt'\n",
     );
-    expect((await run('cp merhaba.txt .bashrc yok')).err).toBe("cp: target 'yok' is not a directory\n");
+    expect((await run('cp merhaba.txt .bashrc yok')).err).toBe("cp: target 'yok' dizin değil\n");
     expect((await run('cp merhaba.txt yok/a')).err).toBe(
-      "cp: cannot create regular file 'yok/a': No such file or directory\n",
+      "cp: cannot create regular file 'yok/a': Böyle bir dosya veya dizin yok\n",
     );
   });
 });
@@ -264,14 +264,14 @@ describe('mv', () => {
 
   it('reports mv errors', async () => {
     const { run } = createTestShell();
-    expect((await run('mv yok x')).err).toBe("mv: cannot stat 'yok': No such file or directory\n");
+    expect((await run('mv yok x')).err).toBe("mv: durum bilgisi alınamıyor 'yok': Böyle bir dosya veya dizin yok\n");
     expect((await run('mv Belgeler Belgeler/x')).err).toBe(
-      "mv: cannot move 'Belgeler' to a subdirectory of itself, 'Belgeler/x'\n",
+      "mv: taşınamıyor 'Belgeler' to a subdirectory of itself, 'Belgeler/x'\n",
     );
     expect((await run('mv merhaba.txt yok/x')).err).toBe(
-      "mv: cannot move 'merhaba.txt' to 'yok/x': No such file or directory\n",
+      "mv: taşınamıyor 'merhaba.txt' to 'yok/x': Böyle bir dosya veya dizin yok\n",
     );
-    expect((await run('mv x')).err).toContain("mv: missing destination file operand after 'x'");
+    expect((await run('mv x')).err).toContain("mv: hedef dosya argümanı eksik: 'x'");
   });
 });
 
@@ -280,7 +280,7 @@ describe('rm', () => {
     const { run, fs } = createTestShell();
     await run('rm merhaba.txt');
     expect(fs.exists('/home/kullanici/merhaba.txt')).toBe(false);
-    expect((await run('rm Belgeler')).err).toBe("rm: cannot remove 'Belgeler': Is a directory\n");
+    expect((await run('rm Belgeler')).err).toBe("rm: silinemiyor 'Belgeler': Bir dizin\n");
     await run('rm -r Belgeler');
     expect(fs.exists('/home/kullanici/Belgeler')).toBe(false);
     await run('rm -d Indirilenler');
@@ -289,17 +289,17 @@ describe('rm', () => {
 
   it('handles -f and missing files', async () => {
     const { run } = createTestShell();
-    expect((await run('rm yok')).err).toBe("rm: cannot remove 'yok': No such file or directory\n");
+    expect((await run('rm yok')).err).toBe("rm: silinemiyor 'yok': Böyle bir dosya veya dizin yok\n");
     const r = await run('rm -f yok');
     expect(r.err).toBe('');
     expect(r.exitCode).toBe(0);
-    expect((await run('rm')).err).toContain('rm: missing operand');
+    expect((await run('rm')).err).toContain('rm: argüman eksik');
   });
 
   it('refuses dangerous targets', async () => {
     const { run, fs } = createTestShell();
-    expect((await run('rm -rf /')).err).toContain("rm: it is dangerous to operate recursively on '/'");
-    expect((await run('rm -r ..')).err).toBe("rm: refusing to remove '.' or '..' directory: skipping '..'\n");
+    expect((await run('rm -rf /')).err).toContain("rm: üzerinde yinelemeli işlem yapmak tehlikelidir: '/'");
+    expect((await run('rm -r ..')).err).toBe("rm: '.' veya '..' dizini silinmiyor; atlanıyor: '..'\n");
     expect(fs.isDir('/etc')).toBe(true);
   });
 });
@@ -321,7 +321,7 @@ describe('clear / help / man / history', () => {
   it('man shows manual pages and errors', async () => {
     const { run } = createTestShell();
     expect((await run('man ls')).out).toContain('ls - dizin içeriğini listeler');
-    expect((await run('man yok')).err).toBe('No manual entry for yok\n');
+    expect((await run('man yok')).err).toBe('Kılavuz girdisi yok: yok\n');
     expect((await run('man')).err).toContain('Hangi kılavuz sayfasını görmek istiyorsun?');
   });
 
@@ -542,10 +542,10 @@ describe('clear / help / man / history', () => {
 
     it('reports errors for missing operands or non-existent files', async () => {
       const { run } = createTestShell();
-      expect((await run('chmod')).err).toContain('missing operand');
-      expect((await run('chmod 755')).err).toContain('missing operand after');
-      expect((await run('chmod bad /tmp/f')).err).toContain('invalid mode');
-      expect((await run('chmod 755 /tmp/nonexistent')).err).toContain('No such file or directory');
+      expect((await run('chmod')).err).toContain('argüman eksik');
+      expect((await run('chmod 755')).err).toContain('hedef argüman eksik');
+      expect((await run('chmod bad /tmp/f')).err).toContain('geçersiz izin kipi');
+      expect((await run('chmod 755 /tmp/nonexistent')).err).toContain('Böyle bir dosya veya dizin yok');
     });
   });
 
@@ -561,7 +561,7 @@ describe('clear / help / man / history', () => {
       const { run } = createTestShell();
       const r = await run('whoami extra');
       expect(r.exitCode).toBe(1);
-      expect(r.err).toContain('extra operand');
+      expect(r.err).toContain('fazladan argüman');
     });
   });
 
@@ -647,7 +647,7 @@ describe('clear / help / man / history', () => {
       const { run } = createTestShell();
       const r = await run('export 123bad=val');
       expect(r.exitCode).toBe(1);
-      expect(r.err).toContain('not a valid identifier');
+      expect(r.err).toContain('geçerli bir tanımlayıcı değil');
     });
   });
 
@@ -695,14 +695,14 @@ describe('clear / help / man / history', () => {
 
       const rAgain = await run('kill 1420');
       expect(rAgain.exitCode).toBe(1);
-      expect(rAgain.err).toContain('No such process');
+      expect(rAgain.err).toContain('Böyle bir süreç yok');
     });
 
     it('refuses to kill PID 1', async () => {
       const { run } = createTestShell();
       const r = await run('kill 1');
       expect(r.exitCode).toBe(1);
-      expect(r.err).toContain('Operation not permitted');
+      expect(r.err).toContain('İşleme izin verilmedi');
     });
   });
 
@@ -714,7 +714,7 @@ describe('clear / help / man / history', () => {
       // Without +x -> 126 Permission denied
       const rNoExec = await run('/tmp/betik.sh');
       expect(rNoExec.exitCode).toBe(126);
-      expect(rNoExec.err).toContain('Permission denied');
+      expect(rNoExec.err).toContain('İzin reddedildi');
 
       // With +x -> executes successfully
       await run('chmod +x /tmp/betik.sh');
@@ -792,8 +792,8 @@ describe('clear / help / man / history', () => {
 
     it('reports error on missing operand or non-existent file', async () => {
       const { run } = createTestShell();
-      expect((await run('stat')).err).toContain('missing operand');
-      expect((await run('stat /yok.txt')).err).toContain('No such file or directory');
+      expect((await run('stat')).err).toContain('argüman eksik');
+      expect((await run('stat /yok.txt')).err).toContain('Böyle bir dosya veya dizin yok');
     });
   });
 
@@ -815,7 +815,7 @@ describe('clear / help / man / history', () => {
       const { run } = createTestShell();
       const rErr = await run('realpath /olmayan/dosya.txt');
       expect(rErr.exitCode).toBe(1);
-      expect(rErr.err).toContain('No such file or directory');
+      expect(rErr.err).toContain('Böyle bir dosya veya dizin yok');
 
       const rMissing = await run('realpath -m /olmayan/dosya.txt');
       expect(rMissing.exitCode).toBe(0);
@@ -855,7 +855,7 @@ describe('clear / help / man / history', () => {
       const { run } = createTestShell();
       const r = await run('basename');
       expect(r.exitCode).toBe(1);
-      expect(r.err).toContain('missing operand');
+      expect(r.err).toContain('argüman eksik');
     });
   });
 });

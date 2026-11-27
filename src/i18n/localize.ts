@@ -4,6 +4,7 @@ import type { CheatCategory } from '../cheatsheet/data';
 import type { ExploreTool } from '../explore/data';
 import type { GitIntroData } from '../git/intro';
 import type { CommandDefinition } from '../core/shell/types';
+import { localizeFixtureText, localizeTaskCheck } from './fixtureLocale';
 
 import { EN_LESSONS, EN_LEVELS, EN_LESSON_EXTENSIONS, EN_LESSON_EXAMPLES } from './content/en/lessons';
 import { EN_GIT_LESSONS, EN_GIT_LEVELS } from './content/en/gitLessons';
@@ -21,29 +22,32 @@ export function localizeLesson(lesson: Lesson, lang: Lang, isGit = false): Lesso
   const localizedTasks = lesson.tasks.map((task) => {
     const taskOverlay = overlay?.tasks?.[task.id];
     if (!taskOverlay) {
-      const solution = task.solution.trim();
+      const solution = localizeFixtureText(task.solution.trim(), lang);
       return {
         ...task,
         description: solution
           ? `Run \`${solution}\` to complete this task.`
           : 'Complete the task using the commands covered in this lesson.',
         hints: solution ? [`Try running \`${solution}\`.`] : ['Review the lesson examples and try the relevant command.'],
+        solution,
+        check: localizeTaskCheck(task.check, lang),
       };
     }
     return {
       ...task,
-      description: taskOverlay.description ?? task.description,
-      hints: taskOverlay.hints ?? task.hints,
-      solution: taskOverlay.solution ?? task.solution,
+      description: localizeFixtureText(taskOverlay.description ?? task.description, lang),
+      hints: (taskOverlay.hints ?? task.hints).map((hint) => localizeFixtureText(hint, lang)),
+      solution: localizeFixtureText(taskOverlay.solution ?? task.solution, lang),
+      check: localizeTaskCheck(task.check, lang),
     };
   });
 
   return {
     ...lesson,
-    title: overlay?.title ?? lesson.title,
-    summary: overlay?.summary ?? lesson.summary,
-    content: [overlay?.content, EN_LESSON_EXTENSIONS[lesson.id]].filter(Boolean).join('\n\n') || lesson.content,
-    examples: overlay?.examples ?? EN_LESSON_EXAMPLES[lesson.id] ?? lesson.examples,
+    title: localizeFixtureText(overlay?.title ?? lesson.title, lang),
+    summary: localizeFixtureText(overlay?.summary ?? lesson.summary, lang),
+    content: localizeFixtureText([overlay?.content, EN_LESSON_EXTENSIONS[lesson.id]].filter(Boolean).join('\n\n') || lesson.content, lang),
+    examples: (overlay?.examples ?? EN_LESSON_EXAMPLES[lesson.id] ?? lesson.examples).map((example) => localizeFixtureText(example, lang)),
     tasks: localizedTasks,
   };
 }
@@ -81,6 +85,7 @@ export function localizeCheatSheet(categories: CheatCategory[], lang: Lang): Che
         return {
           ...item,
           description: itemOverlay?.description ?? item.description,
+          example: itemOverlay?.example ?? localizeFixtureText(item.example, lang),
         };
       }),
     };
@@ -96,6 +101,8 @@ export function localizeExplore(tools: ExploreTool[], lang: Lang): ExploreTool[]
 
     return {
       ...tool,
+      exampleCommand: localizeFixtureText(tool.exampleCommand, lang),
+      exampleOutput: localizeFixtureText(tool.exampleOutput, lang),
       description: overlay.description ?? tool.description,
       warning: overlay.warning ?? tool.warning,
       tips: overlay.tips ?? tool.tips,

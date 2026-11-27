@@ -10,13 +10,15 @@ import { gitLevel2 } from './gitLevel2';
 import { gitLevel3 } from './gitLevel3';
 import { gitLevel4 } from './gitLevel4';
 import { GIT_STORAGE_KEY, loadProgress, STORAGE_KEY, useProgress } from '../../state/useProgress';
+import { localizeLesson } from '../../i18n/localize';
 
-function createTestShell(lesson = GIT_ALL_LESSONS[0]) {
+function createTestShell(lesson = GIT_ALL_LESSONS[0], lang: 'tr' | 'en' = 'tr') {
   const fs = createLessonFS(lesson);
   const shell = new Shell({
     fs,
     registry: createRegistry(),
     cwd: lessonStartCwd(lesson, fs),
+    lang,
   });
   return { shell, fs };
 }
@@ -53,6 +55,35 @@ describe('Git Curriculum Structure', () => {
       }
     }
   });
+});
+
+describe('English Git lesson execution', () => {
+  for (const lesson of GIT_ALL_LESSONS) {
+    it(`completes every English task in ${lesson.id}`, async () => {
+      const { shell, fs } = createTestShell(lesson, 'en');
+      await runLessonSetupCommands(shell, lesson);
+      const localized = localizeLesson(lesson, 'en', true);
+      const records: CommandRecord[] = [];
+      const completed: string[] = [];
+
+      for (const task of localized.tasks) {
+        const last = await shell.execute(task.solution);
+        records.push(last);
+        const result = evaluateCommand(localized, completed, {
+          fs,
+          cwd: shell.cwd,
+          last,
+          records,
+          shell,
+          env: shell.env,
+        });
+        expect(result.completedTaskId, `${lesson.id}/${task.id}: ${last.stderr || last.stdout}`).toBe(task.id);
+        completed.push(task.id);
+      }
+
+      expect(completed).toEqual(lesson.tasks.map((task) => task.id));
+    });
+  }
 });
 
 describe('Read-only Git Inspection Commands Exemption', () => {

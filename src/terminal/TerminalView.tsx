@@ -13,6 +13,7 @@ export interface TerminalHandle {
   /** Send raw key data, e.g. '\t' or '\x1b[A' (mobile key bar). */
   sendKey(data: string): void;
   focus(): void;
+  refreshPrompt(): void;
   printAbove(text: string): void;
   resetScreen(banner?: string): void;
 }
@@ -132,6 +133,7 @@ export const TerminalView = forwardRef<TerminalHandle, Props>(function TerminalV
       termRef.current?.focus();
     },
     focus: () => termRef.current?.focus(),
+    refreshPrompt: () => editorRef.current?.render(),
     printAbove: (text) => editorRef.current?.printAbove(text),
     resetScreen: (banner) => editorRef.current?.resetScreen(banner),
   }));

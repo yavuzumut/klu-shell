@@ -69,7 +69,7 @@ SEÇENEKLER
         exitCode = 1;
         continue;
       }
-      ctx.stdout(`${abs}\n`);
+      ctx.stdout(`${ctx.shell.displayPath(abs)}\n`);
     }
 
     return exitCode;

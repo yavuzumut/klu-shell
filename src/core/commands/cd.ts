@@ -41,7 +41,7 @@ AÇIKLAMA
         return 1;
       }
       target = ctx.shell.prevCwd;
-      ctx.stdout(target + '\n');
+      ctx.stdout(ctx.shell.displayPath(target) + '\n');
     }
     const abs = ctx.resolve(target);
     try {

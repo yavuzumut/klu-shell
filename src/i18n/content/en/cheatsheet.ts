@@ -1,7 +1,7 @@
 export interface CheatCategoryTranslation {
   titleTr: string;
   title: string;
-  items: Record<string, { description: string }>;
+  items: Record<string, { description: string; example?: string }>;
 }
 
 export const EN_CHEAT_SHEET: CheatCategoryTranslation[] = [
@@ -44,7 +44,7 @@ export const EN_CHEAT_SHEET: CheatCategoryTranslation[] = [
   } },
   { titleTr: 'Ortam ve Değişkenler', title: 'Environment & Variables', items: {
     env: { description: 'List the current environment variables.' },
-    export: { description: 'Define or export an environment variable.' },
+    export: { description: 'Define or export an environment variable.', example: 'export NAME=KLU' },
     which: { description: 'Find the executable path for a command.' },
   } },
   { titleTr: 'Süreç Yönetimi', title: 'Process Management', items: {
@@ -52,7 +52,7 @@ export const EN_CHEAT_SHEET: CheatCategoryTranslation[] = [
     kill: { description: 'Terminate a process by PID (-9 forces termination).' },
   } },
   { titleTr: 'Kopyalama ve Taşıma', title: 'Copying & Moving', items: {
-    cp: { description: 'Copy files and directories (-r is required for directories).' },
+    cp: { description: 'Copy files and directories (-r is required for directories).', example: 'cp -r Documents backup' },
     mv: { description: 'Move or rename files and directories.' },
   } },
   { titleTr: 'Silme İşlemleri', title: 'Removing Files', items: {

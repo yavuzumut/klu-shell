@@ -2,18 +2,18 @@ import { modeString, nodeSize, type FsNode } from '../fs/VirtualFS';
 import type { CommandContext, CommandDefinition } from '../shell/types';
 import { color, tryParseArgs } from './_utils';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function formatDate(ms: number): string {
+function formatDate(ms: number, lang: 'tr' | 'en'): string {
   const d = new Date(ms);
   const day = String(d.getDate()).padStart(2, ' ');
   const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  return `${MONTHS[d.getMonth()]} ${day} ${time}`;
+  const locale = lang === 'en' ? 'en-US' : 'tr-TR';
+  const month = new Intl.DateTimeFormat(locale, { month: 'short' }).format(d).replace(/\.$/, '');
+  return `${month} ${day} ${time}`;
 }
 
 /** Sort like GNU ls in a UTF-8 locale: ignore leading dots, case-insensitive. */
-function sortKey(name: string): string {
-  return name.replace(/^\.+/, '').toLocaleLowerCase('tr');
+function sortKey(name: string, locale: 'tr' | 'en'): string {
+  return name.replace(/^\.+/, '').toLocaleLowerCase(locale);
 }
 
 interface Entry {
@@ -27,7 +27,8 @@ function linkCount(node: FsNode): number {
 }
 
 function formatName(entry: Entry, ctx: CommandContext): string {
-  return ctx.isTTY && entry.node.type === 'dir' ? color.dir(entry.name) : entry.name;
+  const name = ctx.shell.displayName(entry.name);
+  return ctx.isTTY && entry.node.type === 'dir' ? color.dir(name) : name;
 }
 
 function formatEntries(entries: Entry[], long: boolean, ctx: CommandContext): string {
@@ -37,10 +38,10 @@ function formatEntries(entries: Entry[], long: boolean, ctx: CommandContext): st
   const rows = entries.map((e) => ({
     mode: modeString(e.node),
     links: String(linkCount(e.node)),
-    owner: e.node.owner,
-    group: e.node.group,
+    owner: ctx.shell.displayName(e.node.owner),
+    group: ctx.shell.displayName(e.node.group),
     size: String(nodeSize(e.node)),
-    date: formatDate(e.node.mtime),
+    date: formatDate(e.node.mtime, ctx.shell.lang),
     name: formatName(e, ctx),
   }));
   const w = (k: keyof (typeof rows)[number]) => Math.max(...rows.map((r) => r[k].length));
@@ -138,7 +139,10 @@ UZUN BİÇİM (ls -l)
       entries = entries.sort((a, b) => {
         if (a.name === '.' || a.name === '..') return b.name === '.' || b.name === '..' ? a.name.length - b.name.length : -1;
         if (b.name === '.' || b.name === '..') return 1;
-        return sortKey(a.name).localeCompare(sortKey(b.name), 'tr') || a.name.localeCompare(b.name);
+        const locale = ctx.shell.lang === 'en' ? 'en' : 'tr';
+        const nameA = ctx.shell.displayName(a.name);
+        const nameB = ctx.shell.displayName(b.name);
+        return sortKey(nameA, locale).localeCompare(sortKey(nameB, locale), locale) || nameA.localeCompare(nameB, locale);
       });
       if (out || idx > 0) out += '\n';
       if (multiple || files.length) out += `${d.label}:\n`;

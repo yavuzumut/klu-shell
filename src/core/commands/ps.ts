@@ -50,7 +50,7 @@ SEÇENEKLER
 
       const header = 'USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\n';
       const rows = all.map((p) => {
-        const u = p.user.padEnd(8).slice(0, 8);
+        const u = ctx.shell.displayName(p.user).padEnd(8).slice(0, 8);
         const pid = String(p.pid).padStart(5);
         const cpu = p.cpu.padStart(4);
         const mem = p.mem.padStart(4);

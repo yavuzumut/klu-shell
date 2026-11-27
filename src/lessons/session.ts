@@ -1,6 +1,7 @@
 import { createDefaultFS } from '../core/fs/defaultTree';
 import type { VirtualFS } from '../core/fs/VirtualFS';
 import type { Lesson } from './types';
+import { localizeFixtureText } from '../i18n/fixtureLocale';
 
 /** Fresh file system for a lesson: default tree + the lesson's setup. */
 export function createLessonFS(lesson: Lesson): VirtualFS {
@@ -15,14 +16,14 @@ export function lessonStartCwd(lesson: Lesson, fs: VirtualFS): string {
 
 /** Execute setup commands silently if defined on the lesson. */
 export async function runLessonSetupCommands(
-  shell: { execute(cmd: string, options?: { recordHistory?: boolean }): Promise<unknown> },
+  shell: { lang?: 'tr' | 'en'; execute(cmd: string, options?: { recordHistory?: boolean }): Promise<unknown> },
   lesson: Lesson,
   isCancelled?: () => boolean,
 ): Promise<void> {
   if (!lesson.setup?.setupCommands?.length) return;
   for (const cmd of lesson.setup.setupCommands) {
     if (isCancelled?.()) return;
-    await shell.execute(cmd, { recordHistory: false });
+    await shell.execute(shell.lang === 'en' ? localizeFixtureText(cmd, 'en') : cmd, { recordHistory: false });
   }
 }
 

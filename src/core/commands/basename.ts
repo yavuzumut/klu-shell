@@ -85,12 +85,12 @@ SEÇENEKLER
         return 1;
       }
       const [path, explicitSuffix] = operands;
-      ctx.stdout(`${extractBasename(path, explicitSuffix)}\n`);
+      ctx.stdout(`${ctx.shell.displayName(extractBasename(path, explicitSuffix))}\n`);
       return 0;
     }
 
     for (const op of operands) {
-      ctx.stdout(`${extractBasename(op, suffix)}\n`);
+      ctx.stdout(`${ctx.shell.displayName(extractBasename(op, suffix))}\n`);
     }
 
     return 0;

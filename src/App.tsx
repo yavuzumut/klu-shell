@@ -64,6 +64,7 @@ export default function App() {
   useEffect(() => {
     lessonShell.lang = lang;
     sandboxShell.lang = lang;
+    termRef.current?.refreshPrompt();
   }, [lessonShell, sandboxShell, lang]);
 
   const activeShell = mode === 'lessons' ? lessonShell : sandboxShell;
@@ -235,7 +236,7 @@ export default function App() {
   }, []);
 
   const handleTreeSelectPath = useCallback((path: string, node: { type: 'file' | 'dir' }) => {
-    const pretty = activeShell.fs.prettyPath(path);
+    const pretty = activeShell.displayPath(activeShell.fs.prettyPath(path));
     const target = quotePath(pretty);
     const cmd = node.type === 'dir' ? `cd ${target}` : `cat ${target}`;
     setMobileTab('terminal');

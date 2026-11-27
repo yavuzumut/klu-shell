@@ -45,14 +45,15 @@ SEÇENEKLER
     const { inputs, failed } = readInputs(ctx, operands);
     if (failed) return 2;
 
-    const lines = inputs.flatMap((i) => splitLines(i.text));
-    const textKey = (s: string) => (flags.has('f') ? s.toLocaleLowerCase('tr') : s);
+    const lines = inputs.flatMap((i) => splitLines(ctx.shell.displayText(i.text)));
+    const locale = ctx.shell.lang === 'en' ? 'en' : 'tr';
+    const textKey = (s: string) => (flags.has('f') ? s.toLocaleLowerCase(locale) : s);
     const compare = (a: string, b: string): number => {
       if (flags.has('n')) {
         const diff = numericKey(a) - numericKey(b);
         if (diff !== 0) return diff;
       }
-      return textKey(a).localeCompare(textKey(b), 'tr');
+      return textKey(a).localeCompare(textKey(b), ctx.shell.lang === 'en' ? 'en' : 'tr');
     };
     lines.sort(compare);
     if (flags.has('r')) lines.reverse();

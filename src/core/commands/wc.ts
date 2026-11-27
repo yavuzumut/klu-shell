@@ -74,7 +74,7 @@ SEÇENEKLER
       const nums = columns.map((c) => String(r.counts[c]).padStart(width)).join(' ');
       out += r.name ? `${nums} ${r.name}\n` : `${nums}\n`;
     }
-    ctx.stdout(out);
+    ctx.stdout(ctx.shell.displayText(out));
     return failed ? 1 : 0;
   },
 };

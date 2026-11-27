@@ -133,7 +133,7 @@ DESEN İPUÇLARI
         return;
       }
       if (node.type === 'file') {
-        inputs.push({ name: display, text: node.content });
+        inputs.push({ name: display, text: ctx.shell.displayText(node.content) });
         return;
       }
       if (!recursive) {
@@ -192,7 +192,7 @@ DESEN İPUÇLARI
       }
     }
 
-    ctx.stdout(out);
+    ctx.stdout(ctx.shell.displayText(out));
     if (hadError) return 2;
     return matchedAny ? 0 : 1;
   },

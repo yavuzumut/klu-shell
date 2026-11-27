@@ -6,6 +6,7 @@ import type { CommandContext, CommandRecord, OutputChunk, ShellProcess } from '.
 
 import type { Lang } from '../../i18n/types';
 import { getCommandDoc } from '../../i18n/localize';
+import { localizeCommandError, localizeFixtureName, localizeFixturePath, localizeFixtureText, resolveFixturePath } from '../../i18n/fixtureLocale';
 
 export interface ShellOptions {
   fs: VirtualFS;
@@ -32,7 +33,7 @@ export class Shell {
   history: string[];
   lastExitCode = 0;
   processes: ShellProcess[];
-  lang: Lang;
+  private currentLang: Lang;
   private listeners = new Set<Listener>();
 
   constructor(options: ShellOptions) {
@@ -41,9 +42,53 @@ export class Shell {
     this.hostname = options.hostname ?? 'klu';
     this.cwd = options.cwd ?? this.fs.home;
     this.history = options.history ? [...options.history] : [];
+    this.currentLang = options.lang ?? 'tr';
     this.env = this.defaultEnv();
     this.processes = options.processes ? [...options.processes] : this.defaultProcesses();
-    this.lang = options.lang ?? 'tr';
+  }
+
+  get lang(): Lang {
+    return this.currentLang;
+  }
+
+  set lang(lang: Lang) {
+    this.currentLang = lang;
+    this.syncLanguageEnv();
+  }
+
+  get username(): string {
+    return this.fs.user === 'root' ? 'root' : localizeFixtureName(this.fs.user, this.lang);
+  }
+
+  displayName(name: string): string {
+    return localizeFixtureName(name, this.lang);
+  }
+
+  displayPath(path: string): string {
+    return localizeFixturePath(path, this.lang);
+  }
+
+  displayText(text: string): string {
+    return localizeFixtureText(text, this.lang);
+  }
+
+  /** Resolve an entered path after translating localized fixture-name aliases. */
+  resolvePath(path: string, cwd = this.cwd): string {
+    return this.fs.resolve(this.canonicalizePathInput(path), cwd);
+  }
+
+  canonicalizePathInput(path: string): string {
+    return resolveFixturePath(path, this.lang);
+  }
+
+  private syncLanguageEnv(): void {
+    if (!this.env) return;
+    this.env.LANG = this.lang === 'en' ? 'en_US.UTF-8' : 'tr_TR.UTF-8';
+    this.env.USER = this.username;
+    this.env.LOGNAME = this.username;
+    this.env.HOME = this.displayPath(this.fs.home);
+    this.env.PWD = this.displayPath(this.cwd);
+    if (this.prevCwd) this.env.OLDPWD = this.displayPath(this.prevCwd);
   }
 
   defaultProcesses(): ShellProcess[] {
@@ -119,14 +164,14 @@ export class Shell {
   private defaultEnv(): Record<string, string> {
     const env: Record<string, string> = Object.create(null);
     Object.assign(env, {
-      HOME: this.fs.home,
-      USER: this.fs.user,
-      LOGNAME: this.fs.user,
+      HOME: this.displayPath(this.fs.home),
+      USER: this.username,
+      LOGNAME: this.username,
       SHELL: '/bin/bash',
       PATH: '/usr/local/bin:/usr/bin:/bin',
       HOSTNAME: this.hostname,
-      LANG: 'tr_TR.UTF-8',
-      PWD: this.cwd,
+      LANG: this.lang === 'en' ? 'en_US.UTF-8' : 'tr_TR.UTF-8',
+      PWD: this.displayPath(this.cwd),
       '?': '0',
     });
     return env;
@@ -150,14 +195,14 @@ export class Shell {
   /** Coloured prompt, e.g. `kullanici@klu:~$ `. */
   get prompt(): string {
     const symbol = this.fs.user === 'root' ? '#' : '$';
-    return `\x1b[1;32m${this.fs.user}@${this.hostname}\x1b[0m:\x1b[1;34m${this.fs.prettyPath(this.cwd)}\x1b[0m${symbol} `;
+    return `\x1b[1;32m${this.username}@${this.hostname}\x1b[0m:\x1b[1;34m${this.displayPath(this.fs.prettyPath(this.cwd))}\x1b[0m${symbol} `;
   }
 
   setCwd(abs: string): void {
     if (abs !== this.cwd) this.prevCwd = this.cwd;
     this.cwd = abs;
-    this.env.PWD = abs;
-    if (this.prevCwd) this.env.OLDPWD = this.prevCwd;
+    this.env.PWD = this.displayPath(abs);
+    if (this.prevCwd) this.env.OLDPWD = this.displayPath(this.prevCwd);
   }
 
   onExecute(listener: Listener): () => void {
@@ -180,7 +225,7 @@ export class Shell {
 
     const term = {
       stdout: (text: string) => text && output.push({ stream: 'stdout', text }),
-      stderr: (text: string) => text && output.push({ stream: 'stderr', text }),
+      stderr: (text: string) => text && output.push({ stream: 'stderr', text: localizeCommandError(text, this.lang) }),
     };
 
     let exitCode = this.lastExitCode;
@@ -258,7 +303,7 @@ export class Shell {
       let redirectError = false;
 
       for (const r of cmd.redirects) {
-        const path = this.fs.resolve(r.target.value, this.cwd);
+        const path = this.resolvePath(r.target.value, this.cwd);
         if (r.op === '<') {
           try {
             stdin = this.fs.readFile(path);
@@ -306,10 +351,10 @@ export class Shell {
           else captured += text;
         },
         stderr: (text) => {
-          if (stderrRedirect) errBuffer += text;
+          if (stderrRedirect) errBuffer += localizeCommandError(text, this.lang);
           else term.stderr(text);
         },
-        resolve: (p) => this.fs.resolve(p, this.cwd),
+        resolve: (p) => this.resolvePath(p, this.cwd),
       };
 
       exitCode = await this.runCommand(argv, ctx);
@@ -326,7 +371,7 @@ export class Shell {
     const def = this.registry.get(name);
     if (!def) {
       if (name.includes('/')) {
-        const abs = this.fs.resolve(name, this.cwd);
+        const abs = this.resolvePath(name, this.cwd);
         const node = this.fs.tryLookup(abs);
         if (!node) {
           ctx.stderr(`bash: ${name}: No such file or directory\n`);
@@ -342,10 +387,14 @@ export class Shell {
         }
         const lines = node.content.split('\n');
         let code = 0;
+        const isEnglishLocalizedFixture =
+          this.lang === 'en' &&
+          (node.content === 'echo "KLU Linux dunyasina hos geldin!"\n' || node.content === 'echo "Yedek aliniyor..."\n');
         for (const raw of lines) {
           const trimmed = raw.trim();
           if (!trimmed || trimmed.startsWith('#')) continue;
-          const rec = await this.execute(trimmed, { recordHistory: false });
+          const command = isEnglishLocalizedFixture ? this.displayText(trimmed) : trimmed;
+          const rec = await this.execute(command, { recordHistory: false });
           code = rec.exitCode;
           if (rec.stdout) ctx.stdout(rec.stdout);
           if (rec.stderr) ctx.stderr(rec.stderr);

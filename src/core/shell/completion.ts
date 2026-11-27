@@ -63,15 +63,18 @@ export function complete(before: string, shell: Shell): CompletionResult {
   const basePrefix = slash >= 0 ? unescaped.slice(slash + 1) : unescaped;
   if (unescaped === '~') return { line: head + '~/', options: [] };
 
-  const dirAbs = shell.fs.resolve(dirPart || '.', shell.cwd);
+  const dirAbs = shell.resolvePath(dirPart || '.', shell.cwd);
   if (!shell.fs.isDir(dirAbs)) return none;
 
   const candidates = shell.fs
     .readdir(dirAbs)
-    .filter((n) => n.name.startsWith(basePrefix))
+    .filter((n) => shell.displayName(n.name).startsWith(basePrefix))
     .filter((n) => basePrefix.startsWith('.') || !n.name.startsWith('.'))
     .filter((n) => mode !== 'dirs' || n.type === 'dir')
-    .map((n) => (n.type === 'dir' ? n.name + '/' : n.name));
+    .map((n) => {
+      const name = shell.displayName(n.name);
+      return n.type === 'dir' ? name + '/' : name;
+    });
 
   return finish(
     candidates,

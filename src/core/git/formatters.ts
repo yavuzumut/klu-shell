@@ -10,13 +10,11 @@ const ANSI = {
   cyan: '\x1b[36m',
 };
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-export function formatGitDate(timestamp: number): string {
+export function formatGitDate(timestamp: number, lang: 'tr' | 'en' = 'en'): string {
   const d = new Date(timestamp);
-  const dayName = DAYS[d.getDay()] ?? 'Sun';
-  const monthName = MONTHS[d.getMonth()] ?? 'Jan';
+  const locale = lang === 'en' ? 'en-US' : 'tr-TR';
+  const dayName = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d).replace(/\.$/, '');
+  const monthName = new Intl.DateTimeFormat(locale, { month: 'short' }).format(d).replace(/\.$/, '');
   const day = d.getDate();
   const pad = (n: number) => String(n).padStart(2, '0');
   const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -24,7 +22,7 @@ export function formatGitDate(timestamp: number): string {
   return `${dayName} ${monthName} ${day} ${time} ${year} +0000`;
 }
 
-export function formatStatus(status: GitStatusResult): string {
+export function formatStatus(status: GitStatusResult, localizePath: (path: string) => string = (path) => path): string {
   const lines: string[] = [];
   lines.push(`On branch ${status.branch}`);
 
@@ -60,13 +58,13 @@ export function formatStatus(status: GitStatusResult): string {
     lines.push('Changes to be committed:');
     lines.push('  (use "git restore --staged <file>..." to unstage)');
     for (const file of status.staged.newFiles) {
-      lines.push(`\t${ANSI.green}new file:   ${file}${ANSI.reset}`);
+      lines.push(`\t${ANSI.green}new file:   ${localizePath(file)}${ANSI.reset}`);
     }
     for (const file of status.staged.modifiedFiles) {
-      lines.push(`\t${ANSI.green}modified:   ${file}${ANSI.reset}`);
+      lines.push(`\t${ANSI.green}modified:   ${localizePath(file)}${ANSI.reset}`);
     }
     for (const file of status.staged.deletedFiles) {
-      lines.push(`\t${ANSI.green}deleted:    ${file}${ANSI.reset}`);
+      lines.push(`\t${ANSI.green}deleted:    ${localizePath(file)}${ANSI.reset}`);
     }
   }
 
@@ -76,10 +74,10 @@ export function formatStatus(status: GitStatusResult): string {
     lines.push('  (use "git add <file>..." to update what will be committed)');
     lines.push('  (use "git restore <file>..." to discard changes in working directory)');
     for (const file of status.unstaged.modifiedFiles) {
-      lines.push(`\t${ANSI.red}modified:   ${file}${ANSI.reset}`);
+      lines.push(`\t${ANSI.red}modified:   ${localizePath(file)}${ANSI.reset}`);
     }
     for (const file of status.unstaged.deletedFiles) {
-      lines.push(`\t${ANSI.red}deleted:    ${file}${ANSI.reset}`);
+      lines.push(`\t${ANSI.red}deleted:    ${localizePath(file)}${ANSI.reset}`);
     }
   }
 
@@ -88,7 +86,7 @@ export function formatStatus(status: GitStatusResult): string {
     lines.push('Unmerged paths:');
     lines.push('  (use "git add <file>..." to mark resolution)');
     for (const c of merging?.conflicts ?? []) {
-      lines.push(`\t${ANSI.red}${(c.kind + ':').padEnd(16)}${c.path}${ANSI.reset}`);
+      lines.push(`\t${ANSI.red}${(c.kind + ':').padEnd(16)}${localizePath(c.path)}${ANSI.reset}`);
     }
   }
 
@@ -97,7 +95,7 @@ export function formatStatus(status: GitStatusResult): string {
     lines.push('Untracked files:');
     lines.push('  (use "git add <file>..." to include in what will be committed)');
     for (const file of status.untracked) {
-      lines.push(`\t${ANSI.red}${file}${ANSI.reset}`);
+      lines.push(`\t${ANSI.red}${localizePath(file)}${ANSI.reset}`);
     }
   }
 
@@ -119,11 +117,12 @@ export function formatStatus(status: GitStatusResult): string {
 
 export function formatLog(
   commits: GitCommit[],
-  options: { oneline?: boolean; branch?: string; refs?: Record<string, string[]> } = {},
+  options: { oneline?: boolean; branch?: string; refs?: Record<string, string[]>; lang?: 'tr' | 'en' } = {},
 ): string {
   const oneline = options.oneline ?? false;
   const branch = options.branch ?? 'main';
   const refs = options.refs ?? {};
+  const lang = options.lang ?? 'en';
 
   if (commits.length === 0) {
     return '';
@@ -159,7 +158,7 @@ export function formatLog(
           `commit ${ANSI.yellow}${c.hash}${ANSI.reset}${decorate(c, idx)}\n` +
           mergeLine +
           `Author: ${c.author} <${c.author}@klu>\n` +
-          `Date:   ${formatGitDate(c.timestamp)}\n\n` +
+          `Date:   ${formatGitDate(c.timestamp, lang)}\n\n` +
           `    ${c.message}\n`
         );
       })
@@ -168,14 +167,15 @@ export function formatLog(
 }
 
 /** Render file differences as a colored unified diff (`-` red, `+` green). */
-export function formatDiff(diffs: GitFileDiff[]): string {
+export function formatDiff(diffs: GitFileDiff[], localizePath: (path: string) => string = (path) => path): string {
   const out: string[] = [];
   for (const d of diffs) {
-    out.push(`${ANSI.bold}diff --git a/${d.path} b/${d.path}${ANSI.reset}`);
+    const path = localizePath(d.path);
+    out.push(`${ANSI.bold}diff --git a/${path} b/${path}${ANSI.reset}`);
     if (d.oldContent === null) out.push(`${ANSI.bold}new file mode 100644${ANSI.reset}`);
     if (d.newContent === null) out.push(`${ANSI.bold}deleted file mode 100644${ANSI.reset}`);
-    out.push(`${ANSI.bold}--- ${d.oldContent === null ? '/dev/null' : `a/${d.path}`}${ANSI.reset}`);
-    out.push(`${ANSI.bold}+++ ${d.newContent === null ? '/dev/null' : `b/${d.path}`}${ANSI.reset}`);
+    out.push(`${ANSI.bold}--- ${d.oldContent === null ? '/dev/null' : `a/${path}`}${ANSI.reset}`);
+    out.push(`${ANSI.bold}+++ ${d.newContent === null ? '/dev/null' : `b/${path}`}${ANSI.reset}`);
 
     const hunks = buildHunks(diffLines(d.oldContent ?? '', d.newContent ?? ''));
     for (const h of hunks) {

@@ -19,7 +19,7 @@ AÇIKLAMA
     $ pwd
     /home/kullanici`,
   run(_args, ctx) {
-    ctx.stdout(ctx.shell.cwd + '\n');
+    ctx.stdout(ctx.shell.displayPath(ctx.shell.cwd) + '\n');
     return 0;
   },
 };

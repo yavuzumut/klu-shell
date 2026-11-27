@@ -209,9 +209,9 @@ ALT KOMUTLAR (Git 4)
       const { isReinit } = GitRepo.init(ctx.fs, targetDir, 'main', { bare: isBare });
       const gitPath = isBare ? ctx.resolve(targetDir) : ctx.fs.resolve('.git', targetDir);
       if (isReinit) {
-        ctx.stdout(`Reinitialized existing Git repository in ${gitPath}/\n`);
+        ctx.stdout(`Reinitialized existing Git repository in ${ctx.shell.displayPath(gitPath)}/\n`);
       } else {
-        ctx.stdout(`Initialized empty Git repository in ${gitPath}/\n`);
+        ctx.stdout(`Initialized empty Git repository in ${ctx.shell.displayPath(gitPath)}/\n`);
       }
       return 0;
     }
@@ -224,11 +224,11 @@ ALT KOMUTLAR (Git 4)
         return 128;
       }
       const url = cloneArgs[0];
-      const target = cloneArgs[1];
+      const target = cloneArgs[1] ? ctx.shell.canonicalizePathInput(cloneArgs[1]) : undefined;
       try {
         GitRepo.clone(ctx.fs, url, target, ctx.cwd);
         const folderName = target || url.trim().replace(/\.git\/?$/, '').split(/[/:]+/).pop() || 'repo';
-        ctx.stdout(`Cloning into '${folderName}'...\ndone.\n`);
+        ctx.stdout(`Cloning into '${ctx.shell.displayName(folderName)}'...\ndone.\n`);
         return 0;
       } catch (err) {
         ctx.stderr(`${errMsg(err)}\n`);
@@ -248,7 +248,7 @@ ALT KOMUTLAR (Git 4)
     // git status
     if (sub === 'status') {
       const status = repo.getStatus();
-      ctx.stdout(formatStatus(status));
+      ctx.stdout(formatStatus(status, (path) => ctx.shell.displayPath(path)));
       return 0;
     }
 
@@ -260,7 +260,7 @@ ALT KOMUTLAR (Git 4)
         return 0;
       }
       try {
-        repo.add(patterns, ctx.cwd);
+        repo.add(patterns.map((path) => ctx.shell.canonicalizePathInput(path)), ctx.cwd);
         return 0;
       } catch (err) {
         ctx.stderr(`${errMsg(err)}\n`);
@@ -308,7 +308,7 @@ ALT KOMUTLAR (Git 4)
 
       if (mergeState && mergeState.conflicts.length > 0) {
         try {
-          repo.commit(message, ctx.fs.user);
+          repo.commit(message, ctx.shell.username);
         } catch (err) {
           ctx.stderr(`${errMsg(err)}\n`);
         }
@@ -318,7 +318,7 @@ ALT KOMUTLAR (Git 4)
       try {
         const parentCommit = repo.getHeadCommit();
         const parentTree = parentCommit?.tree ?? {};
-        const commit = repo.commit(message, ctx.fs.user);
+        const commit = repo.commit(message, ctx.shell.username);
 
         // Calculate count of changed files
         const allKeys = new Set([...Object.keys(parentTree), ...Object.keys(commit.tree)]);
@@ -337,7 +337,7 @@ ALT KOMUTLAR (Git 4)
         return 0;
       } catch {
         const status = repo.getStatus();
-        ctx.stdout(formatStatus(status));
+        ctx.stdout(formatStatus(status, (path) => ctx.shell.displayPath(path)));
         return 1;
       }
     }
@@ -362,6 +362,7 @@ ALT KOMUTLAR (Git 4)
         oneline,
         branch: repo.getCurrentBranch() ?? 'main',
         refs,
+        lang: ctx.shell.lang,
       });
       ctx.stdout(formatted);
       return 0;
@@ -380,9 +381,9 @@ ALT KOMUTLAR (Git 4)
         } else paths.push(a);
       }
       try {
-        const specs = paths.length > 0 ? repo.resolvePathspecs(paths, ctx.cwd) : [''];
+        const specs = paths.length > 0 ? repo.resolvePathspecs(paths.map((path) => ctx.shell.canonicalizePathInput(path)), ctx.cwd) : [''];
         const diffs = staged ? repo.diffStaged(specs) : repo.diffWorking(specs);
-        ctx.stdout(formatDiff(diffs));
+        ctx.stdout(formatDiff(diffs, (path) => ctx.shell.displayPath(path)));
         return 0;
       } catch (err) {
         ctx.stderr(`${errMsg(err)}\n`);
@@ -410,7 +411,7 @@ ALT KOMUTLAR (Git 4)
         return 128;
       }
       try {
-        repo.restore(paths, ctx.cwd, { staged, worktree: worktree || !staged });
+        repo.restore(paths.map((path) => ctx.shell.canonicalizePathInput(path)), ctx.cwd, { staged, worktree: worktree || !staged });
         return 0;
       } catch (err) {
         ctx.stderr(`${errMsg(err)}\n`);
@@ -515,7 +516,7 @@ ALT KOMUTLAR (Git 4)
         return 128;
       }
       try {
-        const result = repo.merge(name, ctx.fs.user);
+        const result = repo.merge(name, ctx.shell.username);
         switch (result.type) {
           case 'up-to-date':
             ctx.stdout('Already up to date.\n');
@@ -655,7 +656,7 @@ ALT KOMUTLAR (Git 4)
       const branchName = positional[1];
 
       try {
-        const result = repo.pull(remoteName, branchName, ctx.fs.user);
+        const result = repo.pull(remoteName, branchName, ctx.shell.username);
         switch (result.type) {
           case 'up-to-date':
             ctx.stdout('Already up to date.\n');

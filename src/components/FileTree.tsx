@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import type { VirtualFS, FsNode } from '../core/fs/VirtualFS';
 import { useI18n } from '../i18n/I18nProvider';
+import { localizeFixtureName, localizeFixturePath } from '../i18n/fixtureLocale';
+import type { Lang } from '../i18n/types';
 
 interface FileTreeProps {
   fs: VirtualFS;
@@ -14,6 +16,7 @@ interface TreeNodeProps {
   name: string;
   absPath: string;
   node: FsNode;
+  lang: Lang;
   fs: VirtualFS;
   cwd: string;
   level: number;
@@ -27,6 +30,7 @@ function TreeNode({
   name,
   absPath,
   node,
+  lang,
   fs,
   cwd,
   level,
@@ -58,7 +62,7 @@ function TreeNode({
         className={`tree-node ${isCwd ? 'tree-node-cwd' : ''} ${isHighlighted ? 'tree-node-highlight' : ''}`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={handleClick}
-        title={absPath}
+        title={localizeFixturePath(absPath, lang)}
       >
         <span className="tree-icon">
           {isDir ? (
@@ -76,9 +80,10 @@ function TreeNode({
           {children.map((child) => {
             const childPath = absPath === '/' ? `/${child.name}` : `${absPath}/${child.name}`;
             return (
-              <TreeNode
+            <TreeNode
                 key={childPath}
-                name={child.name}
+                name={localizeFixtureName(child.name, lang)}
+                lang={lang}
                 absPath={childPath}
                 node={child}
                 fs={fs}
@@ -183,7 +188,7 @@ export function FileTree({ fs, cwd, onSelectPath, onResetFs, highlightedPath: ex
     });
   };
 
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const activeHighlight = externalHighlight ?? internalHighlight;
 
   return (
@@ -199,6 +204,7 @@ export function FileTree({ fs, cwd, onSelectPath, onResetFs, highlightedPath: ex
       <div className="file-tree-body">
         <TreeNode
           name="/"
+          lang={lang}
           absPath="/"
           node={fs.root}
           fs={fs}

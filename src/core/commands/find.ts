@@ -109,8 +109,8 @@ AÇIKLAMA
     const walk = (display: string, abs: string, depth: number) => {
       const node = ctx.fs.tryLookup(abs);
       if (!node) return;
-      const name = depth === 0 ? basename(display) : node.name;
-      if (tests.every((t) => t(name, node.type))) out.push(display);
+      const name = ctx.shell.displayName(depth === 0 ? basename(display) : node.name);
+      if (tests.every((t) => t(name, node.type))) out.push(ctx.shell.displayPath(display));
       if (node.type === 'dir' && depth < maxDepth) {
         for (const child of ctx.fs.readdir(abs)) {
           walk(joinPath(display, child.name), joinPath(abs, child.name), depth + 1);

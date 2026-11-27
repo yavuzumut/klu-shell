@@ -47,7 +47,7 @@ SEÇENEKLER
     const out = groups
       .filter((g) => (!flags.has('d') || g.count > 1) && (!flags.has('u') || g.count === 1))
       .map((g) => (flags.has('c') ? `${String(g.count).padStart(7)} ${g.line}` : g.line));
-    ctx.stdout(joinLines(out));
+    ctx.stdout(ctx.shell.displayText(joinLines(out)));
     return 0;
   },
 };

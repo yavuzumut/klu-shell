@@ -85,15 +85,15 @@ describe('Security & Resilience Audit Tests', () => {
 
       const r1 = await run('export __proto__=malicious');
       expect(r1.exitCode).toBe(1);
-      expect(r1.err).toContain('not a valid identifier');
+      expect(r1.err).toContain('geçerli bir tanımlayıcı değil');
 
       const r2 = await run('export constructor=evil');
       expect(r2.exitCode).toBe(1);
-      expect(r2.err).toContain('not a valid identifier');
+      expect(r2.err).toContain('geçerli bir tanımlayıcı değil');
 
       const r3 = await run('export prototype=evil');
       expect(r3.exitCode).toBe(1);
-      expect(r3.err).toContain('not a valid identifier');
+      expect(r3.err).toContain('geçerli bir tanımlayıcı değil');
 
       // Verify Object.prototype was not polluted
       expect(({} as any).malicious).toBeUndefined();

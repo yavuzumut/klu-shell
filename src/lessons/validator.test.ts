@@ -5,12 +5,16 @@ import { Shell } from '../core/shell/Shell';
 import type { CommandRecord } from '../core/shell/types';
 import { ALL_LESSONS, LEVELS } from './content';
 import type { Lesson } from './types';
+import type { Lang } from '../i18n/types';
+import { localizeLesson } from '../i18n/localize';
+import { runLessonSetupCommands } from './session';
 import { evaluateCheck, evaluateCommand, isReadOnlyGitCommand, isWrongAttempt } from './validator';
 
-function sessionFor(lesson: Lesson) {
+function sessionFor(lesson: Lesson, lang: Lang = 'tr') {
   const { cwd, processes, ...seed } = lesson.setup ?? {};
   const fs = createDefaultFS(seed);
-  const shell = new Shell({ fs, registry: createRegistry(), cwd });
+  const shell = new Shell({ fs, registry: createRegistry(), cwd, lang });
+  const activeLesson = localizeLesson(lesson, lang);
   if (processes) {
     for (const p of processes) shell.addProcess(p);
   }
@@ -19,7 +23,7 @@ function sessionFor(lesson: Lesson) {
   const run = async (line: string) => {
     const last = await shell.execute(line);
     records.push(last);
-    const result = evaluateCommand(lesson, completed, {
+    const result = evaluateCommand(activeLesson, completed, {
       fs: shell.fs,
       cwd: shell.cwd,
       last,
@@ -58,6 +62,16 @@ describe('lesson content', () => {
         expect(result.completedTaskId, `task ${task.id}`).toBe(task.id);
       }
       expect(completed).toEqual(lesson.tasks.map((t) => t.id));
+    });
+
+    it(`English solutions complete all tasks of "${lesson.title}"`, async () => {
+      const { shell, run, completed } = sessionFor(lesson, 'en');
+      await runLessonSetupCommands(shell, lesson);
+      for (const task of localizeLesson(lesson, 'en').tasks) {
+        const result = await run(task.solution);
+        expect(result.completedTaskId, `task ${task.id}`).toBe(task.id);
+      }
+      expect(completed).toEqual(lesson.tasks.map((task) => task.id));
     });
   }
 });

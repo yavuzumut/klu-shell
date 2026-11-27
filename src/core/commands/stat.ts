@@ -106,16 +106,16 @@ SEÇENEKLER
         out = out.replace(/%a/g, (node.mode & 0o777).toString(8));
         out = out.replace(/%A/g, modeHuman);
         out = out.replace(/%F/g, typeDesc);
-        out = out.replace(/%U/g, node.owner);
-        out = out.replace(/%G/g, node.group);
+        out = out.replace(/%U/g, ctx.shell.displayName(node.owner));
+        out = out.replace(/%G/g, ctx.shell.displayName(node.group));
         ctx.stdout(`${out}\n`);
       } else {
         const blocks = Math.ceil(size / 4096) * 8;
         const text =
-          `  File: ${target}\n` +
+          `  File: ${ctx.shell.displayPath(target)}\n` +
           `  Size: ${String(size).padEnd(10)} Blocks: ${String(blocks).padEnd(10)} IO Block: 4096   ${typeDesc}\n` +
           `Device: 0/0       \tInode: 1001        Links: ${links}\n` +
-          `Access: (${mode}/${modeHuman})  Uid: ( 1000/${node.owner})   Gid: ( 1000/${node.group})\n` +
+          `Access: (${mode}/${modeHuman})  Uid: ( 1000/${ctx.shell.displayName(node.owner)})   Gid: ( 1000/${ctx.shell.displayName(node.group)})\n` +
           `Modify: ${timeStr}\n`;
         ctx.stdout(text);
       }

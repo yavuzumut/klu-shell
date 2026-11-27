@@ -72,6 +72,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
 
   useEffect(() => {
     gitShell.lang = lang;
+    termRef.current?.refreshPrompt();
   }, [gitShell, lang]);
 
   const [currentCwd, setCurrentCwd] = useState(gitShell.cwd);
@@ -191,7 +192,7 @@ export function GitWorkspace({ onBackToIntro, terminalTheme, initialLessonId }: 
 
   const handleTreeSelectPath = useCallback(
     (path: string, node: { type: 'file' | 'dir' }) => {
-      const pretty = gitShell.fs.prettyPath(path);
+      const pretty = gitShell.displayPath(gitShell.fs.prettyPath(path));
       const target = quotePath(pretty);
       const cmd = node.type === 'dir' ? `cd ${target}` : `cat ${target}`;
       setMobileTab('terminal');

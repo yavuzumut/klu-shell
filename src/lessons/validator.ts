@@ -49,7 +49,12 @@ export function evaluateCheck(check: TaskCheck, state: CheckState): boolean {
       return !state.fs.exists(resolve(check.path));
     case 'fileContains': {
       const node = state.fs.tryLookup(resolve(check.path));
-      return node?.type === 'file' && node.content.includes(check.text);
+      const content = node?.type === 'file'
+        ? state.shell?.lang === 'en'
+          ? state.shell.displayText(node.content)
+          : node.content
+        : '';
+      return node?.type === 'file' && content.includes(check.text);
     }
     case 'cwdIs':
       return state.cwd === state.fs.resolve(check.path, '/');

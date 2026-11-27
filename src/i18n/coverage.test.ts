@@ -15,6 +15,7 @@ import { EN_EXPLORE_TOOLS } from './content/en/explore';
 import { EN_GIT_INTRO } from './content/en/gitIntro';
 import { EN_GIT_LESSONS, EN_GIT_LEVELS } from './content/en/gitLessons';
 import { EN_LESSONS, EN_LEVELS, EN_LESSON_EXAMPLES, EN_LESSON_EXTENSIONS } from './content/en/lessons';
+import { localizeFixtureText, localizeTaskCheck } from './fixtureLocale';
 
 const keys = (items: string[]) => [...items].sort();
 
@@ -55,8 +56,8 @@ describe('English translation catalog coverage', () => {
           expect(localizedTask?.hints.every(Boolean), `${lesson.id}/${task.id} hint text`).toBe(true);
           expect(localizedTask?.hints).not.toEqual(task.hints);
           const translatedSolution = catalog[lesson.id]?.tasks?.[task.id]?.solution;
-          expect(localizedTask?.solution).toBe(translatedSolution ?? task.solution);
-          expect(localizedTask?.check).toEqual(task.check);
+          expect(localizedTask?.solution).toBe(localizeFixtureText(translatedSolution ?? task.solution, 'en'));
+          expect(localizedTask?.check).toEqual(localizeTaskCheck(task.check, 'en'));
         }
         expect(localized.tasks.map((task) => task.id)).toEqual(lesson.tasks.map((task) => task.id));
         if (lessons === ALL_LESSONS) {
@@ -65,7 +66,7 @@ describe('English translation catalog coverage', () => {
           expect(localized.examples?.every(Boolean), `${lesson.id} example text`).toBe(true);
         } else {
           expect(translated.examples, `${lesson.id} examples`).toHaveLength(lesson.examples.length);
-          expect(localized.examples).toEqual(translated.examples);
+          expect(localized.examples).toEqual((translated.examples ?? []).map((example) => localizeFixtureText(example, 'en')));
         }
       }
     }
@@ -84,9 +85,15 @@ describe('English translation catalog coverage', () => {
     }
     const localized = localizeCheatSheet(CHEAT_SHEET_DATA, 'en');
     for (let index = 0; index < CHEAT_SHEET_DATA.length; index++) {
+      const translatedCategory = EN_CHEAT_SHEET.find((category) => category.titleTr === CHEAT_SHEET_DATA[index].title);
       expect(localized[index].title).not.toBe(CHEAT_SHEET_DATA[index].title);
       expect(localized[index].items.map((item) => item.command)).toEqual(CHEAT_SHEET_DATA[index].items.map((item) => item.command));
       expect(localized[index].items.every((item, itemIndex) => item.description !== CHEAT_SHEET_DATA[index].items[itemIndex].description)).toBe(true);
+      expect(localized[index].items.map((item) => item.example)).toEqual(
+        CHEAT_SHEET_DATA[index].items.map((item) =>
+          translatedCategory?.items[item.command]?.example ?? localizeFixtureText(item.example, 'en'),
+        ),
+      );
     }
   });
 
@@ -100,6 +107,8 @@ describe('English translation catalog coverage', () => {
       if (tool.tips?.length) expect(translated?.tips, `${tool.id} tips`).toHaveLength(tool.tips.length);
       if (tool.install.note) expect(translated?.installNote, `${tool.id} install note`).toBeTruthy();
       expect(localizeExplore([tool], 'en')[0].description).not.toBe(tool.description);
+      expect(localizeExplore([tool], 'en')[0].exampleCommand).toBe(localizeFixtureText(tool.exampleCommand, 'en'));
+      expect(localizeExplore([tool], 'en')[0].exampleOutput).toBe(localizeFixtureText(tool.exampleOutput, 'en'));
     }
     expect(keys(Object.keys(EN_GIT_INTRO.curriculum.topics))).toEqual(
       keys(GIT_INTRO_DATA.curriculum.topics.map((topic) => topic.id)),
