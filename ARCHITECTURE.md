@@ -35,9 +35,10 @@ termi/
 │   │   ├── shell/          # Kabuk ayrıştırıcı, boru hatları, glob, otomatik tamamlama
 │   │   └── test/           # Birim test yardımcıları ve test ortamı
 │   ├── explore/            # Meraklısına sekmesi ve modern CLI araç kartları
-│   ├── git/                # Git bilgilendirme sekmesi ve görsel anlatım verisi
+│   ├── git/                # Git sekmesi, etkileşimli Git dersleri ve görev akışları
+│   │   └── lessons/        # Git Seviye 1–4 içerikleri ve doğrulama akışları
 │   ├── lessons/            # Ders ve görev mantığı, doğrulayıcı, ders içerikleri
-│   │   └── content/        # Seviye 0 ve Seviye 1 ders tanımları
+│   │   └── content/        # Seviye 0–3 Linux ders tanımları
 │   ├── state/              # İlerleme (progress) durumu ve localStorage entegrasyonu
 │   ├── terminal/           # xterm.js React sarmalayıcısı ve satır düzenleyici
 │   ├── themes/             # Tema tanımları, vurgu rengi ve xterm renk paleti yönetimi
@@ -49,7 +50,7 @@ termi/
 ### Modül Sorumlulukları
 1. **`src/core/fs`:** Ağaç tabanlı bellek içi dosya sistemi. CRUD operasyonları, POSIX hata kodları, mutasyon olayları (`VirtualFS.subscribe`) ve başlangıç dosya yapısı tohumlama (`src/core/fs/defaultTree.ts`).
 2. **`src/core/shell`:** POSIX benzeri kabuk yorumlayıcısı. Komut satırı tokenlaştırma/ayrıştırma (`src/core/shell/parser.ts`), tilde ve değişken genişletme, dosya adı desenleri (`src/core/shell/glob.ts`), boru hatları (`|`), mantıksal zincirler (`&&`, `||`), I/O yönlendirmeleri (`<`, `>`, `>>`, `2>`, `2>>`), geçmiş (`history`) ve Tab tamamlama (`src/core/shell/completion.ts`).
-3. **`src/core/commands`:** Dahili komutların (`pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history`) bireysel implementasyonları ve merkezi kayıt defteri (`src/core/commands/index.ts`).
+3. **`src/core/commands`:** Dahili terminal komutlarının modülleri ve merkezi kayıt defteri (`src/core/commands/index.ts`).
 4. **`src/core/test`:** Test ortamında bağımsız kabuk (`createTestShell`), ANSI temizleme (`stripAnsi`) ve zaman sabitleme (`FIXED_NOW`) yardımcıları (`src/core/test/helpers.ts`).
 5. **`src/lessons`:** Eğitim motoru. Görev tipleri (`src/lessons/types.ts`), komut/dosya durumu doğrulayıcı (`src/lessons/validator.ts`), oturum hazırlayıcı (`src/lessons/session.ts`) ve seviye/ders kataloğu (`src/lessons/content/index.ts`).
 6. **`src/state`:** Kullanıcı ilerlemesinin (`completed`, `attempts`, `revealed`, `history`) takibi ve `localStorage` ile kalıcı senkronizasyonu (`src/state/useProgress.ts`).
@@ -57,7 +58,7 @@ termi/
 8. **`src/components`:** React bileşenleri. Başlık ve mod sekmeleri (`src/components/Header.tsx`), sol gezinme çekmecesi (`src/components/LessonDrawer.tsx`), ders paneli ve görev kartları (`src/components/LessonPanel.tsx`), canlı dosya ağacı görünümü (`src/components/FileTree.tsx`), tema seçici açılır menü (`src/components/ThemeSelector.tsx`).
 9. **`src/cheatsheet`:** Temel komutların hızlı başvuru tablosu (`src/cheatsheet/CheatSheetView.tsx`, `src/cheatsheet/data.ts`).
 10. **`src/explore`:** Gerçek Linux CLI araçlarını tanıtan kartlar (`src/explore/ExploreView.tsx`, `src/explore/data.ts`).
-11. **`src/git`:** Git sürüm kontrol kavramları, 3 alan modeli ve yol haritası (`src/git/GitIntroView.tsx`, `src/git/intro.ts`).
+11. **`src/git`:** Git giriş görünümü ve Git 1–4 etkileşimli dersleri (`src/git/GitIntroView.tsx`, `src/git/lessons/`). Motor `src/core/git/` altındadır.
 12. **`src/terminal`:** `@xterm/xterm` kütüphanesini React yaşam döngüsüne bağlayan görünüm bileşeni (`src/terminal/TerminalView.tsx`, `src/terminal/LineEditor.ts`).
 
 ---
@@ -618,7 +619,7 @@ Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konu
    `BaseNode` nesnesinde `mode` (örn: `0o755`), `owner` ve `group` alanları tanımlıdır ve `chmod` için ayrılmıştır. Ancak mevcut aşamada `VirtualFS` üzerindeki okuma, yazma ve silme işlemlerinde yetki denetimi henüz işletilmemektedir (Örn: Standart kullanıcı hesabı olan `kullanici`, `/root` dizini altındaki dosyaları okuyabilmektedir).
 2. **Serbest Mod ve FS Kalıcılığı:**
    Sanal dosya sistemi tamamen RAM üzerinde yaşar. Sayfa yenilendiğinde (F5 / browser refresh) Serbest Mod'da oluşturulan dosyalar sıfırlanır ve varsayılan tohum ağacına döner (Kullanıcı ilerlemesi `localStorage` üzerinde saklanırken sanal FS saklanmaz).
-3. **Etkileşimli Git Motoru:** Git sekmesi Git 1–4 içeriklerini ve etkileşimli ders akışlarını çalıştırır. `GitRepo`, sanal `.git/` JSON verisini; Git komutları temel commit akışını, diff/restore işlemlerini, dallanma/birleştirmeyi ve Git 4 uzak depo işlemlerini yönetir. Uzak işlemler VirtualFS içindeki `/var/klu-remotes` simülasyonunu kullanır.
+3. **Git simülasyonu:** Git sekmesi Git 1–4 içeriklerini ve etkileşimli ders akışlarını çalıştırır. `GitRepo`, sanal `.git/` JSON verisini; Git komutları temel commit akışını, diff/restore işlemlerini, dallanma/birleştirmeyi ve uzak depo işlemlerini yönetir. Uzak işlemler VirtualFS içindeki `/var/klu-remotes` simülasyonunu kullanır; gerçek Git sunucusuna bağlanmaz.
 4. **Mobil Klavye Kısayolları:**
    Mobil cihazlar için ekranda temel gezinme tuşlarını içeren bir çubuk (`.key-bar` — Tab, ↑, ↓, ←, →, ~, /, -, Ctrl+C) bulunmaktadır; ancak boru hattı (`|`), yönlendirme (`>`, `<`) ve kesme tuşları gibi gelişmiş terminal operatörleri için zengin bir sanal tuş takımı henüz geliştirilmemiştir.
 5. **Dosya İsimlerinde ANSI Kaçış Filtreleme:**
@@ -628,18 +629,8 @@ Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konu
 
 ## 12. Planlanan Geliştirmeler ve Yol Haritası (Roadmap)
 
-### Seviye 2: Orta Seviye (Ön Koşul: Yönlendirme Dersi)
-- Seviye 2'ye geçilmeden önce dosya yönlendirmeleri (`>`, `>>`) ve dosya yazma temelleri ders olarak pekiştirilmelidir.
-- Boru hattı mantığı (`|`) ve G/Ç yönlendirmelerinin (`>`, `>>`, `<`) uygulamalı anlatımı.
-- `grep` (metin içi arama ve filtreleme) komutunun çekirdeğe eklenmesi.
-- `find` (dosya sisteminde arama) komutunun çekirdeğe eklenmesi.
-- `chmod` ve `chown` komutlarıyla gerçek dosya izin sisteminin aktif hale getirilmesi.
-
-### Seviye 3: İleri Düzey Linux ve Betikleme
-- Temel süreç yönetimi simülasyonu (`ps`, `kill`).
-- Basit kabuk betikleri çalıştırma (değişkenler, döngüler, `if-else`).
-- Paket yöneticisi simülasyonu (`apt install` simülasyonu).
-- Ağ araçları (`curl`, `ping` simülasyonları).
+### Linux ders seviyeleri (Seviye 0–3)
+Linux ders kataloğu `src/lessons/content/index.ts` üzerinden Seviye 0, 1, 2 ve 3'ü yükler. Seviyelerin mevcut içeriği ve ders listesi bu belgenin “Mevcut Durum Özeti” bölümünde verilmiştir. Gerçek Linux izin modeli, paket yöneticisi ve ağ erişimi bu simülatörün özellikleri değildir.
 
 ### Etkileşimli Git Motoru (Tamamlandı)
 - Git sekmesi Linux seviyelerinden ayrı eğitim alanı ve etkileşimli ders akışı sunar.
@@ -649,7 +640,7 @@ Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konu
   - **Git 1 (Temel Akış):** `git init`, `git config`, `git status`, `git add`, `git commit`, `git log`.
   - **Git 2 (İnce Ayar & Düzeltmeler):** `git diff`, `git restore`, `.gitignore` desteği, `git commit --amend`.
   - **Git 3 (Dallanma & Birleştirme):** `git branch`, `git switch` / `git checkout`, `git merge`.
-  - **Git 4 (İşbirliği & Uzak Depo):** `git remote`, `git clone`, `git push`, `git pull` ve tarayıcı içi simüle uzak depo (fake remote).
+  - **Git 4 (İşbirliği & Uzak Depo):** `git remote`, `git clone`, `git push`, `git pull` ve VirtualFS içindeki yerel uzak depo simülasyonu.
 
 ---
 

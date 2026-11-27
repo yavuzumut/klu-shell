@@ -12,8 +12,7 @@
 <p align="center">
   <a href="https://klu-shell.pages.dev/">Canlı uygulama</a> ·
   <a href="https://github.com/yavuzumut/klu-shell">GitHub deposu</a> ·
-  <a href="ARCHITECTURE.md">Mimari</a> ·
-  <a href="SECURITY_REPORT.md">Güvenlik raporu</a>
+  <a href="ARCHITECTURE.md">Mimari</a>
 </p>
 
 <p align="center">
@@ -74,7 +73,7 @@ Test sayıları değişebileceğinden README’de sabitlenmiyor; `npm test` gün
 - Linux dersleri `src/lessons/content/level0`–`level3` altında tutulur. İlgili seviye dizinindeki `index.ts` dosyasına yeni dersi kaydet ve doğrulama kapsamını `src/lessons/validator.test.ts` ile kontrol et.
 - Git dersleri `src/git/lessons/` altında bulunur; motor ve doğrulama akışları `src/core/git/` ile birlikte çalışır.
 - Shell komutları `src/core/commands/`, kabuk yorumlayıcısı `src/core/shell/`, VirtualFS `src/core/fs/` altındadır.
-- Ayrıntılı katman ve veri akışı için [ARCHITECTURE.md](ARCHITECTURE.md) belgesine; mevcut güvenlik değerlendirmesi için depo kökündeki [SECURITY_REPORT.md](SECURITY_REPORT.md) dosyasına bak.
+- Ayrıntılı katman ve veri akışı için [ARCHITECTURE.md](ARCHITECTURE.md) belgesine bak.
 
 ## Teknoloji
 

@@ -6,3 +6,4 @@ dist
 .env
 .env.*
 *.local
+SECURITY_REPORT.md
