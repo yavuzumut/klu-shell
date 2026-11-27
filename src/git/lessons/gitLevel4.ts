@@ -19,6 +19,8 @@ export const gitLevel4: Level = {
 1. **\`git remote add <ad> <url>\`:** Yerel depoya uzak bir sunucu adresi bağlar. Standart olarak ilk uzak depoya **\`origin\`** adı verilir.
 2. **\`git remote -v\`:** Hangi uzak depolara bağlı olduğunu ve adreslerini (\`fetch\` ve \`push\` için) listeler.
 3. **\`git push -u <uzak> <dal>\`:** Yereldeki commit'lerini uzak depoya gönderir. **\`-u\`** (\`--set-upstream\`) bayrağı bu dalı uzak dalla eşler; böylece bundan sonraki gönderimlerde sadece **\`git push\`** yazman yeterli olur.
+
+> **KLU simülasyonu:** KLU, GitHub'a veya genel internete bağlanmaz. Bu dersteki uzak depo adresleri sanal dosya sistemindeki yerel depolara karşılık gelir; push ve pull işlemleri yalnızca bu simülasyonda çalışır.
 `,
       examples: [
         'git remote add origin https://github.com/klu/notlar.git',
@@ -102,6 +104,8 @@ Başkalarının paylaştığı bir projeyi kendi bilgisayarına almak veya ekip 
 1. **\`git clone <url>\`:** Uzaktaki bir depoyu tüm commit geçmişi, dalları ve dosyalarıyla birlikte bilgisayarına indirir. Ayrıca uzak bağlantıyı otomatik olarak **\`origin\`** olarak kaydeder.
 2. **\`git pull\`:** Uzak depodaki yeni commit'leri çeker ve üzerinde çalıştığın mevcut dala birleştirir.
 3. **\`git log --oneline\`:** Çekilen yeni commit'lerin geçmişe eklendiğini doğrular.
+
+> **KLU simülasyonu:** Klonlama ve güncelleme, sanal dosya sistemi altındaki yerel uzak depo örneklerini kullanır; gerçek bir sunucuya bağlanmaz.
 `,
       examples: [
         'git clone https://github.com/klu/notlar.git',

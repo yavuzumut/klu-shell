@@ -38,7 +38,7 @@ Initialized empty Git repository in /home/kullanici/.git/
 
 ---
 
-### The Most Important Command: \`git status\`
+**The Most Important Command: \`git status\`**
 
 \`git status\` tells you:
 1. Which branch you are currently on (usually \`main\` or \`master\`).
@@ -71,7 +71,7 @@ Initialized empty Git repository in /home/kullanici/.git/
     summary: 'Stage files with git add and record your first permanent snapshot with git commit',
     examples: ['git status', 'git add notlar.txt', 'git commit -m "First commit"', 'git log --oneline'],
     content: `
-### Staging Area (The Index)
+**Staging Area (The Index)**
 
 In Git, changes are not committed directly from the working directory. First, you choose which files belong to the upcoming snapshot and place them in the **Staging Area** (also called index) using \`git add\`.
 
@@ -85,7 +85,7 @@ Changes to be committed:
 
 ---
 
-### Recording History: \`git commit\`
+**Recording History: \`git commit\`**
 
 Once your files are staged, you bundle them into a permanent snapshot with \`git commit\`.
 Every commit requires a clear, meaningful message describing the change:
@@ -98,7 +98,7 @@ $ git commit -m "Add first notes file"
 
 ---
 
-### Viewing History: \`git log\`
+**Viewing History: \`git log\`**
 
 Run \`git log\` to review your repository's commit history:
 
@@ -147,7 +147,7 @@ diff --git a/metin.txt b/metin.txt
 
 ---
 
-### Working Directory vs Staging Area
+**Working Directory vs Staging Area**
 
 - \`git diff\`: Compares **Working Directory** against **Staging Area**.
 - \`git diff --staged\`: Compares **Staging Area** against the **last commit (HEAD)**.
@@ -265,6 +265,9 @@ Fast-forward
 - **3-way merge:** If both branches have new commits, Git creates a dedicated merge commit.
 
 If both branches changed the same lines in incompatible ways, Git can pause the merge and mark a conflict for the user to resolve. Review the marked file, choose the intended content, stage the resolution, and finish the merge. This lesson's prepared history is arranged for a fast-forward, so its merge command completes without a conflict.
+
+> **Golden rule:** Switch to the branch that should receive the changes before running merge.
+> To merge a feature into \`main\`, run \`git switch main\` first, then \`git merge <feature-branch>\`.
 `,
     tasks: {
       'git-branch-check': {
@@ -297,7 +300,7 @@ origin  https://github.com/klu/notlar.git (fetch)
 origin  https://github.com/klu/notlar.git (push)
 \`\`\`
 
-### Push Local Commits
+**Push Local Commits**
 
 \`git push -u origin main\` sends the local branch's commits to the configured remote. The \`-u\` option (also called \`--set-upstream\`) records the upstream branch, so later pushes can usually use the shorter \`git push\` command.
 
@@ -333,7 +336,7 @@ $ cd notlar
 $ git remote -v
 \`\`\`
 
-### Pull New Changes
+**Pull New Changes**
 
 After another contributor pushes a commit, \`git pull\` fetches it from the configured remote and integrates it into the current branch. Inspect the working tree and history afterward to confirm what arrived.
 

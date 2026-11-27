@@ -21,11 +21,6 @@ export const EN_LEVELS: Record<string, LevelTranslation> = {
 
 /** Additional English explanations that preserve the source lessons' teaching depth. */
 export const EN_LESSON_EXTENSIONS: Record<string, string> = {
-  'l0-intro': `### How the Pieces Fit Together
-
-The terminal is the interface, while the shell interprets what you type. The shell turns a command into a request to the operating system; the Linux kernel manages hardware and system resources. These names describe different layers, even though people often use “terminal” to mean the whole command-line experience.
-
-The prompt is a visual cue, not part of the command. In the example, \`~\` represents the home directory and \`$\` marks a regular user prompt; a real root prompt often uses \`#\`. The username and host portions identify the account and machine in an actual shell. Type only the command after the prompt, then press Enter. Linux distributions combine the kernel with user tools, so they are complete operating systems built around that core. KLU simulates this workflow in the browser; it is not a real Bash process or Linux kernel.`,
   'l0-klu-works': `### What Runs in the Browser
 
 KLU pairs a shell command interpreter with a virtual filesystem. Commands read and change that in-memory tree rather than your computer's files. Lesson setup restores the expected starting files so a task can be repeated; the free terminal filesystem resets when the page is refreshed.
@@ -42,6 +37,12 @@ The Cheat Sheet sends a selected command to the sandbox terminal. Explore introd
 
 Separate the command name from its options and arguments. A hyphenated short option such as \`-la\` can combine options; long options usually begin with two hyphens, as in \`--help\`. The argument tells the command what path or value to use.
 
+\`ls -la /home\` lists the \`/home\` directory, including hidden entries, in a detailed format.
+\`\`\`text
+command [options/flags] [arguments/targets]
+ls -la /home
+\`\`\`
+
 ### Recover and Get Help
 
 Use the Up and Down arrows to recall history, Tab to complete supported names, and Ctrl+C to cancel the current input. Ctrl+L clears the display without deleting files or history. When unsure, inspect a command's help or manual before trying options. KLU implements a teaching-oriented subset of shell behavior, so real Bash shortcuts and options may differ.`,
@@ -49,19 +50,16 @@ Use the Up and Down arrows to recall history, Tab to complete supported names, a
 
 The command-line ideas in this course—paths, options, quoting, pipes, and redirection—are useful on real Linux systems. KLU's supported command set and filesystem are deliberately limited, however, and its commands do not affect a real operating system. The same command can support more options or have different consequences on a real machine, so check the real system's manual before relying on behavior learned in a simulator.
 
+> **Safety reminder:** On a real Linux system, files removed with rm are permanently deleted; there is no graphical trash bin by default.
+
 ### Choose a Safe First Environment
 
 WSL provides a genuine Linux environment on Windows; a virtual machine runs a separate guest system; macOS includes a Terminal app with a Unix-like shell. A live USB can boot a Linux environment without installing it to the internal drive, while dual boot installs Linux alongside another operating system. Package managers such as \`apt\`, \`dnf\`, and \`pacman\` install software on supported distributions; they are outside KLU's simulated command set. Learn the target environment's recovery and backup practices before running commands that delete or change system files.
 
 ### What to Learn Next
 
-The next Linux level practices directory navigation with \`cd\`, listings with \`ls\`, and creating, reading, copying, moving, and removing files with \`mkdir\`, \`touch\`, \`cat\`, \`cp\`, \`mv\`, and \`rm\`. Begin with a disposable practice directory, inspect paths before changing them, and keep backups of real work. KLU's lesson fixtures make these tasks repeatable; on a real system, your commands act on its actual files.`,
-  'l1-welcome': `### Working Directory and Absolute Paths
-
-The shell keeps a current working directory, so a relative path is interpreted from that location. An absolute path begins at the root directory \`/\` and identifies the same location regardless of where you are. The home shortcut \`~\` expands to your user's home directory.
-
-Try \`pwd\` after changing directories to see this context. In KLU, \`/home/kullanici\` is the simulated home path; the username is part of the exercise environment and is not your computer account.`,
-  'l1-listing': `### Hidden Files and Long Listings
+The next Linux level practices directory navigation with \`cd\`, listings with \`ls\`, and creating, reading, copying, moving, and removing files with \`mkdir\`, \`touch\`, \`cat\`, \`cp\`, \`mv\`, and \`rm\`. Begin with a disposable practice directory, inspect paths before changing them, and keep backups of real work. KLU's lesson fixtures make these tasks repeatable; on a real system, your commands act on its actual files. Git is a version-control system for recording changes; KLU's Git lessons practice it with local simulated remotes.`,
+  'l1-listing': `**Hidden Files and Long Listings**
 
 Names beginning with a dot are hidden by convention; they are still present in the directory. Add \`-a\` to include them. The \`-l\` option shows a detailed row with mode bits, owner, group, size, date, and name. Use both options together to inspect hidden entries and metadata.
 
@@ -69,7 +67,9 @@ Names beginning with a dot are hidden by convention; they are still present in t
 $ ls -la
 \`\`\`
 
-The listing uses the files seeded for this lesson. Its Turkish names are part of the current virtual filesystem and are intentionally retained where tasks check for those exact entries.`,
+The listing uses the files seeded for this lesson. Its Turkish names are part of the current virtual filesystem and are intentionally retained where tasks check for those exact entries.
+
+> **Tip:** Combine flags when they make the listing easier to inspect; \`ls -la\` includes hidden files and details.`,
   'l1-navigation': `### Relative and Absolute Movement
 
 The command \`cd\` changes the shell's working directory. A directory name such as \`Belgeler\` is relative to your current location; \`/etc\` is absolute. The special path \`..\` means the parent directory, while \`~\` means home. Use \`pwd\` to verify every move.
@@ -80,8 +80,21 @@ $ pwd
 $ cd ..
 \`\`\`
 
-This lesson checks its seeded directory paths, so keep the provided path names exactly as shown in its tasks.`,
-  'l1-creating': `### Parent Directories and Empty Files
+This lesson checks its seeded directory paths, so keep the provided path names exactly as shown in its tasks.
+
+### Special Path Shortcuts
+
+| Path | Meaning |
+|---|---|
+| .. | Parent directory |
+| . | Current directory |
+| ~ | Home directory |
+| - | Previous directory (cd -) |
+
+Running cd without an argument returns to your home directory. Use pwd whenever you are unsure where you are.
+
+> **Tip:** The prompt path is a quick reminder of your location; run pwd to confirm it.`,
+  'l1-creating': `**Parent Directories and Empty Files**
 
 Without \`-p\`, \`mkdir\` creates the requested directory only when its parent already exists. With \`-p\`, it creates missing parents along the path and does not complain if those directories already exist. This makes it useful for preparing a nested project layout in one command.
 
@@ -90,15 +103,19 @@ $ mkdir -p projects/docs/notes
 $ touch projects/notes.txt
 \`\`\`
 
-\`touch\` creates a missing empty file; when the file exists, it updates its timestamps rather than replacing its contents. The task checks use the lesson's own fixed virtual paths, while these English names illustrate the general pattern.`,
+\`touch\` creates a missing empty file; when the file exists, it updates its timestamps rather than replacing its contents. The task checks use the lesson's own fixed virtual paths, while these English names illustrate the general pattern.
+
+> **Tip:** Use mkdir -p when one or more parent directories may not exist yet.`,
   'l1-reading': `### Read Only What You Need
 
 \`cat\` prints a file's contents to standard output. For a short file this is convenient; for long files, commands such as \`head\` and \`tail\` are easier to scan. The \`-n\` option on \`cat\` adds line numbers, which helps refer to a particular line without changing the file.
 
-### Manuals and Quick Help
+**Manuals and Quick Help**
 
-\`man <command>\` opens the command's detailed manual page. \`<command> --help\` is a shorter usage summary when the command supports it. The file names in the tasks point to lesson fixtures, including a hidden file, and must remain unchanged for their output checks.`,
-  'l1-copy-move': `### Copying and Moving Are Different
+\`man <command>\` opens the command's detailed manual page. \`<command> --help\` is a shorter usage summary when the command supports it. The file names in the tasks point to lesson fixtures, including a hidden file, and must remain unchanged for their output checks.
+
+> **Tip:** Use cat for short files; preview long logs with head or tail to keep output manageable.`,
+  'l1-copy-move': `**Copying and Moving Are Different**
 
 \`cp\` leaves the source in place and creates a copy at the destination. To copy a directory tree, include \`-r\`; otherwise the command rejects a directory. \`mv\` moves an item or renames it when the source and destination are in the same directory.
 
@@ -108,7 +125,9 @@ $ cp -r projects docs-backup
 $ mv draft.txt final.txt
 \`\`\`
 
-When the destination is an existing directory, \`mv\` places the source inside it. The task checks use specific seeded files and destinations, so use those exact paths when solving them.`,
+When the destination is an existing directory, \`mv\` places the source inside it. The task checks use specific seeded files and destinations, so use those exact paths when solving them.
+
+> **Remember:** cp leaves the source in place, while mv relocates it or changes its name.`,
   'l1-removing': `### Remove Carefully
 
 \`rm\` removes files. It does not move them to a recycle bin, and the command-line interface may not offer a simple undo. The recursive option \`-r\` is needed for a directory and its contents; \`-f\` suppresses prompts and errors for missing paths, so combining it with recursion deserves particular care.
@@ -129,7 +148,9 @@ $ echo "Another line" >> notes.txt
 $ cat notes.txt
 \`\`\`
 
-Redirection changes where output goes; it does not print that redirected text to the terminal. This lesson's validator checks exact text and a specific file, so use the prescribed task strings and path when completing it.`,
+Redirection changes where output goes; it does not print that redirected text to the terminal. This lesson's validator checks exact text and a specific file, so use the prescribed task strings and path when completing it.
+
+> **Caution:** A single > replaces an existing file, so use it carefully when the file already contains useful data.`,
   'l2-pipes': `### Connect Small Commands
 
 A pipe sends the left command's standard output to the right command's standard input. It does not create an intermediate file. Commands can therefore be combined to filter, count, sort, or preview a stream of results.
@@ -149,7 +170,9 @@ $ head -n 3 server.log
 $ tail -n 2 server.log
 \`\`\`
 
-The exercise checks particular log lines, so its fixture path and expected line text remain fixed. The English file name above is a general example; use the task's specified file while practicing.`,
+The exercise checks particular log lines, so its fixture path and expected line text remain fixed. The English file name above is a general example; use the task's specified file while practicing.
+
+> **Tip:** Preview only the lines you need instead of printing a large log in full.`,
   'l2-wc': `### Choose What to Count
 
 \`wc\` can count lines with \`-l\`, words with \`-w\`, and bytes with \`-c\`. With no option it prints all three counts. It can read a file directly or receive text from a pipeline, for example \`ls | wc -l\` to count entries in a directory listing.
@@ -170,7 +193,7 @@ $ grep -c ERROR application.log
 \`\`\`
 
 The lesson's fixture includes known log records and the checks expect their exact text. The English command examples explain the flags; use the prescribed search term and fixture path for the graded tasks.`,
-  'l2-sort-uniq': `### Sort Before Removing Duplicates
+  'l2-sort-uniq': `**Sort Before Removing Duplicates**
 
 \`sort\` orders lines alphabetically by default. Use \`-n\` for numeric order and \`-r\` to reverse the result. \`uniq\` removes only adjacent duplicate lines, so sort first when you want duplicates separated in the original input to collapse as well.
 
@@ -179,7 +202,9 @@ $ sort names.txt | uniq
 $ sort names.txt | uniq -c
 \`\`\`
 
-The \`-c\` option prefixes each unique line with its count. The exercise's city data deliberately contains repeated names and its validator checks the exact resulting order; retain that fixture when doing the task.`,
+The \`-c\` option prefixes each unique line with its count. The exercise's city data deliberately contains repeated names and its validator checks the exact resulting order; retain that fixture when doing the task.
+
+> **Remember:** uniq removes only adjacent duplicate lines; sort first when duplicates may be separated.`,
   'l2-find': `### Filter a Directory Tree
 
 \`find\` starts at a path and visits its descendants. The \`-name\` predicate filters by a filename pattern; \`-type f\` selects regular files and \`-type d\` selects directories. You can combine predicates to narrow the result.
@@ -189,8 +214,10 @@ $ find projects -name "*.js"
 $ find projects -type d
 \`\`\`
 
-Quote wildcard patterns so the shell passes them to \`find\` instead of expanding them before the command runs. The command reports one matching path per line, which makes its output easy to pipe into another command or compare with an expected list. This lesson checks named files and directory paths in its prepared project tree, so use the task's root path exactly.`,
-  'l3-system-info': `### Read System Identity
+Quote wildcard patterns so the shell passes them to \`find\` instead of expanding them before the command runs. The command reports one matching path per line, which makes its output easy to pipe into another command or compare with an expected list. This lesson checks named files and directory paths in its prepared project tree, so use the task's root path exactly.
+
+> **Tip:** Quote wildcard patterns so the shell passes them to find instead of expanding them first.`,
+  'l3-system-info': `**Read System Identity**
 
 \`whoami\` prints the active user name. \`uname\` reports the operating-system name, while \`uname -a\` includes additional kernel and machine details; \`-r\` prints only the kernel release. \`date\` shows the current date and time according to the environment. These are read-only inspection commands: they help identify the context before you choose other commands, and they do not change files or system settings.
 
@@ -200,8 +227,10 @@ $ uname -a
 $ date
 \`\`\`
 
-KLU returns simulator-defined system values rather than inspecting your host computer. The expected virtual username is \`kullanici\`; that output is part of the validator and is not localized. On a real machine the output reflects its actual account, kernel, architecture, and clock, which may differ from these lesson fixtures.`,
-  'l3-environment': `### Inspect the Environment
+KLU returns simulator-defined system values rather than inspecting your host computer. The expected virtual username is \`kullanici\`; that output is part of the validator and is not localized. On a real machine the output reflects its actual account, kernel, architecture, and clock, which may differ from these lesson fixtures.
+
+> **KLU simulation:** These commands return fixture values from the virtual environment, not details about your computer.`,
+  'l3-environment': `**Inspect the Environment**
 
 Environment variables are named values available to programs launched by the shell. \`env\` lists them, and \`echo $NAME\` expands one value into a command argument. The \`export NAME=value\` form defines or updates a variable and makes it available to child processes.
 
@@ -211,7 +240,17 @@ $ export CITY="Springfield"
 $ echo $CITY
 \`\`\`
 
-Variable names are case-sensitive. The task uses a custom check for the exact variable \`SEHIR\` and value \`Kirklareli\`; changing either would fail that check, so those values stay as defined by the exercise.`,
+### Read a Variable's Value
+
+Prefix a variable name with \`$\` to expand its value in a command. For example, \`echo $USER\` prints the current user's value; variable names are case-sensitive.
+
+### List Variables with \`env\`
+
+Run \`env\` to inspect the environment passed to the shell. Pipe its output into \`grep\` to find one name, as in \`env | grep USER\`.
+
+### Define a Variable with \`export\`
+
+Use \`export NAME=value\` to define a value for the current shell and make it available to child processes. The task uses the exact variable \`SEHIR\` and value \`Kirklareli\`; changing either would fail its validator.`,
   'l3-which-path': `### Search Order in PATH
 
 \`PATH\` is a colon-separated list of directories. When you type a command without a slash, the shell checks those directories in order and runs the first matching executable. \`which\` reports the resolved executable path in this simulator.
@@ -221,6 +260,10 @@ $ echo $PATH
 $ which ls
 $ which grep
 \`\`\`
+
+### A Toolbelt of Search Locations
+
+Think of \`PATH\` as an ordered toolbelt: the shell checks each directory from left to right until it finds an executable. The first match wins, so changing the order can change which program runs.
 
 An absolute executable path can be run directly; a relative executable in the current directory is commonly written with a \`./\` prefix. KLU's search path and command locations are virtual fixture values, not paths on the host system.`,
   'l3-chmod-numeric': `### Calculate Numeric Modes
@@ -233,7 +276,9 @@ $ chmod 755 backup.sh
 $ ls -l
 \`\`\`
 
-The mode is stored on the virtual file node. The lesson checks the exact modes on its seeded files, so keep the required paths and numeric values unchanged.`,
+### Apply a Three-Digit Mode
+
+Give \`chmod\` a three-digit value and a path, for example \`chmod 755 script.sh\`. The owner, group, and others digits are applied in that order. The mode is stored on the virtual file node; this lesson checks exact modes and paths, so keep its required values unchanged.`,
   'l3-chmod-symbolic': `### Change One Permission Symbolically
 
 Symbolic modes identify a class and an operation. For example, \`u+x\` adds execute permission for the owner; \`a+x\` adds it for everyone. A bare \`+x\` in KLU applies the supported execute-bit change. Removing write access uses \`-w\`.
@@ -253,6 +298,10 @@ $ ps
 $ ps aux
 $ ps aux | grep worker
 \`\`\`
+
+### Think of a Process as a Running Task
+
+Each process has its own PID, much like a task identifier in a system monitor. A process listing is a snapshot: inspect it immediately before using a PID because that number can later refer to another process.
 
 Piping the list to \`grep\` is a quick way to find a command by name. The worker process is a simulator fixture, so use \`worker.py\` as specified in the task's output checks.`,
   'l3-kill-process': `### Send a Signal to a Process
@@ -275,6 +324,14 @@ $ mkdir -p projects && cd projects
 $ cat missing.txt || echo "File not found"
 \`\`\`
 
+### AND: Continue Only on Success
+
+With \`&&\`, the shell runs the next command only if the previous one exits successfully. This is useful when a later command depends on an earlier setup step, such as creating and then entering a directory.
+
+### OR: Run a Fallback on Failure
+
+With \`||\`, the next command runs only after a failure. It can provide a fallback message when an expected file or command is unavailable.
+
 The left command's exit status controls which part of the chain runs. The graded examples use fixed directory and output text values; keep \`calisma\` and \`Dosya yok\` exactly where required by the checks.`,
   'l3-path-and-stat': `### Inspect Paths and Metadata
 
@@ -286,7 +343,13 @@ $ realpath ..
 $ basename documents/report.pdf .pdf
 \`\`\`
 
-These commands answer different questions: metadata about a node, the full location of a path, and the final name in a path. The lesson's seeded PDF path is case-sensitive and is retained in the task descriptions and validator checks.`,
+### Resolve a Canonical Path with \`realpath\`
+
+\`realpath\` follows path components such as \`..\` and reports the canonical absolute location. Use it to remove ambiguity about which directory a relative path refers to.
+
+### Extract a Name with \`basename\`
+
+\`basename\` returns the last component of a path; an optional suffix removes a known extension. These commands answer different questions: metadata about a node, the full location of a path, and the final name in a path. The lesson's seeded PDF path is case-sensitive and is retained in its tasks and validators.`,
 };
 export const EN_LESSON_EXAMPLES: Record<string, string[]> = {
   'l0-intro': ['help', 'echo "Merhaba Linux"'],
@@ -323,7 +386,7 @@ export const EN_LESSONS: Record<string, LessonTranslation> = {
   "l0-intro": {
     "title": "What is a Terminal, Shell, and Linux?",
     "summary": "The difference between GUI and CLI, core terminal concepts, and Linux architecture",
-    "content": "\n### GUI vs CLI: Two Ways to Talk to Your Computer\n\nMost users interact with their computer through a **GUI** (Graphical User Interface)—clicking icons, dragging windows, and browsing menus with a mouse.\n\nThe **CLI** (Command Line Interface) lets you command your operating system directly by typing text commands.\n\n- **Terminal:** The window emulator that receives your keyboard input and displays text output.\n- **Shell (e.g. bash, zsh):** The command interpreter that reads your commands, executes them, and talks to the operating system kernel.\n- **Linux:** The secure, open-source operating system kernel that powers supercomputers, cloud servers, Android phones, and the modern internet.\n",
+    "content": "\n<div class=\"klu-welcome-card\">\n  <div class=\"klu-logo-frame klu-logo-frame-welcome\">\n    <img src=\"/klu-logo-cropped.webp\" alt=\"KLU\" class=\"klu-welcome-logo\" />\n  </div>\n  <div class=\"klu-welcome-content\">\n    <div class=\"klu-welcome-title\">Hi, I'm KLU! 👋</div>\n    <p class=\"klu-welcome-desc\">Welcome to Linux and the terminal. We'll explore the command line together, one safe step at a time.</p>\n  </div>\n</div>\n\n### What Is Linux?\nLinux is a **kernel**: the core layer that connects computer hardware with running programs and manages system resources. Distributions such as **Ubuntu, Fedora, and Arch** combine the Linux kernel with user tools and package managers to form complete operating systems. Linux runs much of the web and cloud infrastructure, as well as Android devices. The command-line ideas you learn here apply across those systems.\n\n### What Are the Terminal and Shell?\n- **Terminal:** The window that accepts typed input and displays text output.\n- **Shell:** The program that reads commands and passes requests to the operating system. Bash is a widely used shell. KLU simulates a Bash-like workflow in the browser; it does not run a real Bash process or Linux kernel.\n\nThe line shown in the terminal is called the **prompt**:\n\n```\nuser@klu:~$\n```\n\n| Part | Meaning |\n|---|---|\n| \`user\` | The account signed in to this shell session |\n| \`klu\` | The machine's network hostname |\n| \`~\` | Your current directory; tilde is shorthand for your home directory |\n| \`$\` | A regular-user prompt; root prompts commonly use \`#\` |\n\nType a command after the prompt and press **Enter** to run it.\n",
     "tasks": {
       "l0-help": {
         "description": "Run `help` to list available built-in commands.",
@@ -400,7 +463,7 @@ export const EN_LESSONS: Record<string, LessonTranslation> = {
   "l1-welcome": {
     "title": "Welcome to the Terminal",
     "summary": "Your first terminal command: print working directory with pwd",
-    "content": "\n### Your First Command: `pwd`\n\nWhen you open a terminal, you are always located in a specific directory.\n`pwd` stands for **Print Working Directory** and prints the full path to where you currently are.\n\n```\n$ pwd\n/home/kullanici\n```\n\nIn Linux:\n- `/` is the root directory.\n- `/home/kullanici` is your user home directory (often abbreviated as `~`).\n",
+        "content": "\n**Welcome to the terminal.** The prompt shows where you are and which account is active:\n\n```\nkullanici@klu:~$\n```\n\n| Part | Meaning |\n|---|---|\n| `kullanici` | The signed-in user in this simulated session |\n| `klu` | The machine name shown by the prompt |\n| `~` | Your home directory |\n| `$` | A regular-user prompt; root commonly uses `#` |\n\nWhen you type a command and press **Enter**, the shell runs it and displays the result.\n\n### Your First Commands\n\n- `pwd` (*print working directory*) shows your current directory.\n- `echo` prints the text you provide.\n- `help` lists the available commands.\n- `clear` clears the display (shortcut: **Ctrl+L**).\n\n> **Tip:** Press the Up arrow (↑) to recall earlier commands, or use **Tab** to complete supported command and file names.\n",
     "tasks": {
       "pwd": {
         "description": "Run `pwd` to print your current working directory.",

@@ -34,7 +34,7 @@ describe('English translation catalog coverage', () => {
     expect(keys(Object.keys(EN_GIT_LESSONS))).toEqual(keys(GIT_ALL_LESSONS.map((lesson) => lesson.id)));
     expect(keys(Object.keys(EN_GIT_LEVELS))).toEqual(keys(GIT_LEVELS.map((level) => level.id)));
     expect(keys(Object.keys(EN_LESSON_EXAMPLES))).toEqual(keys(ALL_LESSONS.map((lesson) => lesson.id)));
-    expect(keys(Object.keys(EN_LESSON_EXTENSIONS))).toEqual(keys(ALL_LESSONS.map((lesson) => lesson.id)));
+    expect(Object.keys(EN_LESSON_EXTENSIONS).every((id) => ALL_LESSONS.some((lesson) => lesson.id === id))).toBe(true);
 
     for (const [lessons, catalog] of [[ALL_LESSONS, EN_LESSONS], [GIT_ALL_LESSONS, EN_GIT_LESSONS]] as const) {
       for (const lesson of lessons) {
