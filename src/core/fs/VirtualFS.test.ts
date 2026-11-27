@@ -1,6 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import { FsError, modeString, VirtualFS } from './VirtualFS';
+import {
+  FsError,
+  MAX_FILE_SIZE,
+  MAX_TOTAL_NODES,
+  MAX_TOTAL_SIZE,
+  modeString,
+  VirtualFS,
+  type DirNode,
+  type FsNode,
+} from './VirtualFS';
 import { createDefaultFS } from './defaultTree';
+
+function fileNode(name: string, content = ''): FsNode {
+  return { type: 'file', name, content, mode: 0o644, owner: 'user', group: 'user', mtime: 1 };
+}
+
+function rootNode(children: Record<string, FsNode> = Object.create(null)): DirNode {
+  return { type: 'dir', name: '', children, mode: 0o755, owner: 'root', group: 'root', mtime: 1 };
+}
+
+function wideRoot(fileCount: number, content = ''): DirNode {
+  const children: Record<string, FsNode> = Object.create(null);
+  for (let i = 0; i < fileCount; i++) children[`f${i}`] = fileNode(`f${i}`, content);
+  return rootNode(children);
+}
+
+function deepRoot(directoryCount: number): DirNode {
+  const root = rootNode();
+  let parent = root;
+  for (let i = 0; i < directoryCount; i++) {
+    const name = `d${i}`;
+    const child: DirNode = {
+      type: 'dir', name, children: Object.create(null), mode: 0o755,
+      owner: 'user', group: 'user', mtime: 1,
+    };
+    parent.children[name] = child;
+    parent = child;
+  }
+  return root;
+}
+
+function expectFsErrorCode(operation: () => unknown, code: FsError['code']): void {
+  let thrown: unknown;
+  try {
+    operation();
+  } catch (error) {
+    thrown = error;
+  }
+  expect(thrown).toBeInstanceOf(FsError);
+  expect((thrown as FsError).code).toBe(code);
+}
 
 describe('VirtualFS.resolve', () => {
   const fs = new VirtualFS();
@@ -97,6 +146,118 @@ describe('VirtualFS operations', () => {
     const c2 = fs.clone();
     c2.writeFile('/tmp/z', '1');
     expect(fs.exists('/tmp/z')).toBe(false);
+  });
+
+  it('preserves special file and directory names through JSON round-trip and clone', () => {
+    const fs = new VirtualFS();
+    fs.mkdir('/files');
+    fs.mkdir('/dirs');
+    for (const name of ['__proto__', 'constructor', 'prototype']) {
+      fs.writeFile(`/files/${name}`, `file:${name}`);
+      fs.mkdir(`/dirs/${name}`);
+      fs.writeFile(`/dirs/${name}/child`, `child:${name}`);
+    }
+
+    const serialized = JSON.parse(JSON.stringify(fs.toJSON())) as DirNode;
+    const restored = VirtualFS.fromJSON(serialized);
+    const cloned = fs.clone();
+    for (const name of ['__proto__', 'constructor', 'prototype']) {
+      for (const candidate of [restored, cloned]) {
+        expect(candidate.readFile(`/files/${name}`)).toBe(`file:${name}`);
+        expect(candidate.isDir(`/dirs/${name}`)).toBe(true);
+        expect(candidate.readFile(`/dirs/${name}/child`)).toBe(`child:${name}`);
+      }
+    }
+  });
+
+  it('preserves special file and directory names during recursive copy', () => {
+    const fs = new VirtualFS();
+    fs.mkdir('/src');
+    fs.mkdir('/src/files');
+    fs.mkdir('/src/dirs');
+    for (const name of ['__proto__', 'constructor', 'prototype']) {
+      fs.writeFile(`/src/files/${name}`, `file:${name}`);
+      fs.mkdir(`/src/dirs/${name}`);
+      fs.writeFile(`/src/dirs/${name}/child`, `child:${name}`);
+    }
+
+    fs.copy('/src', '/copy', { recursive: true });
+    for (const name of ['__proto__', 'constructor', 'prototype']) {
+      expect(fs.readFile(`/copy/files/${name}`)).toBe(`file:${name}`);
+      expect(fs.isDir(`/copy/dirs/${name}`)).toBe(true);
+      expect(fs.readFile(`/copy/dirs/${name}/child`)).toBe(`child:${name}`);
+    }
+  });
+
+  it.each([
+    ['non-directory root', { ...rootNode(), type: 'file', content: 'x' }],
+    ['unsupported node type', rootNode({ bad: { ...fileNode('bad'), type: 'link' } as unknown as FsNode })],
+    ['missing metadata', rootNode({ bad: { type: 'file', name: 'bad', content: 'x' } as FsNode })],
+    ['non-string content', rootNode({ bad: { ...fileNode('bad'), content: 42 } as unknown as FsNode })],
+    ['invalid children container', { ...rootNode(), children: [] }],
+    ['child key/name mismatch', rootNode({ key: fileNode('different') })],
+    ['slash in child name', rootNode({ 'a/b': fileNode('a/b') })],
+  ])('rejects malformed imported trees: %s', (_label, malformed) => {
+    expect(() => VirtualFS.fromJSON(malformed as DirNode)).toThrowError(FsError);
+  });
+
+  it('enforces per-file, total-byte, and node limits while importing', () => {
+    expectFsErrorCode(() => VirtualFS.fromJSON(wideRoot(1, 'x'.repeat(MAX_FILE_SIZE + 1))), 'EFBIG');
+
+    const oversizedChildren: Record<string, FsNode> = Object.create(null);
+    for (let i = 0; i < 5; i++) {
+      oversizedChildren[`large${i}`] = fileNode(`large${i}`, i === 4 ? 'x' : 'x'.repeat(MAX_FILE_SIZE));
+    }
+    expect(MAX_TOTAL_SIZE).toBe(4 * MAX_FILE_SIZE);
+    expectFsErrorCode(() => VirtualFS.fromJSON(rootNode(oversizedChildren)), 'ENOSPC');
+
+    expectFsErrorCode(() => VirtualFS.fromJSON(wideRoot(MAX_TOTAL_NODES)), 'ENOSPC');
+  });
+
+  it('keeps the depth limit and does not mutate existing state after failed import', () => {
+    expect(() => VirtualFS.fromJSON(deepRoot(65))).toThrowError(FsError);
+    expect(VirtualFS.fromJSON(deepRoot(64)).isDir('/' + Array.from({ length: 64 }, (_, i) => `d${i}`).join('/')))
+      .toBe(true);
+
+    const fs = new VirtualFS();
+    fs.writeFile('/keep', 'unchanged');
+    const before = JSON.stringify(fs.toJSON());
+    const invalid = rootNode({ bad: { ...fileNode('bad'), content: null } as unknown as FsNode });
+    expect(() => VirtualFS.fromJSON(invalid)).toThrowError(FsError);
+    expect(fs.readFile('/keep')).toBe('unchanged');
+    expect(JSON.stringify(fs.toJSON())).toBe(before);
+  });
+
+  it('rejects mkdir -p at capacity without partial directories or notifications', () => {
+    const fs = VirtualFS.fromJSON(wideRoot(MAX_TOTAL_NODES - 2));
+    const events: unknown[] = [];
+    fs.subscribe((event) => events.push(event));
+
+    expectFsErrorCode(() => fs.mkdir('/partial/child', { parents: true }), 'ENOSPC');
+    expect(fs.exists('/partial')).toBe(false);
+    expect(events).toEqual([]);
+  });
+
+  it('keeps seed atomic when capacity fails after earlier seed entries', () => {
+    const fs = VirtualFS.fromJSON(wideRoot(MAX_TOTAL_NODES - 3));
+    const events: unknown[] = [];
+    fs.subscribe((event) => events.push(event));
+    const before = JSON.stringify(fs.toJSON());
+
+    expectFsErrorCode(() => fs.seed({ dirs: ['/first', '/second', '/third'] }), 'ENOSPC');
+    expect(fs.exists('/first')).toBe(false);
+    expect(fs.exists('/second')).toBe(false);
+    expect(fs.exists('/third')).toBe(false);
+    expect(JSON.stringify(fs.toJSON())).toBe(before);
+    expect(events).toEqual([]);
+  });
+
+  it('measures the single-file limit in UTF-8 bytes', () => {
+    const fs = new VirtualFS();
+    const exactLimitEmojiContent = '😀'.repeat(MAX_FILE_SIZE / 4);
+    fs.writeFile('/emoji.txt', exactLimitEmojiContent);
+    expect(fs.readFile('/emoji.txt')).toBe(exactLimitEmojiContent);
+    expectFsErrorCode(() => fs.writeFile('/emoji.txt', `${exactLimitEmojiContent}😀`), 'EFBIG');
   });
 
   it('formats mode strings', () => {

@@ -96,6 +96,8 @@ export function joinPath(...parts: string[]): string {
   return parts.join('/').replace(/\/+/g, '/');
 }
 
+const utf8ByteLength = (content: string): number => new TextEncoder().encode(content).byteLength;
+
 export type FsChangeAction = 'create' | 'modify' | 'delete' | 'move';
 
 export interface FsChangeEvent {
@@ -130,7 +132,7 @@ export class VirtualFS {
   }
 
   private totals(node: FsNode = this.root): { nodes: number; size: number } {
-    if (node.type === 'file') return { nodes: 1, size: new TextEncoder().encode(node.content).length };
+    if (node.type === 'file') return { nodes: 1, size: utf8ByteLength(node.content) };
     let nodes = 1;
     let size = 0;
     for (const child of Object.values(node.children)) {
@@ -237,9 +239,10 @@ export class VirtualFS {
 
   writeFile(abs: string, content: string, options: { append?: boolean } = {}): void {
     const existing = this.tryLookup(abs);
-    const existingLen = existing && existing.type === 'file' ? existing.content.length : 0;
-    const finalLength = options.append ? existingLen + content.length : content.length;
-    if (finalLength > MAX_FILE_SIZE) {
+    const finalContent = options.append && existing?.type === 'file'
+      ? existing.content + content
+      : content;
+    if (utf8ByteLength(finalContent) > MAX_FILE_SIZE) {
       throw new FsError('EFBIG', abs);
     }
     if (existing) {
@@ -272,23 +275,51 @@ export class VirtualFS {
     if (options.parents) {
       let current = this.root;
       let path = '';
+      let missingParent: DirNode | null = null;
+      let firstMissingIndex = -1;
       const parts = splitPath(abs);
       const createdPaths: string[] = [];
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         path += '/' + part;
+        if (missingParent) {
+          createdPaths.push(path);
+          continue;
+        }
         const child: FsNode | undefined = current.children[part];
         if (!child) {
-          this.ensureCapacity(path, this.makeDir(part));
-          const dir = this.makeDir(part);
-          current.children[part] = dir;
-          current.mtime = this.now();
-          current = dir;
+          missingParent = current;
+          firstMissingIndex = i;
           createdPaths.push(path);
         } else if (child.type === 'dir') {
           current = child;
         } else {
           throw new FsError(i === parts.length - 1 ? 'EEXIST' : 'ENOTDIR', path);
+        }
+      }
+
+      if (missingParent && firstMissingIndex >= 0) {
+        if (this.totals().nodes + createdPaths.length > MAX_TOTAL_NODES) {
+          throw new FsError('ENOSPC', createdPaths[createdPaths.length - 1]);
+        }
+
+        let firstCreated: DirNode | null = null;
+        let previous: DirNode | null = null;
+        for (let i = firstMissingIndex; i < parts.length; i++) {
+          const dir = this.makeDir(parts[i]);
+          if (previous) {
+            const parentMtime = this.now();
+            previous.children[dir.name] = dir;
+            previous.mtime = parentMtime;
+          } else {
+            firstCreated = dir;
+          }
+          previous = dir;
+        }
+        if (firstCreated) {
+          const parentMtime = this.now();
+          missingParent.children[parts[firstMissingIndex]] = firstCreated;
+          missingParent.mtime = parentMtime;
         }
       }
       for (const p of createdPaths) {
@@ -376,12 +407,25 @@ export class VirtualFS {
 
   /** Apply a seed on top of the current tree (creates parents as needed). */
   seed(seed: FsSeed): void {
-    for (const dir of seed.dirs ?? []) this.mkdir(this.resolve(dir), { parents: true });
-    for (const [path, content] of Object.entries(seed.files ?? {})) {
-      const abs = this.resolve(path);
-      this.mkdir(dirname(abs), { parents: true });
-      this.writeFile(abs, content);
+    if (seed.dirs !== undefined && (!Array.isArray(seed.dirs) || !seed.dirs.every((dir) => typeof dir === 'string'))) {
+      throw new FsError('EINVAL', '/');
     }
+    if (seed.files !== undefined && (!isRecord(seed.files) ||
+      !Object.values(seed.files).every((content) => typeof content === 'string'))) {
+      throw new FsError('EINVAL', '/');
+    }
+
+    const staged = VirtualFS.fromJSON(this.root, { user: this.user, home: this.home, now: this.now });
+    const events: FsChangeEvent[] = [];
+    staged.subscribe((event) => events.push(event));
+    for (const dir of seed.dirs ?? []) staged.mkdir(staged.resolve(dir), { parents: true });
+    for (const [path, content] of Object.entries(seed.files ?? {})) {
+      const abs = staged.resolve(path);
+      staged.mkdir(dirname(abs), { parents: true });
+      staged.writeFile(abs, content);
+    }
+    this.root = staged.root;
+    events.forEach((event) => this.notify(event));
   }
 
   /** Change file mode bits (and optionally all descendants). */
@@ -414,8 +458,15 @@ export class VirtualFS {
   }
 
   static fromJSON(root: DirNode, options: VirtualFSOptions = {}): VirtualFS {
+    let validatedRoot: DirNode;
+    try {
+      validatedRoot = validateAndCloneRoot(root);
+    } catch (error) {
+      if (error instanceof FsError) throw error;
+      throw new FsError('EINVAL', '/');
+    }
     const fs = new VirtualFS(options);
-    fs.root = cloneNode(root) as DirNode;
+    fs.root = validatedRoot;
     return fs;
   }
 
@@ -445,10 +496,77 @@ function cloneNode(node: FsNode, depth = 0): FsNode {
   if (node.type === 'file') return { ...node };
   const children: Record<string, FsNode> = Object.create(null);
   for (const [k, v] of Object.entries(node.children)) {
-    if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
-    children[k] = cloneNode(v, depth + 1);
+    Object.defineProperty(children, k, {
+      value: cloneNode(v, depth + 1),
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
   }
   return { ...node, children };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function validateAndCloneRoot(root: unknown): DirNode {
+  let nodeCount = 0;
+  let totalSize = 0;
+
+  const visit = (value: unknown, depth: number, path: string, expectedName?: string): FsNode => {
+    if (depth > 64) throw new FsError('EINVAL', path);
+    if (!isRecord(value)) throw new FsError('EINVAL', path);
+
+    const name = value.name;
+    const mode = value.mode;
+    const owner = value.owner;
+    const group = value.group;
+    const mtime = value.mtime;
+    if (typeof name !== 'string' || typeof owner !== 'string' || typeof group !== 'string' ||
+        typeof mode !== 'number' || !Number.isSafeInteger(mode) || mode < 0 ||
+        typeof mtime !== 'number' || !Number.isFinite(mtime)) {
+      throw new FsError('EINVAL', path);
+    }
+    if (expectedName === undefined) {
+      if (name !== '' || value.type !== 'dir') throw new FsError('EINVAL', path);
+    } else if (name !== expectedName || !name || name === '.' || name === '..' || name.includes('/') || name.includes('\0')) {
+      throw new FsError('EINVAL', path);
+    }
+
+    nodeCount++;
+    if (nodeCount > MAX_TOTAL_NODES) throw new FsError('ENOSPC', path);
+
+    if (value.type === 'file') {
+      if (Object.hasOwn(value, 'children') || typeof value.content !== 'string') throw new FsError('EINVAL', path);
+      const size = utf8ByteLength(value.content);
+      if (size > MAX_FILE_SIZE) throw new FsError('EFBIG', path);
+      totalSize += size;
+      if (totalSize > MAX_TOTAL_SIZE) throw new FsError('ENOSPC', path);
+      return { type: 'file', name, content: value.content, mode, owner, group, mtime };
+    }
+
+    if (value.type !== 'dir' || Object.hasOwn(value, 'content') || !isRecord(value.children)) {
+      throw new FsError('EINVAL', path);
+    }
+    const children: Record<string, FsNode> = Object.create(null);
+    for (const key in value.children) {
+      if (!Object.hasOwn(value.children, key)) continue;
+      const childPath = path === '/' ? `/${key}` : `${path}/${key}`;
+      Object.defineProperty(children, key, {
+        value: visit(value.children[key], depth + 1, childPath, key),
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
+    }
+    return { type: 'dir', name, children, mode, owner, group, mtime };
+  };
+
+  const cloned = visit(root, 0, '/') as DirNode;
+  return cloned;
 }
 
 function touchTree(node: FsNode, time: number): void {
