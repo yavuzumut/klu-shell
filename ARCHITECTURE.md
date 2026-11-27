@@ -29,9 +29,10 @@ termi/
 ├── src/
 │   ├── cheatsheet/         # Hile Kağıdı sekmesi ve veri kaynağı
 │   ├── components/         # Ortak React kullanıcı arayüzü bileşenleri
-│   ├── core/               # Çekirdek simülasyon motoru (FS, Shell, Commands, Test)
+│   ├── core/               # Çekirdek simülasyon motoru (FS, Shell, Commands, Git, Test)
 │   │   ├── commands/       # Dahili Linux komutları ve komut kayıt defteri
 │   │   ├── fs/             # Sanal dosya sistemi (VirtualFS) ve başlangıç ağacı
+│   │   ├── git/            # Sanal Git motoru, veri tipleri, diff ve gitignore
 │   │   ├── shell/          # Kabuk ayrıştırıcı, boru hatları, glob, otomatik tamamlama
 │   │   └── test/           # Birim test yardımcıları ve test ortamı
 │   ├── explore/            # Meraklısına sekmesi ve modern CLI araç kartları
@@ -48,7 +49,7 @@ termi/
 ```
 
 ### Modül Sorumlulukları
-1. **`src/core/fs`:** Ağaç tabanlı bellek içi dosya sistemi. CRUD operasyonları, POSIX hata kodları, mutasyon olayları (`VirtualFS.subscribe`) ve başlangıç dosya yapısı tohumlama (`src/core/fs/defaultTree.ts`).
+1. **`src/core/fs`:** Ağaç tabanlı bellek içi dosya sistemi. CRUD operasyonları, POSIX hata kodları, tek dosya ve toplam kapasite sınırları, mutasyon olayları (`VirtualFS.subscribe`) ve başlangıç dosya yapısı tohumlama (`src/core/fs/defaultTree.ts`).
 2. **`src/core/shell`:** POSIX benzeri kabuk yorumlayıcısı. Komut satırı tokenlaştırma/ayrıştırma (`src/core/shell/parser.ts`), tilde ve değişken genişletme, dosya adı desenleri (`src/core/shell/glob.ts`), boru hatları (`|`), mantıksal zincirler (`&&`, `||`), I/O yönlendirmeleri (`<`, `>`, `>>`, `2>`, `2>>`), geçmiş (`history`) ve Tab tamamlama (`src/core/shell/completion.ts`).
 3. **`src/core/commands`:** Dahili terminal komutlarının modülleri ve merkezi kayıt defteri (`src/core/commands/index.ts`).
 4. **`src/core/test`:** Test ortamında bağımsız kabuk (`createTestShell`), ANSI temizleme (`stripAnsi`) ve zaman sabitleme (`FIXED_NOW`) yardımcıları (`src/core/test/helpers.ts`).
@@ -58,8 +59,9 @@ termi/
 8. **`src/components`:** React bileşenleri. Başlık ve mod sekmeleri (`src/components/Header.tsx`), sol gezinme çekmecesi (`src/components/LessonDrawer.tsx`), ders paneli ve görev kartları (`src/components/LessonPanel.tsx`), canlı dosya ağacı görünümü (`src/components/FileTree.tsx`), tema seçici açılır menü (`src/components/ThemeSelector.tsx`).
 9. **`src/cheatsheet`:** Temel komutların hızlı başvuru tablosu (`src/cheatsheet/CheatSheetView.tsx`, `src/cheatsheet/data.ts`).
 10. **`src/explore`:** Gerçek Linux CLI araçlarını tanıtan kartlar (`src/explore/ExploreView.tsx`, `src/explore/data.ts`).
-11. **`src/git`:** Git giriş görünümü ve Git 1–4 etkileşimli dersleri (`src/git/GitIntroView.tsx`, `src/git/lessons/`). Motor `src/core/git/` altındadır.
-12. **`src/terminal`:** `@xterm/xterm` kütüphanesini React yaşam döngüsüne bağlayan görünüm bileşeni (`src/terminal/TerminalView.tsx`, `src/terminal/LineEditor.ts`).
+11. **`src/core/git`:** Sanal depo motoru (`GitRepo.ts`), ortak Git veri tipleri (`types.ts`), satır tabanlı diff ve merge çatışma metni araçları (`diff.ts`), `.gitignore` eşleştiricisi (`gitignore.ts`) ve dışa aktarma giriş noktası (`index.ts`).
+12. **`src/git`:** Git giriş görünümü ve Git 1–4 etkileşimli dersleri (`src/git/GitIntroView.tsx`, `src/git/GitWorkspace.tsx`, `src/git/lessons/`). Motor `src/core/git/` altındadır.
+13. **`src/terminal`:** `@xterm/xterm` kütüphanesini React yaşam döngüsüne bağlayan görünüm bileşeni (`src/terminal/TerminalView.tsx`, `src/terminal/LineEditor.ts`).
 
 ---
 
@@ -246,7 +248,7 @@ Kullanıcı Enter tuşuna bastığında `Shell.execute(line)` şu işlem adımla
 ```typescript
 interface BaseNode {
   name: string;
-  /** Permission bits, e.g. 0o755. Not enforced yet (reserved for chmod). */
+  /** Permission bits, e.g. 0o755. Updated by chmod and checked for script execution. */
   mode: number;
   owner: string;
   group: string;
@@ -473,9 +475,13 @@ KLU, istemci tarafında kalıcı verileri tarayıcının `localStorage` API'si �
 | Anahtar | Sorumlu Modül | Saklanan Değer |
 |---|---|---|
 | `klu.progress.v1` | `src/state/useProgress.ts` | Tamamlanan dersler, görevler, hata deneme sayıları, açılan çözümler ve geçmiş. |
+| `klu.git.progress.v1` | `src/state/useProgress.ts`, `src/git/GitWorkspace.tsx` | Linux ders ilerlemesinden ayrı Git ders ilerlemesi ve Git terminal geçmişi. |
 | `klu_theme` | `src/themes/themeManager.ts` | Seçili tema kimliği (`'dark'`, `'light'`, `'dracula'`, `'solarized'`, `'retro'`). |
 | `klu_accent_<themeId>` | `src/themes/themeManager.ts` | Temaya özel kullanıcı tanımlı hex vurgu rengi (örn: `#7ee787`). |
 | `klu_dismiss_level0_banner` | `src/App.tsx` | Seviye 0 başlangıç bilgi şeridinin kapatılma bayrağı (`'1'`). |
+| `klu_congrats_seen` | `src/App.tsx` | Ana Linux müfredatı tamamlandığında gösterilen tebrik penceresinin daha önce kapatıldığı bilgisi (`'1'`). |
+
+Linux ve Git Shell örnekleri oluşturulurken `ProgressState.history`, Shell geçmişine aktarılır; komut çalıştırıldıkça `useProgress` geçmişi günceller. `loadProgress` geçmişi en fazla 200 öğe olarak geri yükler. Sanal dosya sistemleri bu depolama akışına dahil değildir: Linux ve Git derslerinde oturum kurulurken yeniden tohumlanır, Serbest Mod yenileme sonrası varsayılan ağaçla başlar. Dolayısıyla VirtualFS içeriği sayfa yenilemesi sonrasında kalıcı değildir (`src/App.tsx`, `src/git/GitWorkspace.tsx`, `src/lessons/session.ts`).
 
 ### İlerleme Durumu Yapısı
 // Kaynak dosya: src/state/useProgress.ts
@@ -565,6 +571,19 @@ Kullanıcı tema veya vurgu rengi değiştirdiği anda `terminal.options.theme` 
 - **Veri Kaynağı:** `src/git/intro.ts`
 - **İçerik:** Git sürüm kontrolünün temelleri, Linus Torvalds ve Linux çekirdeği ile olan tarihsel bağı, Git ve GitHub farkı, 3 Alan Modeli (Çalışma Alanı -> Staging -> Yerel Depo) ve 4 aşamalı etkileşimli Git yol haritası.
 
+### Sanal Git motoru ve veri modeli (`src/core/git/`)
+- `GitRepo.ts`, depo keşfi/başlatma, çalışma ağacı ve index işlemleri, commit, dallanma, birleştirme ve sanal remote akışlarını yürütür. `types.ts`, `GitCommit`, `GitIndex`, `GitMergeState`, `GitRepoConfig` ve ilgili sonuç tiplerini tanımlar.
+- `diff.ts`, satır tabanlı fark ve merge çatışma içeriği üretir; `gitignore.ts`, `.gitignore` kurallarını eşleştirir. `index.ts` bu modülleri dışa aktarır.
+- Normal bir sanal depoda `.git/` altındaki `commits.json` commit kayıtlarını ve her commit’in dosya yolu/içerik anlık görüntüsünü (`tree`) saklar; `index.json` hazırlık alanını tutar. Dal başları `refs/heads/` altındaki dosyalarda, `HEAD` geçerli dalı gösteren içerikte saklanır.
+- `config.json`, remote URL’leri ve dalların upstream eşleştirmelerini içerir. Çatışmalı bir birleştirme sürerken `MERGE_STATE.json`, merge başlığını, dalı, mesajı ve çatışma listesini tutar. Commitler, index, config ve merge durumu JSON olarak okunur/yazılır; dal ve HEAD referansları ayrı sanal dosyalardır (`GitRepo.ts`).
+- `git clone`, `push` ve `pull` URL’leri gerçek sunucuya göndermez. `urlToRemotePath()` bunları aynı VirtualFS içindeki `/var/klu-remotes/<host>/<owner>/<repo>` yoluna eşler; oradaki depo simülasyonuna erişilir.
+
+### Git ders çalışma alanı (`src/git/GitWorkspace.tsx`)
+Git çalışma alanı Linux ders panelinden ayrı bir React çalışma alanıdır. Kendi `Shell` örneğini, komut kayıt defterini ve `createLessonFS(lesson)` ile ders dosya sistemini kurar. Komut kayıtlarını ortak `src/lessons/validator.ts` doğrulayıcısına iletir; Git ders kataloğu `src/git/lessons/` altındaki Seviye 1–4 tanımlarından gelir. İlerleme `useProgress` hook'una `GIT_STORAGE_KEY` (`klu.git.progress.v1`) verilerek Linux ilerlemesinden ayrı saklanır.
+
+### Başlangıç ve görünüm akışı
+`src/main.tsx`, React `createRoot` ile `<App />` bileşenini `StrictMode` içinde başlatır. `App.tsx`, ders ve Serbest Mod için ayrı Shell/VirtualFS örneklerini oluşturur ve durumuna göre Linux ders, terminal, Git giriş/çalışma alanı, Hile Kağıdı ve Meraklısına görünümlerini seçer. Ders ve Git çalışma alanları, terminalin komut kayıtlarını ilerleme eylemlerine bağlayan callback'ler kullanır; görünümden terminale komut aktarma ve dosya ağacı seçimleri de callback'lerle taşınır. `App.tsx` görünümleri statik olarak import eder; mevcut kodda `React.lazy` / `Suspense` tabanlı görünüm yükleme stratejisi yoktur.
+
 ---
 
 ## 9. Test ve Derleme (Testing & Build)
@@ -573,7 +592,7 @@ KLU projesi katı tip denetimi ve otomatik birim testleriyle korunmaktadır.
 
 ### Komutlar
 ```bash
-# Birim ve entegrasyon testlerini çalıştırır (259 test, 13 test dosyası)
+# Birim ve entegrasyon testlerini çalıştırır (son çalıştırmada 259 test, 13 test dosyası)
 npm test
 
 # İzleme (watch) modunda testleri sürekli çalıştırmak için:
@@ -587,16 +606,20 @@ npm run build
 ```
 
 ### Test Dosyaları ve Kapsam
-Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konumlandırılmıştır:
-1. `src/core/commands/commands.test.ts` (81 test): 33 çekirdek komutun bayrakları, argümanları, boru hatları, mantıksal zincirler (`&&`, `||`) ve çalıştırılabilir betiklerin uç durumları.
-2. `src/core/fs/VirtualFS.test.ts` (21 test): Dizin oluşturma, okuma, yazma, silme, kopyalama, taşıma, chmod izin değişiklikleri, hata kodları ve prototip kirlenmesi koruması.
-3. `src/core/fs/treeListener.test.ts` (3 test): `VirtualFS.subscribe` olay mekanizması ve dosya ağacı tetikleyicileri.
-4. `src/core/shell/parser.test.ts` (14 test): Tırnaklar, boru hattı (`|`), yönlendirmeler (`>`, `>>`), mantıksal operatörler (`&&`, `||`), sözdizimi hataları, tilde (`~`) ve `$VAR` açılımı.
-5. `src/core/shell/completion.test.ts` (5 test): Tab ile komut ve dosya/dizin otomatik tamamlama.
-6. `src/lessons/validator.test.ts` (32 test): Görev doğrulama kuralları, keşif/nötr komutlar, 4 seviyedeki 28 dersin yayınlanan çözümüyle başarıyla tamamlandığının testi.
-7. `src/explore/data.test.ts` (5 test): 15 araç kartının şema doğrulaması ve kategori bütünlüğü.
-8. `src/themes/themes.test.ts` (9 test): 5 tema tanımı, hex renk doğrulama regex'i ve CSS değişkenleri.
-9. `src/state/progress.test.ts` (7 test): İlerleme durumu, localStorage senkronizasyonu ve geçmiş yönetimi.
+`npm test` son çalıştırmasında 13 test dosyası ve 259 test başarılı oldu. Dosyalar ve Vitest'in dosya başına raporladığı test adetleri:
+1. `src/core/commands/commands.test.ts` (83): Komut davranışları, argümanlar, yönlendirme ve kabuk etkileşimleri.
+2. `src/core/fs/VirtualFS.test.ts` (21): VirtualFS işlemleri, hata kodları ve sınırlar.
+3. `src/core/fs/treeListener.test.ts` (3): Dosya sistemi değişiklik abonelikleri.
+4. `src/core/git/git.test.ts` (35): Sanal Git motoru ve depo akışları.
+5. `src/core/security.test.ts` (22): Sanitizasyon ve güvenlik regresyonları.
+6. `src/core/shell/completion.test.ts` (5): Komut ve yol otomatik tamamlama.
+7. `src/core/shell/parser.test.ts` (14): Shell tokenlaştırma ve ayrıştırma.
+8. `src/explore/data.test.ts` (5): Meraklısına veri şeması ve kategoriler.
+9. `src/git/lessons/gitLessons.test.ts` (19): Git ders yapısı, doğrulama ve ilerleme akışları.
+10. `src/lessons/validator.test.ts` (33): Linux ders görev doğrulaması ve ders çözümleri.
+11. `src/state/congrats.test.ts` (3): Tebrik akışı durumu.
+12. `src/state/progress.test.ts` (7): İlerleme, localStorage ve geçmiş yönetimi.
+13. `src/themes/themes.test.ts` (9): Tema tanımları ve vurgu rengi doğrulaması.
 
 ### Test Yardımcıları (`src/core/test/helpers.ts`)
 - **`createTestShell(options)`:** Testler için izole bir sanal dosya sistemi ve kabuk ortamı üretir.
@@ -616,35 +639,18 @@ Test dosyaları doğrudan test ettikleri kaynak kodların yanında (`src/`) konu
 ## 11. Bilinen Eksikler ve Sınırlar (Limitations)
 
 1. **Dosya İzinleri Denetimi (`mode`):**
-   `BaseNode` nesnesinde `mode` (örn: `0o755`), `owner` ve `group` alanları tanımlıdır ve `chmod` için ayrılmıştır. Ancak mevcut aşamada `VirtualFS` üzerindeki okuma, yazma ve silme işlemlerinde yetki denetimi henüz işletilmemektedir (Örn: Standart kullanıcı hesabı olan `kullanici`, `/root` dizini altındaki dosyaları okuyabilmektedir).
+   `chmod`, dosya düğümünün `mode` bitlerini değiştirir; Shell, dosya yolu üzerinden betik çalıştırırken yürütme bitlerinden en az birini (`0o111`) denetler (`src/core/commands/chmod.ts`, `src/core/shell/Shell.ts`). Buna karşılık VirtualFS'nin genel okuma, yazma ve silme metotları kullanıcı kimliğine veya dosya izinlerine göre yetki denetimi yapmaz. `owner` ve `group` metadata olarak tutulur; genel POSIX erişim kontrolü uygulanmaz.
 2. **Serbest Mod ve FS Kalıcılığı:**
    Sanal dosya sistemi tamamen RAM üzerinde yaşar. Sayfa yenilendiğinde (F5 / browser refresh) Serbest Mod'da oluşturulan dosyalar sıfırlanır ve varsayılan tohum ağacına döner (Kullanıcı ilerlemesi `localStorage` üzerinde saklanırken sanal FS saklanmaz).
 3. **Git simülasyonu:** Git sekmesi Git 1–4 içeriklerini ve etkileşimli ders akışlarını çalıştırır. `GitRepo`, sanal `.git/` JSON verisini; Git komutları temel commit akışını, diff/restore işlemlerini, dallanma/birleştirmeyi ve uzak depo işlemlerini yönetir. Uzak işlemler VirtualFS içindeki `/var/klu-remotes` simülasyonunu kullanır; gerçek Git sunucusuna bağlanmaz.
 4. **Mobil Klavye Kısayolları:**
    Mobil cihazlar için ekranda temel gezinme tuşlarını içeren bir çubuk (`.key-bar` — Tab, ↑, ↓, ←, →, ~, /, -, Ctrl+C) bulunmaktadır; ancak boru hattı (`|`), yönlendirme (`>`, `<`) ve kesme tuşları gibi gelişmiş terminal operatörleri için zengin bir sanal tuş takımı henüz geliştirilmemiştir.
-5. **Dosya İsimlerinde ANSI Kaçış Filtreleme:**
-   `ls` komutu ve `LineEditor`, kullanıcı tarafından oluşturulmuş dosya adlarındaki raw ANSI kaçış karakterlerini henüz filtrelememektedir (düşük öncelikli görsel risk).
+5. **Dosya İsimlerinde ANSI Kontrol Karakterleri (Doğrulanması Gereken Bulgu):**
+   Dosya adlarındaki ham ANSI kontrol karakterlerinin `ls` çıktısı ve `LineEditor` üzerinden nasıl işlendiği bu mimari denetimde ayrıca doğrulanmadı. Bu davranışı çözülmüş veya kesinleşmiş bir açık olarak sınıflandırmadan önce ilgili uygulama yolları ve testler incelenmelidir.
 
 ---
 
-## 12. Planlanan Geliştirmeler ve Yol Haritası (Roadmap)
-
-### Linux ders seviyeleri (Seviye 0–3)
-Linux ders kataloğu `src/lessons/content/index.ts` üzerinden Seviye 0, 1, 2 ve 3'ü yükler. Seviyelerin mevcut içeriği ve ders listesi bu belgenin “Mevcut Durum Özeti” bölümünde verilmiştir. Gerçek Linux izin modeli, paket yöneticisi ve ağ erişimi bu simülatörün özellikleri değildir.
-
-### Etkileşimli Git Motoru (Tamamlandı)
-- Git sekmesi Linux seviyelerinden ayrı eğitim alanı ve etkileşimli ders akışı sunar.
-- Repo durumu `VirtualFS` içindeki `.git/` klasöründe JSON olarak saklanır; gerçek Git binary/packfile formatı kullanılmaz.
-- Terminal Git komutları ile çalışma alanı, hazırlık alanı, yerel depo ve commit grafiği sunulur.
-- Git 1–4 motoru tamamlanmıştır; uzak depo işlemleri `/var/klu-remotes` altında sanal olarak yürütülür.
-  - **Git 1 (Temel Akış):** `git init`, `git config`, `git status`, `git add`, `git commit`, `git log`.
-  - **Git 2 (İnce Ayar & Düzeltmeler):** `git diff`, `git restore`, `.gitignore` desteği, `git commit --amend`.
-  - **Git 3 (Dallanma & Birleştirme):** `git branch`, `git switch` / `git checkout`, `git merge`.
-  - **Git 4 (İşbirliği & Uzak Depo):** `git remote`, `git clone`, `git push`, `git pull` ve VirtualFS içindeki yerel uzak depo simülasyonu.
-
----
-
-## 13. Güvenlik Notları (Security Notes)
+## 12. Güvenlik Notları (Security Notes)
 
 KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içinde çalışan statik bir web uygulamasıdır. Kod tabanında uygulanan güvenlik mekanizmaları ve dikkat edilmesi gereken noktalar şunlardır:
 
@@ -686,7 +692,7 @@ KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içi
 
 ---
 
-## 14. Mevcut Durum ve Sonraki Adımlar
+## 13. Mevcut Durum
 
 ### Mevcut Durum Özeti (Kod Tabanında Tam Olarak Var Olanlar)
 1. **Çekirdek Komut Seti (33 Komut):** `pwd`, `ls`, `cd`, `mkdir`, `touch`, `cat`, `echo`, `cp`, `mv`, `rm`, `clear`, `help`, `man`, `history`, `head`, `tail`, `wc`, `grep`, `sort`, `uniq`, `find`, `chmod`, `whoami`, `uname`, `date`, `env`, `export`, `which`, `ps`, `kill`, `stat`, `realpath`, `basename` tamamen işlevseldir.
@@ -701,9 +707,5 @@ KLU, arka uç sunucusu ve harici ağ isteği bulunmayan, tamamen tarayıcı içi
 6. **Hile Kağıdı (Cheat Sheet):** 13 kategoride 33 komutun hızlı başvuru tablosu ve Serbest Mod terminaline aktarım desteği.
 7. **Meraklısına (Explore):** 15 modern CLI aracı, 5 kategori filtresi (`media`, `system`, `files`, `productivity`, `fun`), dağıtım sekmeleri (Debian, Fedora, Arch), ipuçları ve tek tıkla kopyalama.
 8. **Tema Motoru:** 5 renk teması, terminal renklerinin canlı eşzamanlanması, hex doğrulayıcılı özel vurgu rengi seçici.
-9. **Kalite & Test Güvencesi:** 259 testi (13 test dosyasında), sıfır TypeScript hatası, `dist/index.html` içinde üretim CSP'si, 0 `npm audit` açığı.
-
-### Gelecek Geliştirmeler
-1. **Terminal ANSI Filtreleme:**
-   - `ls` komutu ve satır düzenleyicide dosya isimlerindeki ham ANSI kaçış karakterlerinin temizlenmesi tamamlanacaktır.
+9. **Kalite & Test Güvencesi:** Son `npm test` çalıştırmasında 13 dosyada 259 test başarılı oldu. TypeScript denetimi ve üretim derlemesi proje komutlarıyla ayrıca doğrulanır; zamana bağlı bağımlılık denetimi sonuçları bu mimari özetinde tutulmaz.
 
