@@ -126,18 +126,19 @@ DESEN İPUÇLARI
     const inputs: { name: string; text: string }[] = [];
     let hadError = false;
     const addPath = (display: string, abs: string, top: boolean) => {
+    const shownPath = ctx.shell.displayPath(display);
       const node = ctx.fs.tryLookup(abs);
       if (!node) {
-        ctx.stderr(`grep: ${display}: No such file or directory\n`);
+        ctx.stderr(`grep: ${shownPath}: No such file or directory\n`);
         hadError = true;
         return;
       }
       if (node.type === 'file') {
-        inputs.push({ name: display, text: ctx.shell.displayText(node.content) });
+        inputs.push({ name: shownPath, text: ctx.shell.displayText(node.content) });
         return;
       }
       if (!recursive) {
-        ctx.stderr(`grep: ${display}: Is a directory\n`);
+        ctx.stderr(`grep: ${shownPath}: Is a directory\n`);
         hadError = true;
         return;
       }

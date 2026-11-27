@@ -38,13 +38,13 @@ SEÇENEKLER
         if (flags.has('p')) {
           const existed = ctx.fs.exists(abs);
           ctx.fs.mkdir(abs, { parents: true });
-          if (flags.has('v') && !existed) ctx.stdout(`mkdir: created directory '${target}'\n`);
+          if (flags.has('v') && !existed) ctx.stdout(`mkdir: created directory '${ctx.shell.displayPath(target)}'\n`);
         } else {
           ctx.fs.mkdir(abs);
-          if (flags.has('v')) ctx.stdout(`mkdir: created directory '${target}'\n`);
+          if (flags.has('v')) ctx.stdout(`mkdir: created directory '${ctx.shell.displayPath(target)}'\n`);
         }
       } catch (err) {
-        ctx.stderr(`mkdir: cannot create directory '${target}': ${fsErrorMessage(err)}\n`);
+        ctx.stderr(`mkdir: cannot create directory '${ctx.shell.displayPath(target)}': ${fsErrorMessage(err)}\n`);
         exitCode = 1;
       }
     }

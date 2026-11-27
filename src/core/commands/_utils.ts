@@ -129,9 +129,9 @@ export function readInputs(ctx: CommandContext, operands: string[]): { inputs: I
       continue;
     }
     try {
-      inputs.push({ name: target, text: ctx.fs.readFile(ctx.resolve(target)), isStdin: false });
+      inputs.push({ name: ctx.shell.displayPath(target), text: ctx.fs.readFile(ctx.resolve(target)), isStdin: false });
     } catch (err) {
-      ctx.stderr(`${ctx.name}: ${target}: ${fsErrorMessage(err)}\n`);
+      ctx.stderr(`${ctx.name}: ${ctx.shell.displayPath(target)}: ${fsErrorMessage(err)}\n`);
       failed = true;
     }
   }

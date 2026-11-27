@@ -49,7 +49,7 @@ SEÇENEKLER
     for (const target of operands) {
       const last = target.replace(/\/+$/, '').split('/').pop();
       if (last === '.' || last === '..') {
-        fail(`refusing to remove '.' or '..' directory: skipping '${target}'`);
+        fail(`refusing to remove '.' or '..' directory: skipping '${ctx.shell.displayPath(target)}'`);
         continue;
       }
       const abs = ctx.resolve(target);
@@ -62,23 +62,24 @@ SEÇENEKLER
       }
       const node = ctx.fs.tryLookup(abs);
       if (!node) {
-        if (!force) fail(`cannot remove '${target}': No such file or directory`);
+        if (!force) fail(`cannot remove '${ctx.shell.displayPath(target)}': No such file or directory`);
         continue;
       }
       if (node.type === 'dir' && !recursive) {
         if (flags.has('d')) {
           if (Object.keys(node.children).length) {
-            fail(`cannot remove '${target}': Directory not empty`);
+            fail(`cannot remove '${ctx.shell.displayPath(target)}': Directory not empty`);
             continue;
           }
         } else {
-          fail(`cannot remove '${target}': Is a directory`);
+          fail(`cannot remove '${ctx.shell.displayPath(target)}': Is a directory`);
           continue;
         }
       }
       ctx.fs.remove(abs, { recursive: true });
       if (flags.has('v')) {
-        ctx.stdout(node.type === 'dir' ? `removed directory '${target}'\n` : `removed '${target}'\n`);
+        const shownTarget = ctx.shell.displayPath(target);
+        ctx.stdout(node.type === 'dir' ? `removed directory '${shownTarget}'\n` : `removed '${shownTarget}'\n`);
       }
     }
     return exitCode;

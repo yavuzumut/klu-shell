@@ -40,7 +40,7 @@ SEÇENEKLER
     const destIsDir = ctx.fs.isDir(destAbs);
 
     if (sources.length > 1 && !destIsDir) {
-      ctx.stderr(`mv: target '${dest}' is not a directory\n`);
+      ctx.stderr(`mv: target '${ctx.shell.displayPath(dest)}' is not a directory\n`);
       return 1;
     }
 
@@ -58,13 +58,14 @@ SEÇENEKLER
         continue;
       }
       const target = destIsDir ? joinPath(destAbs, basename(srcAbs)) : destAbs;
-      const targetLabel = destIsDir ? joinPath(dest, basename(srcAbs)) : dest;
+      const targetLabel = ctx.shell.displayPath(destIsDir ? joinPath(dest, basename(srcAbs)) : dest);
+      const sourceLabel = ctx.shell.displayPath(src);
       if (target === srcAbs) {
-        fail(`'${src}' and '${targetLabel}' are the same file`);
+        fail(`'${sourceLabel}' and '${targetLabel}' are the same file`);
         continue;
       }
       if (node.type === 'dir' && isSubPath(target, srcAbs)) {
-        fail(`cannot move '${src}' to a subdirectory of itself, '${targetLabel}'`);
+        fail(`cannot move '${sourceLabel}' to a subdirectory of itself, '${targetLabel}'`);
         continue;
       }
       const existing = ctx.fs.tryLookup(target);
@@ -73,14 +74,14 @@ SEÇENEKLER
         continue;
       }
       if (existing?.type === 'file' && node.type === 'dir') {
-        fail(`cannot overwrite non-directory '${targetLabel}' with directory '${src}'`);
+        fail(`cannot overwrite non-directory '${targetLabel}' with directory '${sourceLabel}'`);
         continue;
       }
       try {
         ctx.fs.move(srcAbs, target);
-        if (flags.has('v')) ctx.stdout(`renamed '${src}' -> '${targetLabel}'\n`);
+        if (flags.has('v')) ctx.stdout(`renamed '${sourceLabel}' -> '${targetLabel}'\n`);
       } catch (err) {
-        if (err instanceof FsError) fail(`cannot move '${src}' to '${targetLabel}': ${err.description}`);
+        if (err instanceof FsError) fail(`cannot move '${sourceLabel}' to '${targetLabel}': ${err.description}`);
         else throw err;
       }
     }

@@ -42,7 +42,7 @@ SEÇENEKLER
       try {
         chunks.push(ctx.shell.displayText(ctx.fs.readFile(ctx.resolve(target))));
       } catch (err) {
-        ctx.stderr(`cat: ${target}: ${fsErrorMessage(err)}\n`);
+        ctx.stderr(`cat: ${ctx.shell.displayPath(target)}: ${fsErrorMessage(err)}\n`);
         exitCode = 1;
       }
     }

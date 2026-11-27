@@ -8,44 +8,6 @@ export const EN_LEVELS: Record<string, LevelTranslation> = {
 };
 
 export const EN_LESSON_EXTENSIONS: Record<string, string> = {
-  'l0-klu-works': `### What Runs in the Browser
-
-KLU pairs a shell command interpreter with a virtual filesystem. Commands read and change that in-memory tree rather than your computer's files. Lesson setup restores the expected starting files so a task can be repeated; the free terminal filesystem resets when the page is refreshed.
-
-### Progress and Safety Boundaries
-
-Lesson progress is stored separately in browser storage. Clearing that storage removes the saved progress. “Safe to experiment” applies to KLU's sandbox only: real shells can modify or permanently delete files on the machine where they run. The commands are useful practice, but not every Linux feature or command is implemented here.`,
-  'l0-modes-tools': `### Practice and Reference Areas
-
-Use Lessons for guided tasks and instant checks, or switch to Sandbox to explore without a lesson validator. The File Tree shows the current virtual files and lets you inspect them. Git has its own workspace and guided Git 1–4 lessons; its remotes are local simulations.
-
-The Cheat Sheet sends a selected command to the sandbox terminal. Explore introduces external Linux tools and their real installation commands; those tools do not run inside KLU. The theme selector changes the interface and terminal appearance, while the language switcher changes interface and lesson text.`,
-  'l0-habits': `### Read a Command Before Running It
-
-Separate the command name from its options and arguments. A hyphenated short option such as \`-la\` can combine options; long options usually begin with two hyphens, as in \`--help\`. The argument tells the command what path or value to use.
-
-\`ls -la /home\` lists the \`/home\` directory, including hidden entries, in a detailed format.
-\`\`\`text
-command [options/flags] [arguments/targets]
-ls -la /home
-\`\`\`
-
-### Recover and Get Help
-
-Use the Up and Down arrows to recall history, Tab to complete supported names, and Ctrl+C to cancel the current input. Ctrl+L clears the display without deleting files or history. When unsure, inspect a command's help or manual before trying options. KLU implements a teaching-oriented subset of shell behavior, so real Bash shortcuts and options may differ.`,
-  'l0-real-linux': `### What Transfers—and What Does Not
-
-The command-line ideas in this course—paths, options, quoting, pipes, and redirection—are useful on real Linux systems. KLU's supported command set and filesystem are deliberately limited, however, and its commands do not affect a real operating system. The same command can support more options or have different consequences on a real machine, so check the real system's manual before relying on behavior learned in a simulator.
-
-> **Safety reminder:** On a real Linux system, files removed with rm are permanently deleted; there is no graphical trash bin by default.
-
-### Choose a Safe First Environment
-
-WSL provides a genuine Linux environment on Windows; a virtual machine runs a separate guest system; macOS includes a Terminal app with a Unix-like shell. A live USB can boot a Linux environment without installing it to the internal drive, while dual boot installs Linux alongside another operating system. Package managers such as \`apt\`, \`dnf\`, and \`pacman\` install software on supported distributions; they are outside KLU's simulated command set. Learn the target environment's recovery and backup practices before running commands that delete or change system files.
-
-### What to Learn Next
-
-The next Linux level practices directory navigation with \`cd\`, listings with \`ls\`, and creating, reading, copying, moving, and removing files with \`mkdir\`, \`touch\`, \`cat\`, \`cp\`, \`mv\`, and \`rm\`. Begin with a disposable practice directory, inspect paths before changing them, and keep backups of real work. KLU's lesson fixtures make these tasks repeatable; on a real system, your commands act on its actual files. Git is a version-control system for recording changes; KLU's Git lessons practice it with local simulated remotes.`,
 };
 
 export const EN_LESSON_EXAMPLES: Record<string, string[]> = {
@@ -79,7 +41,7 @@ export const EN_LESSONS: Record<string, LessonTranslation> = {
   "l0-klu-works": {
     "title": "How KLU Works?",
     "summary": "Browser-based sandbox, memory-backed virtual filesystem, and safety boundaries",
-    "content": "\n### What is KLU?\n\nKLU is a zero-install interactive Linux simulator that runs directly in your browser.\nIt features a virtual filesystem in memory and an isolated shell environment.\n\n- **Safe Sandbox:** You cannot break your computer or delete personal files here. Feel free to experiment!\n- **State Reset:** You can reset the filesystem at any time using the \"Reset Terminal\" button.\n- **Practice for Real Systems:** Paths, flags, and shell concepts transfer to Linux and Unix-like systems, while KLU supports only a teaching-focused subset of their commands and behavior.\n",
+    "content": "### Where Does the Name KLU Come From?\n\nKLU takes its inspiration from CLU, the artificial intelligence program in the film *Tron*. Just as CLU creates and manages a digital world for its creator, KLU gives you a safe terminal world where you can learn Linux without touching your real computer. The K comes from the Turkish word **komut**, meaning “command.”\n\n### A Safe Laboratory in Your Browser\n\nKLU is a **virtual filesystem and shell** that run entirely in your browser, with no installation or external server required.\n\n- **Safe sandbox:** You can experiment here without changing or deleting files on your computer. This safety applies only to KLU: on real Linux, `rm` permanently deletes files, and there is no trash bin to restore them from.\n- **Files and progress:** Terminal files are virtual and are not created on your computer. Your progress is saved in this browser's `localStorage`; clearing browser data removes it, and progress does not automatically sync across devices. The Sandbox filesystem lives in memory and resets to its initial state when you refresh the page.\n\n### Lesson Panel and Tasks\n\n- **Left Panel:** Read the lesson, open example commands, and work through its tasks.\n- **Example Commands:** Click an example button to send its command directly to the terminal.\n- **Hints:** Hints appear progressively after incorrect attempts. After three wrong attempts, **Show solution** becomes available.\n- **↺ Reset terminal**: Use the button at the bottom of the Left Panel to restore the lesson's starting filesystem.",
     "tasks": {
       "l0-pwd": {
         "description": "Check your current starting directory with `pwd`.",
@@ -92,7 +54,7 @@ export const EN_LESSONS: Record<string, LessonTranslation> = {
   "l0-modes-tools": {
     "title": "Modes and Tools",
     "summary": "Lessons, Sandbox mode, Git module, Cheat Sheet, and Explore section",
-    "content": "\n### Five Dedicated Spaces in KLU\n\n1. **Lessons:** Guided curriculum from basics to advanced, step by step with instant task validation.\n2. **Sandbox (Free Mode):** Full freedom to practice any command with a live interactive filesystem tree.\n3. **Git Module:** Interactive Git workspace with branching, commits, diffs, and staging.\n4. **Cheat Sheet:** Quick reference for all supported shell commands.\n5. **Explore:** Curated showcase of modern CLI tools you can install on real Linux machines.\n",
+    "content": "KLU provides several work areas and reference tools to support your learning:\n\n### Top Navigation Tabs\n\n- **📖 Lessons:** Follow guided lessons with step-by-step tasks.\n- **💻 Sandbox:** Try commands freely without lesson checks.\n- **🌿 Git:** Practise version control in the interactive Git lessons.\n- **📑 Cheat Sheet:** Browse supported commands and examples; select one to send to the Sandbox terminal.\n- **🚀 Explore:** Browse guides to external Linux tools such as `yt-dlp`. These tools do not run in KLU.\n\n### Helper Panels and Settings\n\n- **🗂️ File Tree:** View the virtual filesystem live. Select a directory to enter it or a file to read it in the terminal.\n- **🎨 Theme and Accent Color:** Choose from five themes and customize the accent color using the palette button in the upper-right corner.",
     "tasks": {
       "l0-history": {
         "description": "View your recent command history with `history`.",
@@ -105,7 +67,7 @@ export const EN_LESSONS: Record<string, LessonTranslation> = {
   "l0-habits": {
     "title": "Terminal Habits & Shortcuts",
     "summary": "Tab completion, command history navigation (arrows), Ctrl+C and Ctrl+L",
-    "content": "\n### Supercharge Your Speed with Shortcuts\n\n- **Tab:** Auto-completes file and directory names. Press Tab once to complete, or twice to see options.\n- **Up / Down Arrows (↑ / ↓):** Cycle through previously executed commands so you never re-type long commands.\n- **Ctrl + C:** Cancels the current running process or clears the current prompt line.\n- **Ctrl + L (or clear):** Clears the terminal screen instantly.\n",
+    "content": "Terminal work becomes faster and safer when you build a few habits:\n\n### 1. Command Anatomy\n\nA Linux command usually follows this pattern:\n\n```text\ncommand [options/flags] [arguments/targets]\n```\nFor example, `ls -la /home` uses `ls` as the command, `-la` to include hidden files in a detailed listing, and `/home` as the target directory. Short options can be combined; long options usually start with two hyphens, as in `--help`.\n\n### 2. Essential Shortcuts\n\n- **Tab:** Type the first characters of a command or filename and press Tab to complete it; press Tab twice to see matching options when needed.\n- **Up / Down Arrows (↑ / ↓):** Recall previously run commands without typing them again.\n- **Ctrl+C:** Cancel the current input line in KLU. On a real Linux system, it can also stop a running foreground process.\n- **Ctrl+L:** Clear the terminal display; it has the same screen-clearing effect as `clear`.\n\n### 3. Getting Help from Commands\n\n- **`--help` flag:** Show a command's usage summary, for example `pwd --help`.\n- **`man` command:** Open a detailed manual page, for example `man ls`.",
     "tasks": {
       "l0-help-flag": {
         "description": "Inspect the `pwd` usage summary with `pwd --help`.",
@@ -124,7 +86,7 @@ export const EN_LESSONS: Record<string, LessonTranslation> = {
   "l0-real-linux": {
     "title": "Moving to Real Linux & What Lies Ahead",
     "summary": "Dual boot, WSL, virtual machines, package managers, and next steps",
-    "content": "\n### Taking Your Skills to Real Machines\n\nOnce you finish KLU, here is how you can use Linux on your daily computer:\n\n- **WSL (Windows Subsystem for Linux):** Run a genuine Linux environment inside Windows.\n- **Virtual Machines (VirtualBox / UTM):** Safely run a complete Linux desktop inside a virtual container.\n- **Dual Boot:** Install Ubuntu, Fedora, or Linux Mint alongside your current OS.\n- **Package Managers:** Install software via terminal using `apt`, `dnf`, or `pacman`.\n",
+    "content": "### Differences Between KLU and Real Linux\n\n- **In-memory simulation:** Changes in KLU stay in the browser's virtual filesystem. On real Linux, commands can affect files on disk, the network, and hardware.\n- **Command range:** KLU simulates a focused set of commands. A real Linux distribution includes many more commands, package managers such as `apt`, `pacman`, and `dnf`, and system tools such as `systemctl` and `journalctl`.\n- **Shared fundamentals:** Paths such as `/`, `~`, and `..`, along with options and flags, work as useful concepts in both. KLU is still a simplified teaching simulator; even features it models, such as `chmod` and scripts, may behave differently on a real system.\n\n> ⚠️ **Important reminder:** On real Linux, files removed with `rm` are permanently deleted; there is no trash bin like in many graphical interfaces.\n\n### How to Try Real Linux\n\n- **Windows:** Use WSL to install a genuine Linux environment, run a virtual machine with VirtualBox, or boot a live Linux USB without installing it.\n- **macOS:** The built-in Terminal provides a Unix-like command line. Its default shell is Zsh, but many basic commands are shared with Linux.\n\n### What Comes Next?\n\nYou are ready for **Level 1: Beginner**, where you will practise:\n\n- Navigating directories with `cd`\n- Listing files with `ls` and `ls -la`\n- Creating files and directories with `touch` and `mkdir`\n- Reading, copying, moving, and removing files with `cat`, `cp`, `mv`, and `rm`\n\nStart in a disposable practice directory and inspect paths before changing real files.\n\n### Git\n\nGit is a version control system for recording changes. You can explore it in KLU's interactive Git lessons.",
     "tasks": {
       "l0-clear": {
         "description": "Clear your terminal screen using `clear`.",

@@ -121,7 +121,7 @@ AÇIKLAMA
     for (const p of paths) {
       const abs = ctx.resolve(p);
       if (!ctx.fs.exists(abs)) {
-        ctx.stderr(`find: '${p}': No such file or directory\n`);
+        ctx.stderr(`find: '${ctx.shell.displayPath(p)}': No such file or directory\n`);
         exitCode = 1;
         continue;
       }

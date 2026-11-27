@@ -43,4 +43,21 @@ describe('TR/EN lesson task and example parity', () => {
     expect(english.content).toContain('klu-welcome-card');
     expect(english.content).toContain('| Part | Meaning |');
   });
+
+  it('keeps Level 0 KLU overview sections and UI labels aligned', () => {
+    const lesson = ALL_LESSONS.find((item) => item.id === 'l0-klu-works')!;
+    const english = localizeLesson(lesson, 'en');
+    const headings = [...english.content.matchAll(/^###\s+(.+)$/gm)].map((match) => match[1]);
+    expect(headings).toEqual([
+      'Where Does the Name KLU Come From?',
+      'A Safe Laboratory in Your Browser',
+      'Lesson Panel and Tasks',
+    ]);
+    expect(english.content).toContain('Tron');
+    expect(english.content).toContain('**komut**');
+    expect(english.content).toContain('`localStorage`');
+    expect(english.content).toContain('After three wrong attempts, **Show solution**');
+    expect(english.content).toContain('**↺ Reset terminal**');
+    expect(english.content).not.toContain('Reset Terminal');
+  });
 });

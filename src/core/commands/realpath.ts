@@ -64,7 +64,7 @@ SEÇENEKLER
       const abs = ctx.resolve(target);
       if (!missingAllowed && !ctx.fs.exists(abs)) {
         if (!quiet) {
-          ctx.stderr(`realpath: '${target}': No such file or directory\n`);
+          ctx.stderr(`realpath: '${ctx.shell.displayPath(target)}': No such file or directory\n`);
         }
         exitCode = 1;
         continue;

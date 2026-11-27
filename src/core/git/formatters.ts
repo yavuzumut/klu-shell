@@ -22,9 +22,13 @@ export function formatGitDate(timestamp: number, lang: 'tr' | 'en' = 'en'): stri
   return `${dayName} ${monthName} ${day} ${time} ${year} +0000`;
 }
 
-export function formatStatus(status: GitStatusResult, localizePath: (path: string) => string = (path) => path): string {
+export function formatStatus(
+  status: GitStatusResult,
+  localizePath: (path: string) => string = (path) => path,
+  localizeName: (name: string) => string = (name) => name,
+): string {
   const lines: string[] = [];
-  lines.push(`On branch ${status.branch}`);
+  lines.push(`On branch ${localizeName(status.branch)}`);
 
   const merging = status.merging;
   const hasUnmerged = (merging?.conflicts.length ?? 0) > 0;
@@ -117,12 +121,21 @@ export function formatStatus(status: GitStatusResult, localizePath: (path: strin
 
 export function formatLog(
   commits: GitCommit[],
-  options: { oneline?: boolean; branch?: string; refs?: Record<string, string[]>; lang?: 'tr' | 'en' } = {},
+  options: {
+    oneline?: boolean;
+    branch?: string;
+    refs?: Record<string, string[]>;
+    lang?: 'tr' | 'en';
+    localizeName?: (name: string) => string;
+    localizeText?: (text: string) => string;
+  } = {},
 ): string {
   const oneline = options.oneline ?? false;
   const branch = options.branch ?? 'main';
   const refs = options.refs ?? {};
   const lang = options.lang ?? 'en';
+  const localizeName = options.localizeName ?? ((name: string) => name);
+  const localizeText = options.localizeText ?? ((text: string) => text);
 
   if (commits.length === 0) {
     return '';
@@ -130,10 +143,10 @@ export function formatLog(
 
   const decorate = (c: GitCommit, idx: number): string => {
     const names: string[] = [];
-    if (idx === 0) names.push(`${ANSI.bold}HEAD -> ${ANSI.green}${branch}`);
+    if (idx === 0) names.push(`${ANSI.bold}HEAD -> ${ANSI.green}${localizeName(branch)}`);
     for (const name of refs[c.hash] ?? []) {
       if (idx === 0 && name === branch) continue;
-      names.push(`${ANSI.green}${name}`);
+      names.push(`${ANSI.green}${localizeName(name)}`);
     }
     if (names.length === 0) return '';
     return ` ${ANSI.cyan}(${names.join(`${ANSI.cyan}, `)}${ANSI.cyan})${ANSI.reset}`;
@@ -142,7 +155,7 @@ export function formatLog(
   if (oneline) {
     return (
       commits
-        .map((c, idx) => `${ANSI.yellow}${c.shortHash}${ANSI.reset}${decorate(c, idx)} ${c.message}`)
+        .map((c, idx) => `${ANSI.yellow}${c.shortHash}${ANSI.reset}${decorate(c, idx)} ${localizeText(c.message)}`)
         .join('\n') + '\n'
     );
   }
@@ -159,7 +172,7 @@ export function formatLog(
           mergeLine +
           `Author: ${c.author} <${c.author}@klu>\n` +
           `Date:   ${formatGitDate(c.timestamp, lang)}\n\n` +
-          `    ${c.message}\n`
+          `    ${localizeText(c.message)}\n`
         );
       })
       .join('\n')
@@ -193,11 +206,11 @@ export function formatDiff(diffs: GitFileDiff[], localizePath: (path: string) =>
 }
 
 /** `git branch` listing: active branch marked with `*` and highlighted. */
-export function formatBranches(branches: GitBranchInfo[]): string {
+export function formatBranches(branches: GitBranchInfo[], localizeName: (name: string) => string = (name) => name): string {
   if (branches.length === 0) return '';
   return (
     branches
-      .map((b) => (b.current ? `* ${ANSI.green}${b.name}${ANSI.reset}` : `  ${b.name}`))
+      .map((b) => (b.current ? `* ${ANSI.green}${localizeName(b.name)}${ANSI.reset}` : `  ${localizeName(b.name)}`))
       .join('\n') + '\n'
   );
 }

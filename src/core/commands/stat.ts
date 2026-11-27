@@ -86,7 +86,7 @@ SEÇENEKLER
       const abs = ctx.resolve(target);
       const node = ctx.fs.tryLookup(abs);
       if (!node) {
-        ctx.stderr(`stat: cannot statx '${target}': No such file or directory\n`);
+        ctx.stderr(`stat: cannot statx '${ctx.shell.displayPath(target)}': No such file or directory\n`);
         exitCode = 1;
         continue;
       }
@@ -100,8 +100,8 @@ SEÇENEKLER
 
       if (format !== null) {
         let out = format;
-        out = out.replace(/%n/g, target);
-        out = out.replace(/%N/g, `'${target}'`);
+        out = out.replace(/%n/g, ctx.shell.displayPath(target));
+        out = out.replace(/%N/g, `'${ctx.shell.displayPath(target)}'`);
         out = out.replace(/%s/g, String(size));
         out = out.replace(/%a/g, (node.mode & 0o777).toString(8));
         out = out.replace(/%A/g, modeHuman);

@@ -27,7 +27,7 @@ function linkCount(node: FsNode): number {
 }
 
 function formatName(entry: Entry, ctx: CommandContext): string {
-  const name = ctx.shell.displayName(entry.name).replace(/[\x00-\x1f\x7f-\x9f]/g, (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`);
+  const name = ctx.shell.displayPath(entry.name).replace(/[\x00-\x1f\x7f-\x9f]/g, (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`);
   return ctx.isTTY && entry.node.type === 'dir' ? color.dir(name) : name;
 }
 
@@ -109,10 +109,10 @@ UZUN BİÇİM (ls -l)
       const abs = ctx.resolve(target);
       const node = ctx.fs.tryLookup(abs);
       if (!node) {
-        ctx.stderr(`ls: cannot access '${target}': No such file or directory\n`);
+        ctx.stderr(`ls: cannot access '${ctx.shell.displayPath(target)}': No such file or directory\n`);
         exitCode = 2;
       } else if (node.type === 'dir') {
-        dirs.push({ label: target, abs });
+        dirs.push({ label: ctx.shell.displayPath(target), abs });
       } else {
         files.push({ name: target, node });
       }

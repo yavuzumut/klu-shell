@@ -42,7 +42,7 @@ SEÇENEKLER
     const destIsDir = ctx.fs.isDir(destAbs);
 
     if (sources.length > 1 && !destIsDir) {
-      ctx.stderr(`cp: target '${dest}' is not a directory\n`);
+      ctx.stderr(`cp: target '${ctx.shell.displayPath(dest)}' is not a directory\n`);
       return 1;
     }
 
@@ -64,13 +64,14 @@ SEÇENEKLER
         continue;
       }
       const target = destIsDir ? joinPath(destAbs, basename(srcAbs)) : destAbs;
-      const targetLabel = destIsDir ? joinPath(dest, basename(srcAbs)) : dest;
+      const targetLabel = ctx.shell.displayPath(destIsDir ? joinPath(dest, basename(srcAbs)) : dest);
+      const sourceLabel = ctx.shell.displayPath(src);
       if (target === srcAbs) {
-        fail(`'${src}' and '${targetLabel}' are the same file`);
+        fail(`'${sourceLabel}' and '${targetLabel}' are the same file`);
         continue;
       }
       if (node.type === 'dir' && isSubPath(target, srcAbs)) {
-        fail(`cannot copy a directory, '${src}', into itself, '${targetLabel}'`);
+        fail(`cannot copy a directory, '${sourceLabel}', into itself, '${targetLabel}'`);
         continue;
       }
       const existing = ctx.fs.tryLookup(target);
@@ -79,12 +80,12 @@ SEÇENEKLER
         continue;
       }
       if (existing?.type === 'file' && node.type === 'dir') {
-        fail(`cannot overwrite non-directory '${targetLabel}' with directory '${src}'`);
+        fail(`cannot overwrite non-directory '${targetLabel}' with directory '${sourceLabel}'`);
         continue;
       }
       try {
         ctx.fs.copy(srcAbs, target, { recursive: true });
-        if (flags.has('v')) ctx.stdout(`'${src}' -> '${targetLabel}'\n`);
+        if (flags.has('v')) ctx.stdout(`'${sourceLabel}' -> '${targetLabel}'\n`);
       } catch (err) {
         if (err instanceof FsError) {
           const kind = node.type === 'dir' ? 'directory' : 'regular file';

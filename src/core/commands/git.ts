@@ -68,16 +68,18 @@ function plural(n: number): string {
   return `${n} file${n === 1 ? '' : 's'} changed`;
 }
 
-function conflictLine(c: GitConflict, branch: string): string {
+function conflictLine(c: GitConflict, branch: string, displayPath: (path: string) => string, displayName: (name: string) => string): string {
+  const path = displayPath(c.path);
+  const branchName = displayName(branch);
   switch (c.kind) {
     case 'deleted by us':
-      return `CONFLICT (modify/delete): ${c.path} deleted in HEAD and modified in ${branch}.`;
+      return `CONFLICT (modify/delete): ${path} deleted in HEAD and modified in ${branchName}.`;
     case 'deleted by them':
-      return `CONFLICT (modify/delete): ${c.path} deleted in ${branch} and modified in HEAD.`;
+      return `CONFLICT (modify/delete): ${path} deleted in ${branchName} and modified in HEAD.`;
     case 'both added':
-      return `CONFLICT (add/add): Merge conflict in ${c.path}`;
+      return `CONFLICT (add/add): Merge conflict in ${path}`;
     default:
-      return `CONFLICT (content): Merge conflict in ${c.path}`;
+      return `CONFLICT (content): Merge conflict in ${path}`;
   }
 }
 
@@ -244,11 +246,12 @@ ALT KOMUTLAR (Git 4)
     }
 
     const subargs = args.slice(1);
+    const canonicalBranchName = (name: string) => ctx.shell.canonicalizePathInput(name);
 
     // git status
     if (sub === 'status') {
       const status = repo.getStatus();
-      ctx.stdout(formatStatus(status, (path) => ctx.shell.displayPath(path)));
+      ctx.stdout(formatStatus(status, (path) => ctx.shell.displayPath(path), (name) => ctx.shell.displayName(name)));
       return 0;
     }
 
@@ -331,13 +334,13 @@ ALT KOMUTLAR (Git 4)
         const isRoot = commit.parent === null;
         const rootTag = isRoot ? ' (root-commit)' : '';
         ctx.stdout(
-          `[${branch}${rootTag} ${commit.shortHash}] ${commit.message}\n` +
+          `[${ctx.shell.displayName(branch)}${rootTag} ${commit.shortHash}] ${ctx.shell.displayText(commit.message)}\n` +
             ` ${plural(changedCount)}\n`,
         );
         return 0;
       } catch {
         const status = repo.getStatus();
-        ctx.stdout(formatStatus(status, (path) => ctx.shell.displayPath(path)));
+        ctx.stdout(formatStatus(status, (path) => ctx.shell.displayPath(path), (name) => ctx.shell.displayName(name)));
         return 1;
       }
     }
@@ -349,7 +352,7 @@ ALT KOMUTLAR (Git 4)
 
       if (commits.length === 0) {
         const branch = repo.getCurrentBranch() ?? 'main';
-        ctx.stderr(`fatal: your current branch '${branch}' does not have any commits yet\n`);
+        ctx.stderr(`fatal: your current branch '${ctx.shell.displayName(branch)}' does not have any commits yet\n`);
         return 128;
       }
 
@@ -363,6 +366,8 @@ ALT KOMUTLAR (Git 4)
         branch: repo.getCurrentBranch() ?? 'main',
         refs,
         lang: ctx.shell.lang,
+        localizeName: (name) => ctx.shell.displayName(name),
+        localizeText: (text) => ctx.shell.displayText(text),
       });
       ctx.stdout(formatted);
       return 0;
@@ -422,7 +427,7 @@ ALT KOMUTLAR (Git 4)
     // git branch [-d|-D <name...>] [<name>]
     if (sub === 'branch') {
       const flags = subargs.filter((a) => a.startsWith('-'));
-      const names = subargs.filter((a) => !a.startsWith('-'));
+      const names = subargs.filter((a) => !a.startsWith('-')).map(canonicalBranchName);
       const del = flags.some((f) => f === '-d' || f === '--delete');
       const forceDel = flags.includes('-D');
       const unknown = flags.find((f) => !['-d', '-D', '--delete', '--list', '-l'].includes(f));
@@ -440,7 +445,7 @@ ALT KOMUTLAR (Git 4)
         for (const name of names) {
           try {
             const { hash } = repo.deleteBranch(name, forceDel);
-            ctx.stdout(`Deleted branch ${name} (was ${hash.slice(0, 7)}).\n`);
+            ctx.stdout(`Deleted branch ${ctx.shell.displayName(name)} (was ${hash.slice(0, 7)}).\n`);
           } catch (err) {
             ctx.stderr(`${errMsg(err)}\n`);
             code = 1;
@@ -450,7 +455,7 @@ ALT KOMUTLAR (Git 4)
       }
 
       if (names.length === 0 || flags.includes('--list') || flags.includes('-l')) {
-        ctx.stdout(formatBranches(repo.listBranches()));
+        ctx.stdout(formatBranches(repo.listBranches(), (name) => ctx.shell.displayName(name)));
         return 0;
       }
 
@@ -486,12 +491,13 @@ ALT KOMUTLAR (Git 4)
         );
         return 128;
       }
-      const name = names[0];
+      const name = canonicalBranchName(names[0]);
       try {
         const { alreadyOn } = repo.switchBranch(name, { create });
-        if (alreadyOn) ctx.stdout(`Already on '${name}'\n`);
-        else if (create) ctx.stdout(`Switched to a new branch '${name}'\n`);
-        else ctx.stdout(`Switched to branch '${name}'\n`);
+        const displayName = ctx.shell.displayName(name);
+        if (alreadyOn) ctx.stdout(`Already on '${displayName}'\n`);
+        else if (create) ctx.stdout(`Switched to a new branch '${displayName}'\n`);
+        else ctx.stdout(`Switched to branch '${displayName}'\n`);
         return 0;
       } catch (err) {
         ctx.stderr(`${errMsg(err)}\n`);
@@ -510,11 +516,12 @@ ALT KOMUTLAR (Git 4)
           return 128;
         }
       }
-      const name = subargs.find((a) => !a.startsWith('-'));
-      if (!name) {
+      const requestedName = subargs.find((a) => !a.startsWith('-'));
+      if (!requestedName) {
         ctx.stderr('fatal: No branch specified.\nusage: git merge <branch>\n');
         return 128;
       }
+      const name = canonicalBranchName(requestedName);
       try {
         const result = repo.merge(name, ctx.shell.username);
         switch (result.type) {
@@ -532,8 +539,8 @@ ALT KOMUTLAR (Git 4)
             );
             return 0;
           case 'conflict': {
-            const lines = result.autoMerged.map((p) => `Auto-merging ${p}`);
-            for (const c of result.conflicts) lines.push(conflictLine(c, name));
+            const lines = result.autoMerged.map((p) => `Auto-merging ${ctx.shell.displayPath(p)}`);
+            for (const c of result.conflicts) lines.push(conflictLine(c, name, (path) => ctx.shell.displayPath(path), (branch) => ctx.shell.displayName(branch)));
             lines.push('Automatic merge failed; fix conflicts and then commit the result.');
             ctx.stdout(lines.join('\n') + '\n');
             return 1;
@@ -620,7 +627,7 @@ ALT KOMUTLAR (Git 4)
       }
 
       const remoteName = positional[0];
-      const branchName = positional[1];
+      const branchName = positional[1] ? canonicalBranchName(positional[1]) : undefined;
 
       try {
         const result = repo.push(remoteName, branchName, { setUpstream });
@@ -629,15 +636,15 @@ ALT KOMUTLAR (Git 4)
 
         let out = `To ${result.url}\n`;
         if (result.isNewBranch) {
-          out += ` * [new branch]      ${result.branch} -> ${result.branch}\n`;
+          out += ` * [new branch]      ${ctx.shell.displayName(result.branch)} -> ${ctx.shell.displayName(result.branch)}\n`;
         } else if (oldShort && oldShort !== newShort) {
-          out += `   ${oldShort}..${newShort}  ${result.branch} -> ${result.branch}\n`;
+          out += `   ${oldShort}..${newShort}  ${ctx.shell.displayName(result.branch)} -> ${ctx.shell.displayName(result.branch)}\n`;
         } else {
           out += `Everything up-to-date\n`;
         }
 
         if (result.setUpstream) {
-          out += `Branch '${result.branch}' set up to track remote branch '${result.branch}' from '${result.remote}'.\n`;
+          out += `Branch '${ctx.shell.displayName(result.branch)}' set up to track remote branch '${ctx.shell.displayName(result.branch)}' from '${result.remote}'.\n`;
         }
 
         ctx.stdout(out);
@@ -653,7 +660,7 @@ ALT KOMUTLAR (Git 4)
     if (sub === 'pull') {
       const positional = subargs.filter((a) => !a.startsWith('-'));
       const remoteName = positional[0];
-      const branchName = positional[1];
+      const branchName = positional[1] ? canonicalBranchName(positional[1]) : undefined;
 
       try {
         const result = repo.pull(remoteName, branchName, ctx.shell.username);
@@ -672,8 +679,8 @@ ALT KOMUTLAR (Git 4)
             );
             return 0;
           case 'conflict': {
-            const lines = result.autoMerged.map((p) => `Auto-merging ${p}`);
-            for (const c of result.conflicts) lines.push(conflictLine(c, branchName ?? 'FETCH_HEAD'));
+            const lines = result.autoMerged.map((p) => `Auto-merging ${ctx.shell.displayPath(p)}`);
+            for (const c of result.conflicts) lines.push(conflictLine(c, branchName ?? 'FETCH_HEAD', (path) => ctx.shell.displayPath(path), (branch) => ctx.shell.displayName(branch)));
             lines.push('Automatic merge failed; fix conflicts and then commit the result.');
             ctx.stdout(lines.join('\n') + '\n');
             return 1;
