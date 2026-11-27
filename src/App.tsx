@@ -253,6 +253,13 @@ export default function App() {
   }, []);
 
   const completedTaskIds = progress.completed[lesson.id] ?? [];
+
+  const toggleFileTree = useCallback(() => {
+    const next = !showFileTree;
+    setShowFileTree(next);
+    // Hiding the tree while its mobile tab is active would leave an empty view.
+    if (!next && mobileTab === 'tree') setMobileTab(mode === 'lessons' ? 'lesson' : 'terminal');
+  }, [showFileTree, mobileTab, mode]);
   const mobileKeys = useMemo(
     () => [
       { label: 'Tab', data: '\t' },
@@ -359,7 +366,7 @@ export default function App() {
         mode={mode}
         onModeChange={handleModeChange}
         showFileTree={showFileTree}
-        onToggleFileTree={() => setShowFileTree((prev) => !prev)}
+        onToggleFileTree={toggleFileTree}
         themeControls={themeControls}
       />
 
@@ -539,6 +546,10 @@ export default function App() {
         onSelectLesson={goToLesson}
         onClose={() => setDrawerOpen(false)}
         onResetAll={handleResetAll}
+        mode={mode}
+        onModeChange={handleModeChange}
+        showFileTree={showFileTree}
+        onToggleFileTree={toggleFileTree}
       />
 
       <CongratsModal

@@ -43,11 +43,14 @@ export function Header({
   return (
     <header className="header">
       <div className="brand">
-        {mode === 'lessons' && (
-          <button className="icon-btn" onClick={onOpenMenu} aria-label="Ders listesi">
-            ☰
-          </button>
-        )}
+        {/* On mobile the menu is always available: the drawer also hosts mode navigation. */}
+        <button
+          className={`icon-btn menu-btn ${mode === 'lessons' ? '' : 'menu-btn-mobile-only'}`}
+          onClick={onOpenMenu}
+          aria-label="Menü ve ders listesi"
+        >
+          ☰
+        </button>
         <button
           type="button"
           className="header-logo-btn"
@@ -147,6 +150,9 @@ export function Header({
                 ? `Hazırlık: ${doneCount}/${lessons.length} ders`
                 : `${doneCount}/${lessons.length} ders · %${mainPercent}`}
             </span>
+            <span className="progress-badge" aria-hidden="true">
+              {doneCount}/{lessons.length}
+            </span>
           </div>
         </>
       )}
@@ -154,9 +160,10 @@ export function Header({
       <div className="header-right-actions">
         {(mode === 'lessons' || mode === 'sandbox') && (
           <button
-            className={`btn btn-small ${showFileTree ? 'btn-primary' : 'btn-ghost'}`}
+            className={`btn btn-small header-tree-btn ${showFileTree ? 'btn-primary' : 'btn-ghost'}`}
             onClick={onToggleFileTree}
             title="Dosya Ağacını Göster/Gizle"
+            aria-pressed={showFileTree}
           >
             🗂️ Dosya Ağacı
           </button>

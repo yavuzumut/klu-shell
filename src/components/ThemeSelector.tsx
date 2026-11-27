@@ -59,7 +59,8 @@ export function ThemeSelector({
         aria-expanded={open}
       >
         <span className="theme-color-dot" style={{ background: currentAccent }} />
-        <span className="theme-btn-label">🎨 {theme.name}</span>
+        <span className="theme-btn-icon" aria-hidden="true">🎨</span>
+        <span className="theme-btn-label">{theme.name}</span>
       </button>
 
       {open && (
