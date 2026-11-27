@@ -1,4 +1,4 @@
-<h1><img src="public/klu-mascot-64.png" alt="KLU" width="36" align="absmiddle" /> KLU</h1>
+<h1><img src="public/klu-mascot-512.png" alt="KLU" width="72" align="absmiddle" /> KLU</h1>
 
 KLU is a browser-based, bilingual (Turkish and English) simulator for learning Linux terminal and Git. It runs locally in the browser with an in-memory virtual filesystem; its shell and Git remotes are simulations, not a real operating system or remote Git host.
 
